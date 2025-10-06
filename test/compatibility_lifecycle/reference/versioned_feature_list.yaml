@@ -1447,6 +1447,12 @@
     lockToDefault: false
     preRelease: Beta
     version: "1.29"
+- name: PodsAPI
+  versionedSpecs:
+  - default: false
+    lockToDefault: false
+    preRelease: Alpha
+    version: "1.35"
 - name: PodSchedulingReadiness
   versionedSpecs:
   - default: false
