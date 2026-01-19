@@ -104,6 +104,7 @@
       initPods: 2500
       measurePods: 2500
       maxClaimsPerNode: 10
+    threshold: 197
 
 - name: ExtendedResource_50Classes
   featureGates:
@@ -149,6 +150,7 @@
       initPods: 2500
       measurePods: 2500
       maxClaimsPerNode: 10
+    threshold: 195
 
 - name: ImplicitExtendedResource_25Classes
   featureGates:
