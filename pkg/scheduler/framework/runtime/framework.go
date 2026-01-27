@@ -352,7 +352,7 @@ func NewFramework(ctx context.Context, r Registry, profile *config.KubeScheduler
 	}
 
 	if utilfeature.DefaultFeatureGate.Enabled(features.OpportunisticBatching) {
-		f.batch = newOpportunisticBatch(f, signUsingFramework)
+		f.batch = newOpportunisticBatch(f)
 	}
 
 	if len(f.extenders) > 0 {
@@ -1575,8 +1575,8 @@ func (f *frameworkImpl) runPlacementScoreExtension(ctx context.Context, pl fwk.P
 	return status
 }
 
-func (f *frameworkImpl) GetNodeHint(ctx context.Context, pod *v1.Pod, state fwk.CycleState, cycleCount int64) (hint string, signature fwk.PodSignature) {
-	return f.batch.GetNodeHint(ctx, pod, state, cycleCount)
+func (f *frameworkImpl) GetNodeHint(ctx context.Context, pod *v1.Pod, signature fwk.PodSignature, state fwk.CycleState, cycleCount int64) string {
+	return f.batch.GetNodeHint(ctx, pod, signature, state, cycleCount)
 }
 
 func (f *frameworkImpl) StoreScheduleResults(ctx context.Context, signature fwk.PodSignature, hintedNode, chosenNode string, otherNodes framework.SortedScoredNodes, cycleCount int64) {
@@ -2196,7 +2196,7 @@ func (f *frameworkImpl) APICacher() fwk.APICacher {
 	return f.apiCacher
 }
 
-// Used only for tests
+// TotalBatchedPods returns the total number of batched pods. Used only for tests
 func (f *frameworkImpl) TotalBatchedPods() int64 {
 	return f.batch.batchedPods
 }

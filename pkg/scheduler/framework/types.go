@@ -558,6 +558,8 @@ type QueuedPodInfo struct {
 	// or doesn't belong to any pod group.
 	// This field can only be set to true when GenericWorkload feature flag is enabled.
 	NeedsPodGroupScheduling bool
+	// Pod scheduling signature
+	PodSignature fwk.PodSignature
 }
 
 func (pqi *QueuedPodInfo) GetPodInfo() fwk.PodInfo {
@@ -624,6 +626,7 @@ func (pqi *QueuedPodInfo) DeepCopy() *QueuedPodInfo {
 		PendingPlugins:          pqi.PendingPlugins.Clone(),
 		ConsecutiveErrorsCount:  pqi.ConsecutiveErrorsCount,
 		NeedsPodGroupScheduling: pqi.NeedsPodGroupScheduling,
+		PodSignature:            pqi.PodSignature,
 	}
 }
 
