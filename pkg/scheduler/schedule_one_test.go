@@ -1141,7 +1141,7 @@ func TestSchedulerScheduleOne(t *testing.T) {
 			PodGroupManager:                        pgm,
 			nominatedNodeNameForExpectationEnabled: features.nominatedNodeNameForExpectationEnabled,
 		}
-		queue.Add(logger, item.sendPod)
+		queue.Add(ctx, logger, item.sendPod)
 
 		sched.SchedulePod = func(ctx context.Context, fwk framework.Framework, state fwk.CycleState, podInfo *framework.QueuedPodInfo) (ScheduleResult, error) {
 			return item.mockScheduleResult, item.injectSchedulingError
@@ -1775,7 +1775,7 @@ func TestScheduleOneMarksPodAsProcessedBeforePreBind(t *testing.T) {
 						Profiles:        profile.Map{testSchedulerName: schedFramework},
 						APIDispatcher:   apiDispatcher,
 					}
-					queue.Add(logger, item.sendPod)
+					queue.Add(ctx, logger, item.sendPod)
 
 					sched.SchedulePod = func(ctx context.Context, fwk framework.Framework, state fwk.CycleState, podInfo *framework.QueuedPodInfo) (ScheduleResult, error) {
 						return item.mockScheduleResult, item.injectSchedulingError
