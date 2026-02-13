@@ -2667,7 +2667,7 @@ var defaultKubernetesFeatureGateDependencies = map[featuregate.Feature][]feature
 
 	TranslateStreamCloseWebsocketRequests: {},
 
-	UserNamespacesHostNetworkSupport: {UserNamespacesSupport},
+	UserNamespacesHostNetworkSupport: {UserNamespacesSupport, NodeDeclaredFeatures},
 
 	UserNamespacesSupport: {},
 
