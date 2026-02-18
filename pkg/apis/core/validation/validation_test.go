@@ -28896,6 +28896,72 @@ func TestValidatePodResize(t *testing.T) {
 			)),
 			err: "spec: Forbidden: only cpu and memory resources are mutable",
 		},
+		{
+			test: "Resize pod with NodeAllocatableResourceClaimStatuses",
+			old: func() *core.Pod {
+				p := podtest.MakePod("pod",
+					podtest.SetContainers(podtest.MakeContainer("container",
+						podtest.SetContainerResources(core.ResourceRequirements{
+							Requests: getResources("100m", "200Mi", "", ""),
+						}))),
+					podtest.SetPodResources(&core.ResourceRequirements{Limits: getResources("100m", "200Mi", "", "")}),
+				)
+				p.Status.NodeAllocatableResourceClaimStatuses = []core.NodeAllocatableResourceClaimStatus{{ResourceClaimName: "node-allocatable-claim"}}
+				return p
+			}(),
+			new: func() *core.Pod {
+				p := podtest.MakePod("pod",
+					podtest.SetContainers(podtest.MakeContainer("container",
+						podtest.SetContainerResources(core.ResourceRequirements{
+							Requests: getResources("200m", "200Mi", "", ""),
+						}))),
+					podtest.SetPodResources(&core.ResourceRequirements{Limits: getResources("200m", "200Mi", "", "")}),
+				)
+				p.Status.NodeAllocatableResourceClaimStatuses = []core.NodeAllocatableResourceClaimStatus{{ResourceClaimName: "node-allocatable-claim"}}
+				return p
+			}(),
+			err: "spec: Forbidden: pods with node allocatable resource claims cannot be resized",
+		},
+		{
+			test: "Resize pod with NodeAllocatableResourceClaimStatuses",
+			old: func() *core.Pod {
+				p := podtest.MakePod("pod",
+					podtest.SetContainers(podtest.MakeContainer("container",
+						podtest.SetContainerResources(core.ResourceRequirements{
+							Requests: getResources("100m", "200Mi", "", ""),
+						}))),
+					podtest.SetPodResources(&core.ResourceRequirements{Limits: getResources("100m", "200Mi", "", "")}),
+				)
+				p.Status.NodeAllocatableResourceClaimStatuses = []core.NodeAllocatableResourceClaimStatus{
+					{
+						ResourceClaimName: "node-allocatable-claim-1",
+						Resources: map[core.ResourceName]resource.Quantity{
+							core.ResourceCPU: resource.MustParse("100m"),
+						},
+					},
+				}
+				return p
+			}(),
+			new: func() *core.Pod {
+				p := podtest.MakePod("pod",
+					podtest.SetContainers(podtest.MakeContainer("container",
+						podtest.SetContainerResources(core.ResourceRequirements{
+							Requests: getResources("200m", "200Mi", "", ""),
+						}))),
+					podtest.SetPodResources(&core.ResourceRequirements{Limits: getResources("200m", "200Mi", "", "")}),
+				)
+				p.Status.NodeAllocatableResourceClaimStatuses = []core.NodeAllocatableResourceClaimStatus{
+					{
+						ResourceClaimName: "node-allocatable-claim-1",
+						Resources: map[core.ResourceName]resource.Quantity{
+							core.ResourceCPU: resource.MustParse("100m"),
+						},
+					},
+				}
+				return p
+			}(),
+			err: "spec: Forbidden: pods with node allocatable resource claims cannot be resized",
+		},
 	}
 
 	for _, test := range tests {
