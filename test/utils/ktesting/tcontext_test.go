@@ -26,11 +26,6 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	"k8s.io/client-go/dynamic"
-	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/restmapper"
 	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/test/utils/ktesting"
 )
@@ -136,7 +131,6 @@ func TestCancelCtx(t *testing.T) {
 	tCtx := ktesting.Init(t)
 	var discardLogger klog.Logger
 	tCtx = tCtx.WithLogger(discardLogger)
-	tCtx = tCtx.WithRESTConfig(new(rest.Config))
 	baseCtx := tCtx
 
 	tCtx.Cleanup(func() {
@@ -149,11 +143,6 @@ func TestCancelCtx(t *testing.T) {
 			t.Errorf("context should not be canceled but is: %v", tCtx.Err())
 		}
 		assert.Equal(t, baseCtx.Logger(), tCtx.Logger(), "Logger()")
-		assert.Equal(t, baseCtx.RESTConfig(), tCtx.RESTConfig(), "RESTConfig()")
-		assert.Equal(t, baseCtx.RESTMapper(), tCtx.RESTMapper(), "RESTMapper()")
-		assert.Equal(t, baseCtx.Client(), tCtx.Client(), "Client()")
-		assert.Equal(t, baseCtx.Dynamic(), tCtx.Dynamic(), "Dynamic()")
-		assert.Equal(t, baseCtx.APIExtensions(), tCtx.APIExtensions(), "APIExtensions()")
 	})
 
 	// Cancel, then let testing.T invoke test cleanup.
@@ -180,19 +169,12 @@ func TestParallel(t *testing.T) {
 func TestRun(t *testing.T) {
 	tCtx := ktesting.Init(t)
 
-	cfg := new(rest.Config)
-	mapper := new(restmapper.DeferredDiscoveryRESTMapper)
-	client := clientset.New(nil)
-	dynamic := dynamic.New(nil)
-	apiextensions := apiextensions.New(nil)
-	tCtx = tCtx.WithClients(cfg, mapper, client, dynamic, apiextensions)
+	key := 42
+	value := "fish"
+	tCtx = tCtx.WithValue(key, value)
 
 	tCtx.Run("sub", func(tCtx ktesting.TContext) {
-		assert.Equal(t, cfg, tCtx.RESTConfig(), "RESTConfig")
-		assert.Equal(t, mapper, tCtx.RESTMapper(), "RESTMapper")
-		assert.Equal(t, client, tCtx.Client(), "Client")
-		assert.Equal(t, dynamic, tCtx.Dynamic(), "Dynamic")
-		assert.Equal(t, apiextensions, tCtx.APIExtensions(), "APIExtensions")
+		tCtx.Assert(tCtx.Value(key)).To(gomega.Equal(value))
 
 		tCtx.Cancel("test is complete")
 		<-tCtx.Done()

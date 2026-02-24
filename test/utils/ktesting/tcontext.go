@@ -28,11 +28,6 @@ import (
 
 	"github.com/onsi/gomega"
 
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	"k8s.io/client-go/dynamic"
-	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/restmapper"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/ktesting"
 	"k8s.io/kubernetes/test/utils/format"
@@ -410,13 +405,6 @@ type TContext struct {
 	// for IsSyncTest
 	isSyncTest bool
 
-	// for WithClient
-	restConfig    *rest.Config
-	restMapper    *restmapper.DeferredDiscoveryRESTMapper
-	client        clientset.Interface
-	dynamic       dynamic.Interface
-	apiextensions apiextensions.Interface
-
 	// for WithNamespace
 	namespace string
 
@@ -584,19 +572,6 @@ func (tCtx TContext) TB() TB { return tCtx.testingTB.TB }
 func (tCtx TContext) Logger() klog.Logger {
 	return klog.FromContext(tCtx.Context)
 }
-
-// RESTConfig returns a copy of the config for a rest client with the UserAgent
-// set to include the current test name or nil if not available. Several typed
-// clients using this config are available through [Client], [Dynamic],
-// [APIExtensions].
-func (tCtx TContext) RESTConfig() *rest.Config {
-	return rest.CopyConfig(tCtx.restConfig)
-}
-
-func (tCtx TContext) RESTMapper() *restmapper.DeferredDiscoveryRESTMapper { return tCtx.restMapper }
-func (tCtx TContext) Client() clientset.Interface                         { return tCtx.client }
-func (tCtx TContext) Dynamic() dynamic.Interface                          { return tCtx.dynamic }
-func (tCtx TContext) APIExtensions() apiextensions.Interface              { return tCtx.apiextensions }
 
 // Expect wraps [gomega.Expect] such that a failure will be reported via
 // [TContext.Fatal]. As with [gomega.Expect], additional values
