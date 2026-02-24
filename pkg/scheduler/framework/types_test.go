@@ -747,8 +747,9 @@ func TestNodeInfoAddPod(t *testing.T) {
 				{Protocol: "TCP", Port: 8080}: {},
 			},
 		},
-		ImageStates:  map[string]*fwk.ImageStateSummary{},
-		PVCRefCounts: map[string]int{"node_info_cache_test/pvc-1": 2, "node_info_cache_test/pvc-2": 1},
+		ImageStates:      map[string]*fwk.ImageStateSummary{},
+		PVCRefCounts:     map[string]int{"node_info_cache_test/pvc-1": 2, "node_info_cache_test/pvc-2": 1},
+		DeclaredFeatures: ndf.DefaultFramework.NewFeatureSet(), // Empty FeatureSet.
 		Pods: []fwk.PodInfo{
 			&PodInfo{
 				Pod: &v1.Pod{
@@ -997,8 +998,9 @@ func TestNodeInfoRemovePod(t *testing.T) {
 						{Protocol: "TCP", Port: 8080}: {},
 					},
 				},
-				ImageStates:  map[string]*fwk.ImageStateSummary{},
-				PVCRefCounts: map[string]int{"node_info_cache_test/pvc-1": 1},
+				ImageStates:      map[string]*fwk.ImageStateSummary{},
+				PVCRefCounts:     map[string]int{"node_info_cache_test/pvc-1": 1},
+				DeclaredFeatures: ndf.DefaultFramework.NewFeatureSet(), // Empty FeatureSet.
 				Pods: []fwk.PodInfo{
 					&PodInfo{
 						Pod: &v1.Pod{
@@ -1163,8 +1165,9 @@ func TestNodeInfoRemovePod(t *testing.T) {
 						{Protocol: "TCP", Port: 8080}: {},
 					},
 				},
-				ImageStates:  map[string]*fwk.ImageStateSummary{},
-				PVCRefCounts: map[string]int{},
+				ImageStates:      map[string]*fwk.ImageStateSummary{},
+				PVCRefCounts:     map[string]int{},
+				DeclaredFeatures: ndf.DefaultFramework.NewFeatureSet(), // Empty FeatureSet.
 				Pods: []fwk.PodInfo{
 					&PodInfo{
 						Pod: &v1.Pod{
@@ -1305,20 +1308,14 @@ func TestSetNodeDeclaredFeatures(t *testing.T) {
 			gotFeatures := ni.GetNodeDeclaredFeatures()
 			if !tt.featureGateEnabled {
 				if !gotFeatures.IsEmpty() {
-					got, err := ndfFramework.Unmap(gotFeatures)
-					if err != nil {
-						t.Fatalf("Failed to unmap features: %v", err)
-					}
+					got := ndfFramework.Unmap(gotFeatures)
 					t.Errorf("Expected GetNodeDeclaredFeatures() to return nil; got %v", got)
 				}
 				return
 			}
 			expected := ndfFramework.MustMapSorted(tt.expectedFeatures)
 			if !gotFeatures.Equal(expected) {
-				got, err := ndfFramework.Unmap(gotFeatures)
-				if err != nil {
-					t.Fatalf("Failed to unmap features: %v", err)
-				}
+				got := ndfFramework.Unmap(gotFeatures)
 				t.Errorf("SetNode() or GetNodeDeclaredFeatures() unexpected result, got: %v, want: %v", got, tt.expectedFeatures)
 			}
 		})
