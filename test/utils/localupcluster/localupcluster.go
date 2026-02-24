@@ -52,6 +52,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubernetes/test/utils/ktesting"
+	"k8s.io/kubernetes/test/utils/tcontext"
 )
 
 type KubeComponentName string
@@ -460,7 +461,7 @@ func (c *Cluster) runComponentWithRetry(tCtx ktesting.TContext, component KubeCo
 
 func (c *Cluster) checkReadiness(tCtx ktesting.TContext, cmd *Cmd) {
 	restConfig := c.LoadConfig(tCtx)
-	tCtx = tCtx.WithRESTConfig(restConfig)
+	tCtx = tcontext.WithRESTConfig(tCtx, restConfig)
 	tCtx = tCtx.WithStep(fmt.Sprintf("wait for %s readiness", cmd.Name))
 
 	// For the apiserver we use the admin client certificate with the cluster CA.
@@ -494,7 +495,7 @@ func (c *Cluster) checkReadiness(tCtx ktesting.TContext, cmd *Cmd) {
 
 		// Also wait for the node to be ready.
 		tCtx.WithStep("wait for node ready").Eventually(func(tCtx ktesting.TContext) (*corev1.NodeList, error) {
-			return tCtx.Client().CoreV1().Nodes().List(tCtx, metav1.ListOptions{})
+			return tcontext.Client(tCtx).CoreV1().Nodes().List(tCtx, metav1.ListOptions{})
 		}).Should(gomega.HaveField("Items", gomega.ConsistOf(gomega.HaveField("Status.Conditions", gomega.ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 			"Type":   gomega.Equal(corev1.NodeReady),
 			"Status": gomega.Equal(corev1.ConditionTrue),

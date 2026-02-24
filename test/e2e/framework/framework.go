@@ -49,6 +49,7 @@ import (
 	"k8s.io/client-go/restmapper"
 	scaleclient "k8s.io/client-go/scale"
 	"k8s.io/kubernetes/test/utils/ktesting"
+	"k8s.io/kubernetes/test/utils/tcontext"
 	admissionapi "k8s.io/pod-security-admission/api"
 
 	"github.com/go-logr/logr"
@@ -186,7 +187,7 @@ func (f *Framework) TContext(ctx context.Context) ktesting.TContext {
 		panic("TContext may only be used while a test runs.")
 	}
 	tCtx := ktesting.InitCtx(ctx, f /* intentionally using f here and not f.TB because f overrides some methods */)
-	tCtx = tCtx.WithClients(f.clientConfig, f.restMapper, f.ClientSet, f.DynamicClient, apiextensions.NewForConfigOrDie(f.clientConfig))
+	tCtx = tcontext.WithClients(tCtx, f.clientConfig, f.restMapper, f.ClientSet, f.DynamicClient, apiextensions.NewForConfigOrDie(f.clientConfig))
 	if f.Namespace != nil {
 		tCtx = tCtx.WithNamespace(f.Namespace.Name)
 	}
@@ -210,7 +211,7 @@ func ContextTODO(ctx context.Context, client clientset.Interface) ktesting.TCont
 	}
 	f := NewDefaultFramework("tcontext")
 	tCtx := ktesting.InitCtx(ctx, f)
-	tCtx = tCtx.WithClients(nil, nil, client, nil, nil)
+	tCtx = tcontext.WithClients(tCtx, nil, nil, client, nil, nil)
 	tCtx = ensureLogger(tCtx)
 	return tCtx
 }
