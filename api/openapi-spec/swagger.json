@@ -19546,6 +19546,20 @@
         }
       ]
     },
+    "io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingConstraints": {
+      "description": "PodGroupSchedulingConstraints defines scheduling constraints (e.g. topology) for a PodGroup.",
+      "properties": {
+        "topology": {
+          "description": "Topology defines the topology constraints for the pod group. Currently only a single topology constraint can be specified. This may change in the future.",
+          "items": {
+            "$ref": "#/definitions/io.k8s.api.scheduling.v1alpha2.TopologyConstraint"
+          },
+          "type": "array",
+          "x-kubernetes-list-type": "atomic"
+        }
+      },
+      "type": "object"
+    },
     "io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingPolicy": {
       "description": "PodGroupSchedulingPolicy defines the scheduling configuration for a PodGroup. Exactly one policy must be set.",
       "properties": {
@@ -19574,6 +19588,10 @@
         "podGroupTemplateRef": {
           "$ref": "#/definitions/io.k8s.api.scheduling.v1alpha2.PodGroupTemplateReference",
           "description": "PodGroupTemplateRef references an optional PodGroup template within other object (e.g. Workload) that was used to create the PodGroup. This field is immutable."
+        },
+        "schedulingConstraints": {
+          "$ref": "#/definitions/io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingConstraints",
+          "description": "SchedulingConstraints defines optional scheduling constraints (e.g. topology) for this PodGroup. Controllers are expected to fill this field by copying it from a PodGroupTemplate. This field is immutable. This field is only available when the TopologyAwareWorkloadScheduling feature gate is enabled."
         },
         "schedulingPolicy": {
           "$ref": "#/definitions/io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingPolicy",
@@ -19611,6 +19629,10 @@
           "description": "Name is a unique identifier for the PodGroupTemplate within the Workload. It must be a DNS label. This field is immutable.",
           "type": "string"
         },
+        "schedulingConstraints": {
+          "$ref": "#/definitions/io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingConstraints",
+          "description": "SchedulingConstraints defines optional scheduling constraints (e.g. topology) for this PodGroupTemplate. This field is only available when the TopologyAwareWorkloadScheduling feature gate is enabled."
+        },
         "schedulingPolicy": {
           "$ref": "#/definitions/io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingPolicy",
           "description": "SchedulingPolicy defines the scheduling policy for this PodGroupTemplate."
@@ -19638,6 +19660,19 @@
           }
         }
       ]
+    },
+    "io.k8s.api.scheduling.v1alpha2.TopologyConstraint": {
+      "description": "TopologyConstraint defines a topology constraint for a PodGroup.",
+      "properties": {
+        "key": {
+          "description": "Key specifies the key of the node label representing the topology domain. All pods within the PodGroup must be colocated within the same domain instance. Different PodGroups can land on different domain instances even if they derive from the same PodGroupTemplate. Examples: \"topology.kubernetes.io/rack\"",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "type": "object"
     },
     "io.k8s.api.scheduling.v1alpha2.TypedLocalObjectReference": {
       "description": "TypedLocalObjectReference allows to reference typed object inside the same namespace.",
