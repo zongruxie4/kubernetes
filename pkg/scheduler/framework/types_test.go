@@ -1308,14 +1308,20 @@ func TestSetNodeDeclaredFeatures(t *testing.T) {
 			gotFeatures := ni.GetNodeDeclaredFeatures()
 			if !tt.featureGateEnabled {
 				if !gotFeatures.IsEmpty() {
-					got := ndfFramework.Unmap(gotFeatures)
+					got, err := ndfFramework.Unmap(gotFeatures)
+					if err != nil {
+						t.Fatalf("Failed to unmap features: %v", err)
+					}
 					t.Errorf("Expected GetNodeDeclaredFeatures() to return nil; got %v", got)
 				}
 				return
 			}
 			expected := ndfFramework.MustMapSorted(tt.expectedFeatures)
 			if !gotFeatures.Equal(expected) {
-				got := ndfFramework.Unmap(gotFeatures)
+				got, err := ndfFramework.Unmap(gotFeatures)
+				if err != nil {
+					t.Fatalf("Failed to unmap features: %v", err)
+				}
 				t.Errorf("SetNode() or GetNodeDeclaredFeatures() unexpected result, got: %v, want: %v", got, tt.expectedFeatures)
 			}
 		})
