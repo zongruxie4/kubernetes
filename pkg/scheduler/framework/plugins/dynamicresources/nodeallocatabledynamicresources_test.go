@@ -106,6 +106,114 @@ func (m *mockDRAManager) ListWithDeviceTaintRules() ([]*resourceapi.ResourceSlic
 	return m.resourceSlices, nil
 }
 
+func TestValidateNodeAllocatableDRAClaimSharing(t *testing.T) {
+	claimName := "node-allocatable-claim"
+	claimNameSpace := "test-ns"
+	claim1Key := types.NamespacedName{Namespace: claimNameSpace, Name: claimName}
+
+	tests := []struct {
+		name       string
+		pod        *v1.Pod
+		claim      *resourceapi.ResourceClaim
+		nodeInfo   *framework.NodeInfo
+		wantStatus *fwk.Status
+	}{
+		{
+			name:  "empty claim",
+			pod:   st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").Obj(),
+			claim: nil,
+			nodeInfo: &framework.NodeInfo{
+				NodeAllocatableDRAClaimStates: map[types.NamespacedName]*fwk.NodeAllocatableDRAClaimState{},
+			},
+			wantStatus: fwk.NewStatus(fwk.Success),
+		},
+		{
+			name: "claim not in node info",
+			pod:  st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("pod-uid").Obj(),
+			claim: &resourceapi.ResourceClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      claimName,
+					Namespace: claimNameSpace,
+					UID:       "claim-uid",
+				},
+			},
+			nodeInfo: func() *framework.NodeInfo {
+				ni := framework.NewNodeInfo()
+				ni.NodeAllocatableDRAClaimStates = map[types.NamespacedName]*fwk.NodeAllocatableDRAClaimState{}
+				return ni
+			}(),
+			wantStatus: fwk.NewStatus(fwk.Success),
+		},
+		{
+			name: "claim shared, current pod not in consumers",
+			pod:  st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("pod-uid").Obj(),
+			claim: &resourceapi.ResourceClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      claimName,
+					Namespace: claimNameSpace,
+					UID:       "claim-uid",
+				},
+			},
+			nodeInfo: func() *framework.NodeInfo {
+				ni := framework.NewNodeInfo()
+				ni.NodeAllocatableDRAClaimStates = map[types.NamespacedName]*fwk.NodeAllocatableDRAClaimState{
+					claim1Key: {ConsumerPods: sets.New[types.UID]("other-pod-uid", "another-pod-uid")},
+				}
+				return ni
+			}(),
+			wantStatus: fwk.NewStatus(fwk.UnschedulableAndUnresolvable, "node allocatable resource claim node-allocatable-claim shared by multiple pods"),
+		},
+		{
+			name: "claim shared, current pod in consumers",
+			pod:  st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("pod-uid").Obj(),
+			claim: &resourceapi.ResourceClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      claimName,
+					Namespace: claimNameSpace,
+					UID:       "claim-uid",
+				},
+			},
+			nodeInfo: func() *framework.NodeInfo {
+				ni := framework.NewNodeInfo()
+				ni.NodeAllocatableDRAClaimStates = map[types.NamespacedName]*fwk.NodeAllocatableDRAClaimState{
+					claim1Key: {ConsumerPods: sets.New[types.UID]("pod-uid", "another-pod-uid")},
+				}
+				return ni
+			}(),
+			wantStatus: fwk.NewStatus(fwk.UnschedulableAndUnresolvable, "node allocatable resource claim node-allocatable-claim shared by multiple pods"),
+		},
+		{
+			name: "claim only used by other pod",
+			pod:  st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("pod-uid").Obj(),
+			claim: &resourceapi.ResourceClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      claimName,
+					Namespace: claimNameSpace,
+					UID:       "claim-uid",
+				},
+			},
+			nodeInfo: func() *framework.NodeInfo {
+				ni := framework.NewNodeInfo()
+				ni.NodeAllocatableDRAClaimStates = map[types.NamespacedName]*fwk.NodeAllocatableDRAClaimState{
+					claim1Key: {ConsumerPods: sets.New[types.UID]("other-pod-uid")},
+				}
+				return ni
+			}(),
+			wantStatus: fwk.NewStatus(fwk.UnschedulableAndUnresolvable, "node allocatable resource claim node-allocatable-claim is already used by another pod"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pl := &DynamicResources{}
+			gotStatus := pl.validateNodeAllocatableDRAClaimSharing(tt.pod, tt.nodeInfo, tt.claim)
+			if diff := cmp.Diff(tt.wantStatus, gotStatus); diff != "" {
+				t.Errorf("validateDRAClaimShareState() returned diff (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 	cpuDevicePerInstance := resourceapi.Device{
 		Name: "cpu0",
@@ -182,6 +290,8 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		}
 	}
 
+	claimNameSpace := "test-ns"
+
 	tests := []struct {
 		name                            string
 		pod                             *v1.Pod
@@ -198,7 +308,7 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		},
 		{
 			name: "one container, one claim, per instance quantity",
-			pod: st.MakePod().Name("test-pod").Namespace("test-ns").UID("test-uid").
+			pod: st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").
 				Containers([]v1.Container{{
 					Name: "c1",
 					Resources: v1.ResourceRequirements{
@@ -222,7 +332,7 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		},
 		{
 			name: "Pod with Standard and DRA CPU and Memory Request",
-			pod: st.MakePod().Name("test-pod").Namespace("test-ns").UID("test-uid").
+			pod: st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").
 				Containers([]v1.Container{{
 					Name: "c1",
 					Resources: v1.ResourceRequirements{
@@ -253,7 +363,7 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		},
 		{
 			name: "Fungible GPU/CPU claim - GPU selected",
-			pod: st.MakePod().Name("test-pod").Namespace("test-ns").UID("test-uid").
+			pod: st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").
 				Containers([]v1.Container{{
 					Name: "c1",
 					Resources: v1.ResourceRequirements{
@@ -271,7 +381,7 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		},
 		{
 			name: "Fungible GPU/CPU claim - CPU selected",
-			pod: st.MakePod().Name("test-pod").Namespace("test-ns").UID("test-uid").
+			pod: st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").
 				Containers([]v1.Container{{
 					Name: "c1",
 					Resources: v1.ResourceRequirements{
@@ -337,7 +447,7 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		},
 		{
 			name: "Pod Level Resources with shared CPU claim and sidecar containers",
-			pod: st.MakePod().Name("test-pod").Namespace("test-ns").UID("test-uid").
+			pod: st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").
 				Resources(v1.ResourceRequirements{
 					Requests: v1.ResourceList{
 						v1.ResourceCPU:    resource.MustParse("11"),
@@ -368,7 +478,7 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		},
 		{
 			name: "Multiple Claims per Container",
-			pod: st.MakePod().Name("test-pod").Namespace("test-ns").UID("test-uid").
+			pod: st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").
 				Containers([]v1.Container{{
 					Name: "c1",
 					Resources: v1.ResourceRequirements{
@@ -406,7 +516,7 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		},
 		{
 			name: "Unreferenced Claims",
-			pod: st.MakePod().Name("test-pod").Namespace("test-ns").UID("test-uid").
+			pod: st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").
 				Containers([]v1.Container{{Name: "c1"}}).
 				Obj(),
 			claims:         []*resourceapi.ResourceClaim{makeClaim("unref-claim", "unref-claim-uid")},
@@ -426,7 +536,7 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		},
 		{
 			name: "Combined Capacity and PerAllocatedUnitQuantity",
-			pod: st.MakePod().Name("test-pod").Namespace("test-ns").UID("test-uid").
+			pod: st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").
 				Containers([]v1.Container{{
 					Name:      "c1",
 					Resources: v1.ResourceRequirements{Claims: []v1.ResourceClaim{{Name: "claim1"}}},
@@ -457,7 +567,7 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		},
 		{
 			name:           "Capacity Key Missing in Allocation - Should be Ignored",
-			pod:            st.MakePod().Name("test-pod").Namespace("test-ns").UID("test-uid").Containers([]v1.Container{{Name: "c1", Resources: v1.ResourceRequirements{Claims: []v1.ResourceClaim{{Name: "claim1"}}}}}).Obj(),
+			pod:            st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").Containers([]v1.Container{{Name: "c1", Resources: v1.ResourceRequirements{Claims: []v1.ResourceClaim{{Name: "claim1"}}}}}).Obj(),
 			claims:         []*resourceapi.ResourceClaim{makeClaim("claim1", "claim1-uid")},
 			resourceSlices: []*resourceapi.ResourceSlice{makeSlice("slice1", cpuDeviceCapacity)},
 			nodeAllocatableClaimAllocations: map[v1.ObjectReference]*resourceapi.AllocationResult{
@@ -467,7 +577,7 @@ func TestBuildNodeAllocatableDRAInfo(t *testing.T) {
 		},
 		{
 			name:           "Invalid -  Device Not Found",
-			pod:            st.MakePod().Name("test-pod").Namespace("test-ns").UID("test-uid").Containers([]v1.Container{{Name: "c1", Resources: v1.ResourceRequirements{Claims: []v1.ResourceClaim{{Name: "claim1"}}}}}).Obj(),
+			pod:            st.MakePod().Name("test-pod").Namespace(claimNameSpace).UID("test-uid").Containers([]v1.Container{{Name: "c1", Resources: v1.ResourceRequirements{Claims: []v1.ResourceClaim{{Name: "claim1"}}}}}).Obj(),
 			claims:         []*resourceapi.ResourceClaim{makeClaim("claim1", "claim1-uid")},
 			resourceSlices: []*resourceapi.ResourceSlice{makeSlice("slice1", resourceapi.Device{Name: "device1"})},
 			nodeAllocatableClaimAllocations: map[v1.ObjectReference]*resourceapi.AllocationResult{
@@ -561,7 +671,7 @@ func TestPatchNodeAllocatableResourceClaimStatus(t *testing.T) {
 					},
 				},
 			},
-			wantPatch:  false,
+			wantPatch:  true,
 			wantStatus: nil,
 		},
 		{

@@ -692,8 +692,15 @@ func (pl *DynamicResources) Filter(ctx context.Context, cs fwk.CycleState, pod *
 				unavailableClaims = append(unavailableClaims, index)
 			}
 		}
-	}
 
+		// The claim is allocated,  check if its a node-allocatable resource claim that is already allocated.
+		if pl.fts.EnableDRANodeAllocatableResources {
+			status := pl.validateNodeAllocatableDRAClaimSharing(pod, nodeInfo, claim)
+			if status != nil {
+				return status
+			}
+		}
+	}
 	// Use allocator to check the node and cache the result in case that the node is picked.
 	var allocations []resourceapi.AllocationResult
 	var nodeAllocatableClaimStatus []v1.NodeAllocatableResourceClaimStatus

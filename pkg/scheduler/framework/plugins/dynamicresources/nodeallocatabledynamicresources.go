@@ -215,9 +215,20 @@ func (pl *DynamicResources) buildNodeAllocatableDRAInfo(pod *v1.Pod, nodeAllocat
 	return nodeAllocatableClaimInfoList, nil
 }
 
-func (pl *DynamicResources) validateNodeAllocatableDRAClaims(pod *v1.Pod, nodeInfo fwk.NodeInfo, nodeAllocatableResourceClaimStatus []v1.NodeAllocatableResourceClaimStatus) error {
-	if len(nodeAllocatableResourceClaimStatus) == 0 {
+// validateNodeAllocatableDRAClaimSharing ensures that a node-allocatable DRA claim is not already in use by another pod on this node.
+func (pl *DynamicResources) validateNodeAllocatableDRAClaimSharing(pod *v1.Pod, nodeInfo fwk.NodeInfo, claim *resourceapi.ResourceClaim) *fwk.Status {
+	if claim == nil {
 		return nil
+	}
+	claimKey := types.NamespacedName{Namespace: pod.Namespace, Name: claim.Name}
+	claimStates := nodeInfo.GetNodeAllocatableDRAClaimState()
+	if state, ok := claimStates[claimKey]; ok && state != nil {
+		if state.ConsumerPods.Len() > 1 {
+			return fwk.NewStatus(fwk.UnschedulableAndUnresolvable, fmt.Sprintf("node allocatable resource claim %s shared by multiple pods", claimKey.Name))
+		}
+		if state.ConsumerPods.Len() == 1 && !state.ConsumerPods.Has(pod.UID) {
+			return fwk.NewStatus(fwk.UnschedulableAndUnresolvable, fmt.Sprintf("node allocatable resource claim %s is already used by another pod", claimKey.Name))
+		}
 	}
 	return nil
 }
@@ -249,10 +260,6 @@ func (pl *DynamicResources) getPodNodeAllocatableResourceFootprint(logger klog.L
 
 	nodeAllocatableStatus, err := pl.buildNodeAllocatableDRAInfo(pod, nodeAllocatableDRAAllocations, claimNametoUID)
 	if err != nil {
-		return nil, nil, statusError(logger, err)
-	}
-
-	if err := pl.validateNodeAllocatableDRAClaims(pod, nodeInfo, nodeAllocatableStatus); err != nil {
 		return nil, nil, statusError(logger, err)
 	}
 
