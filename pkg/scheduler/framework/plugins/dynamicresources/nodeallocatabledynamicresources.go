@@ -24,7 +24,6 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	resourceapi "k8s.io/api/resource/v1"
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -92,6 +91,7 @@ func (pl *DynamicResources) calculateAndCheckNodeAllocatableResources(ctx contex
 
 	totalPodDemand, nodeAllocatableClaimStatus, status := pl.getPodNodeAllocatableResourceFootprint(logger, nodeInfo, pod, state, allocations, nodeAllocatableClaims)
 	if status != nil {
+		logger.V(5).Info("calculateAndCheckNodeAllocatableResources: getPodNodeAllocatableResourceFootprint failed", "status", status)
 		return nil, status
 	}
 
@@ -290,6 +290,14 @@ func (pl *DynamicResources) getPodNodeAllocatableResourceFootprint(logger klog.L
 		return nil, nil, statusError(logger, err)
 	}
 
+	for _, status := range nodeAllocatableStatus {
+		// TODO(KEP-5517): Evaluate if its ok to have no containers referencing a node allocatable resource claim.
+		// This is pending on defining kubelet cgroup enforcement.
+		if len(status.Containers) == 0 {
+			return nil, nil, fwk.NewStatus(fwk.UnschedulableAndUnresolvable, fmt.Sprintf("claim %s: node-allocatable resource claim not referenced by any container within the pod", status.ResourceClaimName))
+		}
+	}
+
 	// Calculate the final totalPodDemand to be used for node fitting
 	optsTotal := resourcehelper.PodResourcesOptions{
 		SkipPodLevelResources:                    !pl.fts.EnablePodLevelResources,
@@ -401,20 +409,22 @@ func (pl *DynamicResources) patchNodeAllocatableResourceClaimStatus(ctx context.
 	if len(nodeAllocatableClaimStatus) == 0 {
 		return nil
 	}
-
 	logger := klog.FromContext(ctx)
-	podStatusCopy := pod.Status.DeepCopy()
-	if apiequality.Semantic.DeepEqual(podStatusCopy.NodeAllocatableResourceClaimStatuses, nodeAllocatableClaimStatus) {
-		logger.V(6).Info("NodeAllocatableResourceClaimStatuses is already up-to-date", "pod", klog.KObj(pod))
-		return nil
-	}
 
-	podStatusCopy.NodeAllocatableResourceClaimStatuses = nodeAllocatableClaimStatus
+	// The incoming 'pod' is from the scheduler cache and would have NodeAllocatableResourceClaimStatus
+	// pre-populated in the assume phase without persisting to the API server.
+	// schedutil.PatchPodStatus skips patching if the old and new status are identical.
+	// To ensure the status is persisted to the API server we clear it in the baseStatus, forcing a patch.
+	baseStatus := pod.Status.DeepCopy()
+	baseStatus.NodeAllocatableResourceClaimStatuses = nil
 
-	if err := schedutil.PatchPodStatus(ctx, pl.clientset, pod.Name, pod.Namespace, &pod.Status, podStatusCopy); err != nil {
+	targetStatus := pod.Status.DeepCopy()
+
+	targetStatus.NodeAllocatableResourceClaimStatuses = nodeAllocatableClaimStatus
+	if err := schedutil.PatchPodStatus(ctx, pl.clientset, pod.Name, pod.Namespace, baseStatus, targetStatus); err != nil {
 		return statusError(logger, fmt.Errorf("updating pod %s/%s NodeAllocatableResourceClaimStatuses: %w", pod.Namespace, pod.Name, err))
 	}
-	logger.V(5).Info("Patched pod status with NodeAllocatableResourceClaimStatuses", "pod", klog.KObj(pod), "status", podStatusCopy.NodeAllocatableResourceClaimStatuses)
+	logger.V(5).Info("Patched pod status with NodeAllocatableResourceClaimStatuses", "pod", klog.KObj(pod), "status", targetStatus.NodeAllocatableResourceClaimStatuses)
 
 	return nil
 }
