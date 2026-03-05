@@ -27,6 +27,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	v1 "k8s.io/api/core/v1"
+	schedulingv1alpha2 "k8s.io/api/scheduling/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
@@ -328,6 +329,195 @@ func TestPatchPodStatus(t *testing.T) {
 
 			if diff := cmp.Diff(tc.statusToUpdate, retrievedPod.Status); diff != "" {
 				t.Errorf("unexpected pod status (-want,+got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestPatchPodGroupStatus(t *testing.T) {
+	now := metav1.NewTime(time.Now().Truncate(time.Second))
+
+	tests := []struct {
+		name   string
+		pg     schedulingv1alpha2.PodGroup
+		client *clientsetfake.Clientset
+		// validateErr checks if error returned from PatchPodGroupStatus is expected one or not.
+		// (true means error is expected one.)
+		validateErr    func(goterr error) bool
+		statusToUpdate *schedulingv1alpha2.PodGroupStatus
+	}{
+		{
+			name:   "Should update podgroup conditions successfully",
+			client: clientsetfake.NewClientset(),
+			pg: schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "pg1",
+				},
+			},
+			statusToUpdate: &schedulingv1alpha2.PodGroupStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               "PodGroupScheduled",
+						Status:             metav1.ConditionFalse,
+						Reason:             "Unschedulable",
+						Message:            "not enough capacity for the gang",
+						LastTransitionTime: now,
+					},
+				},
+			},
+		},
+		{
+			name:   "no-op when status is unchanged",
+			client: clientsetfake.NewClientset(),
+			pg: schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "pg1",
+				},
+				Status: schedulingv1alpha2.PodGroupStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:               "PodGroupScheduled",
+							Status:             metav1.ConditionFalse,
+							Reason:             "Unschedulable",
+							Message:            "not enough capacity",
+							LastTransitionTime: now,
+						},
+					},
+				},
+			},
+			statusToUpdate: &schedulingv1alpha2.PodGroupStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               "PodGroupScheduled",
+						Status:             metav1.ConditionFalse,
+						Reason:             "Unschedulable",
+						Message:            "not enough capacity",
+						LastTransitionTime: now,
+					},
+				},
+			},
+		},
+		{
+			name:   "nil newStatus returns nil",
+			client: clientsetfake.NewClientset(),
+			pg: schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "pg1",
+				},
+			},
+			statusToUpdate: nil,
+		},
+		{
+			name: "retry patch request when a 'connection refused' error is returned",
+			client: func() *clientsetfake.Clientset {
+				client := clientsetfake.NewClientset()
+
+				reqcount := 0
+				client.PrependReactor("patch", "podgroups", func(action clienttesting.Action) (bool, runtime.Object, error) {
+					defer func() { reqcount++ }()
+					if reqcount == 0 {
+						return true, &schedulingv1alpha2.PodGroup{}, fmt.Errorf("connection refused: %w", syscall.ECONNREFUSED)
+					}
+					if reqcount == 1 {
+						return false, &schedulingv1alpha2.PodGroup{}, nil
+					}
+					return true, nil, errors.New("requests comes in more than three times.")
+				})
+
+				return client
+			}(),
+			pg: schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "pg1",
+				},
+			},
+			statusToUpdate: &schedulingv1alpha2.PodGroupStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               "PodGroupScheduled",
+						Status:             metav1.ConditionFalse,
+						Reason:             "Unschedulable",
+						Message:            "not enough capacity for the gang",
+						LastTransitionTime: now,
+					},
+				},
+			},
+		},
+		{
+			name: "only 4 retries at most",
+			client: func() *clientsetfake.Clientset {
+				client := clientsetfake.NewClientset()
+
+				reqcount := 0
+				client.PrependReactor("patch", "podgroups", func(action clienttesting.Action) (bool, runtime.Object, error) {
+					defer func() { reqcount++ }()
+					if reqcount >= 4 {
+						return true, nil, errors.New("requests comes in more than four times.")
+					}
+					return true, &schedulingv1alpha2.PodGroup{}, fmt.Errorf("connection refused: %w", syscall.ECONNREFUSED)
+				})
+
+				return client
+			}(),
+			pg: schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "pg1",
+				},
+			},
+			validateErr: net.IsConnectionRefused,
+			statusToUpdate: &schedulingv1alpha2.PodGroupStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               "PodGroupScheduled",
+						Status:             metav1.ConditionFalse,
+						Reason:             "Unschedulable",
+						Message:            "not enough capacity for the gang",
+						LastTransitionTime: now,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			client := tc.client
+			_, err := client.SchedulingV1alpha2().PodGroups(tc.pg.Namespace).Create(context.TODO(), &tc.pg, metav1.CreateOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			_, ctx := ktesting.NewTestContext(t)
+			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
+
+			err = PatchPodGroupStatus(ctx, client, tc.pg.Name, tc.pg.Namespace, &tc.pg.Status, tc.statusToUpdate)
+			if err != nil && tc.validateErr == nil {
+				t.Fatal(err)
+			}
+			if tc.validateErr != nil {
+				if !tc.validateErr(err) {
+					t.Fatalf("Returned unexpected error: %v", err)
+				}
+				return
+			}
+
+			retrievedPG, err := client.SchedulingV1alpha2().PodGroups(tc.pg.Namespace).Get(ctx, tc.pg.Name, metav1.GetOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantStatus := tc.pg.Status
+			if tc.statusToUpdate != nil {
+				wantStatus = *tc.statusToUpdate
+			}
+			if diff := cmp.Diff(wantStatus, retrievedPG.Status); diff != "" {
+				t.Errorf("unexpected podgroup status (-want,+got):\n%s", diff)
 			}
 		})
 	}

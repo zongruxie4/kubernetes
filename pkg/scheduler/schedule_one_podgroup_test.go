@@ -24,7 +24,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	v1 "k8s.io/api/core/v1"
+	schedulingv1alpha2 "k8s.io/api/scheduling/v1alpha2"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -32,12 +36,15 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/informers"
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
+	schedulinglisters "k8s.io/client-go/listers/scheduling/v1alpha2"
 	clienttesting "k8s.io/client-go/testing"
+	toolscache "k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/events"
 	featuregatetesting "k8s.io/component-base/featuregate/testing"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/ktesting"
 	fwk "k8s.io/kube-scheduler/framework"
+	schedulingapi "k8s.io/kubernetes/pkg/apis/scheduling"
 	"k8s.io/kubernetes/pkg/features"
 	"k8s.io/kubernetes/pkg/scheduler/apis/config"
 	internalcache "k8s.io/kubernetes/pkg/scheduler/backend/cache"
@@ -372,6 +379,7 @@ func TestPodGroupCycle_UpdateSnapshotError(t *testing.T) {
 		Profiles:        profile.Map{"test-scheduler": schedFwk},
 		SchedulingQueue: internalqueue.NewTestQueue(ctx, nil),
 		Cache:           cache,
+		client:          clientsetfake.NewClientset(),
 		FailureHandler: func(ctx context.Context, fwk framework.Framework, p *framework.QueuedPodInfo, status *fwk.Status, ni *fwk.NominatingInfo, start time.Time) {
 			failureHandlerCalled = true
 			if cmp.Equal(updateSnapshotErr.Error(), status.AsError()) {
@@ -897,9 +905,15 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 	qInfo2 := &framework.QueuedPodInfo{PodInfo: &framework.PodInfo{Pod: p2}}
 	qInfo3 := &framework.QueuedPodInfo{PodInfo: &framework.PodInfo{Pod: p3}}
 
+	testPG := &schedulingv1alpha2.PodGroup{
+		ObjectMeta: metav1.ObjectMeta{Name: "pg", Namespace: "default"},
+	}
+
 	pgInfo := &framework.QueuedPodGroupInfo{
 		QueuedPodInfos: []*framework.QueuedPodInfo{qInfo1, qInfo2, qInfo3},
 		PodGroupInfo: &framework.PodGroupInfo{
+			Name:            "pg",
+			Namespace:       "default",
 			UnscheduledPods: []*v1.Pod{p1, p2, p3},
 		},
 	}
@@ -910,6 +924,7 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 		expectBound      sets.Set[string]
 		expectPreempting sets.Set[string]
 		expectFailed     sets.Set[string]
+		expectCondition  *metav1.Condition
 	}{
 		{
 			name: "All pods feasible",
@@ -930,11 +945,16 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 				}},
 			},
 			expectBound: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:   schedulingapi.PodGroupScheduled,
+				Status: metav1.ConditionTrue,
+				Reason: "Scheduled",
+			},
 		},
 		{
 			name: "All pods feasible, but all waiting",
 			algorithmResult: podGroupAlgorithmResult{
-				status: fwk.NewStatus(fwk.Unschedulable),
+				status: fwk.NewStatus(fwk.Unschedulable, "not enough capacity for the gang"),
 				podResults: []algorithmResult{{
 					scheduleResult: ScheduleResult{SuggestedHost: "node1"},
 					status:         nil,
@@ -950,6 +970,12 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 				}},
 			},
 			expectFailed: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionFalse,
+				Reason:  schedulingapi.PodGroupReasonUnschedulable,
+				Message: "not enough capacity for the gang",
+			},
 		},
 		{
 			name: "All pods feasible, but last waiting",
@@ -970,6 +996,11 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 				}},
 			},
 			expectBound: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:   schedulingapi.PodGroupScheduled,
+				Status: metav1.ConditionTrue,
+				Reason: "Scheduled",
+			},
 		},
 		{
 			name: "All pods feasible, one waiting, one unschedulable",
@@ -990,6 +1021,11 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 			},
 			expectBound:  sets.New("p1", "p3"),
 			expectFailed: sets.New("p2"),
+			expectCondition: &metav1.Condition{
+				Type:   schedulingapi.PodGroupScheduled,
+				Status: metav1.ConditionTrue,
+				Reason: "Scheduled",
+			},
 		},
 		{
 			name: "All pods require preemption",
@@ -1023,11 +1059,17 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 				}},
 			},
 			expectPreempting: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionFalse,
+				Reason:  schedulingapi.PodGroupReasonUnschedulable,
+				Message: "waiting for preemption to complete",
+			},
 		},
 		{
 			name: "All pods require preemption, but waiting",
 			algorithmResult: podGroupAlgorithmResult{
-				status: fwk.NewStatus(fwk.Unschedulable),
+				status: fwk.NewStatus(fwk.Unschedulable, "preemption required but not feasible"),
 				podResults: []algorithmResult{{
 					scheduleResult: ScheduleResult{
 						SuggestedHost:  "node1",
@@ -1055,6 +1097,12 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 				}},
 			},
 			expectFailed: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionFalse,
+				Reason:  schedulingapi.PodGroupReasonUnschedulable,
+				Message: "preemption required but not feasible",
+			},
 		},
 		{
 			name: "One pod requires preemption, but waiting, two are feasible",
@@ -1080,6 +1128,12 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 				}},
 			},
 			expectPreempting: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionFalse,
+				Reason:  schedulingapi.PodGroupReasonUnschedulable,
+				Message: "waiting for preemption to complete",
+			},
 		},
 		{
 			name: "One pod unschedulable, one requires preemption, one feasible",
@@ -1104,11 +1158,17 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 			},
 			expectPreempting: sets.New("p1", "p3"),
 			expectFailed:     sets.New("p2"),
+			expectCondition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionFalse,
+				Reason:  schedulingapi.PodGroupReasonUnschedulable,
+				Message: "waiting for preemption to complete",
+			},
 		},
 		{
 			name: "All pods unschedulable",
 			algorithmResult: podGroupAlgorithmResult{
-				status: fwk.NewStatus(fwk.Unschedulable),
+				status: fwk.NewStatus(fwk.Unschedulable, "0/3 nodes are available: insufficient cpu"),
 				podResults: []algorithmResult{{
 					scheduleResult: ScheduleResult{SuggestedHost: "", nominatingInfo: clearNominatedNode},
 					status:         fwk.NewStatus(fwk.Unschedulable),
@@ -1122,11 +1182,17 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 			},
 			expectBound:  sets.New[string](),
 			expectFailed: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionFalse,
+				Reason:  schedulingapi.PodGroupReasonUnschedulable,
+				Message: "0/3 nodes are available: insufficient cpu",
+			},
 		},
 		{
 			name: "All pods unschedulable with nil nominatingInfo",
 			algorithmResult: podGroupAlgorithmResult{
-				status: fwk.NewStatus(fwk.Unschedulable),
+				status: fwk.NewStatus(fwk.Unschedulable, "0/3 nodes are available: insufficient cpu"),
 				podResults: []algorithmResult{{
 					scheduleResult: ScheduleResult{SuggestedHost: "", nominatingInfo: nil},
 					status:         fwk.NewStatus(fwk.Unschedulable),
@@ -1140,15 +1206,27 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 			},
 			expectBound:  sets.New[string](),
 			expectFailed: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionFalse,
+				Reason:  schedulingapi.PodGroupReasonUnschedulable,
+				Message: "0/3 nodes are available: insufficient cpu",
+			},
 		},
 		{
 			name: "Unschedulable for the entire pod group",
 			algorithmResult: podGroupAlgorithmResult{
-				status:     fwk.NewStatus(fwk.Unschedulable),
+				status:     fwk.NewStatus(fwk.Unschedulable, "node affinity mismatch"),
 				podResults: []algorithmResult{},
 			},
 			expectBound:  sets.New[string](),
 			expectFailed: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionFalse,
+				Reason:  schedulingapi.PodGroupReasonUnschedulable,
+				Message: "node affinity mismatch",
+			},
 		},
 		{
 			name: "Error for one pod",
@@ -1197,7 +1275,7 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 			preemptingPods := sets.New[string]()
 			failedPods := sets.New[string]()
 
-			client := clientsetfake.NewClientset(testNode)
+			client := clientsetfake.NewClientset(testNode, testPG)
 			client.PrependReactor("create", "pods", func(action clienttesting.Action) (bool, runtime.Object, error) {
 				if action.GetSubresource() != "binding" {
 					return false, nil, nil
@@ -1239,7 +1317,12 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 			cache := internalcache.New(ctx, nil, true)
 			cache.AddNode(klog.FromContext(ctx), testNode)
 
+			pgIndexer := toolscache.NewIndexer(toolscache.MetaNamespaceKeyFunc, toolscache.Indexers{toolscache.NamespaceIndex: toolscache.MetaNamespaceIndexFunc})
+			pgIndexer.Add(testPG)
+
 			sched := &Scheduler{
+				client:          client,
+				podGroupLister:  schedulinglisters.NewPodGroupLister(pgIndexer),
 				Cache:           cache,
 				Profiles:        profile.Map{"test-scheduler": schedFwk},
 				SchedulingQueue: internalqueue.NewTestQueue(ctx, nil),
@@ -1278,6 +1361,163 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 			}
 			if !tt.expectFailed.Equal(failedPods) {
 				t.Errorf("Expected failed pods: %v, but got: %v", tt.expectFailed, failedPods)
+			}
+
+			updatedPG, err := client.SchedulingV1alpha2().PodGroups("default").Get(ctx, "pg", metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("Failed to get PodGroup: %v", err)
+			}
+			cond := apimeta.FindStatusCondition(updatedPG.Status.Conditions, schedulingapi.PodGroupScheduled)
+			if tt.expectCondition != nil {
+				if cond == nil {
+					t.Fatalf("Expected PodGroupScheduled condition to be set, but it was not found")
+				}
+				if diff := cmp.Diff(*tt.expectCondition, *cond, cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")); diff != "" {
+					t.Errorf("Unexpected PodGroupScheduled condition (-want +got):\n%s", diff)
+				}
+			}
+		})
+	}
+}
+
+func TestUpdatePodGroupScheduledCondition(t *testing.T) {
+	tests := []struct {
+		name            string
+		existingPG      *schedulingv1alpha2.PodGroup
+		namespace       string
+		pgName          string
+		condition       *metav1.Condition
+		expectCondition bool
+	}{
+		{
+			name: "set Scheduled condition to True on empty status",
+			existingPG: &schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{Name: "pg1", Namespace: "ns1"},
+			},
+			namespace: "ns1",
+			pgName:    "pg1",
+			condition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionTrue,
+				Reason:  "SomeReason",
+				Message: "All required pods have been successfully scheduled",
+			},
+			expectCondition: true,
+		},
+		{
+			name: "set Scheduled condition to False with Unschedulable reason",
+			existingPG: &schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{Name: "pg2", Namespace: "ns1"},
+			},
+			namespace: "ns1",
+			pgName:    "pg2",
+			condition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionFalse,
+				Reason:  schedulingapi.PodGroupReasonUnschedulable,
+				Message: "0/3 nodes are available: insufficient cpu",
+			},
+			expectCondition: true,
+		},
+		{
+			name: "set Scheduled condition to False with SchedulerError reason",
+			existingPG: &schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{Name: "pg3", Namespace: "ns1"},
+			},
+			namespace: "ns1",
+			pgName:    "pg3",
+			condition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionFalse,
+				Reason:  schedulingapi.PodGroupReasonSchedulerError,
+				Message: "Internal scheduling error",
+			},
+			expectCondition: true,
+		},
+		{
+			name: "transition from Unschedulable to Scheduled",
+			existingPG: &schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{Name: "pg4", Namespace: "ns1"},
+				Status: schedulingv1alpha2.PodGroupStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:               schedulingapi.PodGroupScheduled,
+							Status:             metav1.ConditionFalse,
+							Reason:             schedulingapi.PodGroupReasonUnschedulable,
+							Message:            "previously unschedulable",
+							LastTransitionTime: metav1.Now(),
+						},
+					},
+				},
+			},
+			namespace: "ns1",
+			pgName:    "pg4",
+			condition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionTrue,
+				Reason:  "SomeReason",
+				Message: "All required pods have been successfully scheduled",
+			},
+			expectCondition: true,
+		},
+		{
+			name:      "PodGroup not found does not panic",
+			namespace: "ns1",
+			pgName:    "nonexistent",
+			condition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionTrue,
+				Reason:  "SomeReason",
+				Message: "test",
+			},
+			expectCondition: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, ctx := ktesting.NewTestContext(t)
+
+			var client *clientsetfake.Clientset
+			pgIndexer := toolscache.NewIndexer(toolscache.MetaNamespaceKeyFunc, toolscache.Indexers{toolscache.NamespaceIndex: toolscache.MetaNamespaceIndexFunc})
+			if tt.existingPG != nil {
+				client = clientsetfake.NewClientset(tt.existingPG)
+				pgIndexer.Add(tt.existingPG)
+			} else {
+				client = clientsetfake.NewClientset()
+			}
+			sched := &Scheduler{client: client, podGroupLister: schedulinglisters.NewPodGroupLister(pgIndexer)}
+
+			pgInfo := &framework.QueuedPodGroupInfo{
+				PodGroupInfo: &framework.PodGroupInfo{
+					Namespace: tt.namespace,
+					Name:      tt.pgName,
+				},
+			}
+			sched.updatePodGroupScheduledCondition(ctx, pgInfo, tt.condition)
+
+			if !tt.expectCondition {
+				return
+			}
+
+			updatedPG, err := client.SchedulingV1alpha2().PodGroups(tt.namespace).Get(ctx, tt.pgName, metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("Failed to get PodGroup: %v", err)
+			}
+
+			cond := apimeta.FindStatusCondition(updatedPG.Status.Conditions, tt.condition.Type)
+			if cond == nil {
+				t.Fatalf("Expected %s condition to be set, but it was not found", tt.condition.Type)
+			}
+
+			if cond.Status != tt.condition.Status {
+				t.Errorf("Condition status: got %v, want %v", cond.Status, tt.condition.Status)
+			}
+			if cond.Reason != tt.condition.Reason {
+				t.Errorf("Condition reason: got %v, want %v", cond.Reason, tt.condition.Reason)
+			}
+			if cond.Message != tt.condition.Message {
+				t.Errorf("Condition message: got %v, want %v", cond.Message, tt.condition.Message)
 			}
 		})
 	}
