@@ -1588,6 +1588,12 @@ func (wrapper *PodGroupWrapper) Namespace(namespace string) *PodGroupWrapper {
 	return wrapper
 }
 
+// UID sets `uid` as the UID of the inner PodGroup.
+func (wrapper *PodGroupWrapper) UID(uid types.UID) *PodGroupWrapper {
+	wrapper.PodGroup.UID = uid
+	return wrapper
+}
+
 // Obj returns the inner PodGroup.
 func (wrapper *PodGroupWrapper) Obj() *schedulingapi.PodGroup {
 	return &wrapper.PodGroup
