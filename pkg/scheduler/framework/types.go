@@ -558,7 +558,7 @@ type QueuedPodInfo struct {
 	// or doesn't belong to any pod group.
 	// This field can only be set to true when GenericWorkload feature flag is enabled.
 	NeedsPodGroupScheduling bool
-	// Pod scheduling signature
+	// PodSignature for opportunistic batching
 	PodSignature fwk.PodSignature
 }
 
