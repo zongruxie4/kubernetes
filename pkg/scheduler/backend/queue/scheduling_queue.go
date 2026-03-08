@@ -220,6 +220,8 @@ type PriorityQueue struct {
 	isPopFromBackoffQEnabled bool
 	// isGenericWorkloadEnabled indicates whether the feature gate GenericWorkload is enabled.
 	isGenericWorkloadEnabled bool
+	// isOpportunisticBatchingEnabled indicates whether the OpportunisticBatching feature gate is enabled.
+	isOpportunisticBatchingEnabled bool
 }
 
 // QueueingHintFunction is the wrapper of QueueingHintFn that has PluginName.
@@ -377,6 +379,7 @@ func NewPriorityQueue(
 	isSchedulingQueueHintEnabled := utilfeature.DefaultFeatureGate.Enabled(features.SchedulerQueueingHints)
 	isPopFromBackoffQEnabled := utilfeature.DefaultFeatureGate.Enabled(features.SchedulerPopFromBackoffQ)
 	isGenericWorkloadEnabled := utilfeature.DefaultFeatureGate.Enabled(features.GenericWorkload)
+	isOpportunisticBatchingEnabled := utilfeature.DefaultFeatureGate.Enabled(features.OpportunisticBatching)
 	lessConverted := convertLessFn(lessFn)
 
 	backoffQ := newBackoffQueue(options.clock, options.podInitialBackoffDuration, options.podMaxBackoffDuration, lessFn, isPopFromBackoffQEnabled)
@@ -397,6 +400,7 @@ func NewPriorityQueue(
 		isSchedulingQueueHintEnabled:      isSchedulingQueueHintEnabled,
 		isPopFromBackoffQEnabled:          isPopFromBackoffQEnabled,
 		isGenericWorkloadEnabled:          isGenericWorkloadEnabled,
+		isOpportunisticBatchingEnabled:    isOpportunisticBatchingEnabled,
 	}
 	var backoffQPopper backoffQPopper
 	if isPopFromBackoffQEnabled {
@@ -1512,7 +1516,7 @@ func (p *PriorityQueue) NominatedPodsForNode(nodeName string) []fwk.PodInfo {
 // signPod computes the scheduling signature for the given pod when OpportunisticBatching is enabled.
 // The signature is used to cache and reuse scheduling results for identical pods.
 func (p *PriorityQueue) signPod(ctx context.Context, logger klog.Logger, pod *v1.Pod) fwk.PodSignature {
-	if !utilfeature.DefaultFeatureGate.Enabled(features.OpportunisticBatching) {
+	if !p.isOpportunisticBatchingEnabled {
 		return nil
 	}
 
