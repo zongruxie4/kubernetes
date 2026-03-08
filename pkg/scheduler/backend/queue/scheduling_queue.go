@@ -211,7 +211,7 @@ type PriorityQueue struct {
 	// It's non-nil only if the SchedulerAsyncAPICalls feature gate is enabled.
 	apiDispatcher fwk.APIDispatcher
 
-	// podSigners map a profile name to a signing function for that profile.
+	// podSigners maps a profile name to a signing function for that profile.
 	podSigners map[string]PodSigner
 
 	// isSchedulingQueueHintEnabled indicates whether the feature gate for the scheduling queue is enabled.
