@@ -738,7 +738,7 @@ func (p *PriorityQueue) Add(ctx context.Context, logger klog.Logger, pod *v1.Pod
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	pInfo := p.newQueuedPodInfo(ctx, pod)
+	pInfo := p.newQueuedPodInfo(ctx, logger, pod)
 	if added := p.moveToActiveQ(logger, pInfo, framework.EventUnscheduledPodAdd.Label(), false); added {
 		p.activeQ.broadcast()
 	}
@@ -1126,14 +1126,16 @@ func (p *PriorityQueue) Update(ctx context.Context, logger klog.Logger, oldPod, 
 			oldPodInfo := newQueuedPodInfoForLookup(oldPod)
 			// If the pod is already in the active queue, just update it there.
 			if pInfo := unlockedActiveQ.update(newPod, oldPodInfo); pInfo != nil {
-				p.updateNominatedPodAndSignature(ctx, logger, pInfo, oldPod, newPod)
+				p.UpdateNominatedPod(logger, oldPod, pInfo.PodInfo)
+				pInfo.PodSignature = p.signPod(ctx, logger, newPod)
 				updated = true
 				return
 			}
 
 			// If the pod is in the backoff queue, update it there.
 			if pInfo := p.backoffQ.update(newPod, oldPodInfo); pInfo != nil {
-				p.updateNominatedPodAndSignature(ctx, logger, pInfo, oldPod, newPod)
+				p.UpdateNominatedPod(logger, oldPod, pInfo.PodInfo)
+				pInfo.PodSignature = p.signPod(ctx, logger, newPod)
 				updated = true
 				return
 			}
@@ -1146,7 +1148,8 @@ func (p *PriorityQueue) Update(ctx context.Context, logger klog.Logger, oldPod, 
 	// If the pod is in the unschedulable queue, updating it may make it schedulable.
 	if pInfo := p.unschedulablePods.get(newPod); pInfo != nil {
 		_ = pInfo.Update(newPod)
-		p.updateNominatedPodAndSignature(ctx, logger, pInfo, oldPod, newPod)
+		p.UpdateNominatedPod(logger, oldPod, pInfo.PodInfo)
+		pInfo.PodSignature = p.signPod(ctx, logger, newPod)
 
 		if p.isSchedulingQueueHintEnabled {
 			// When unscheduled Pods are updated, we check with QueueingHint
@@ -1190,7 +1193,7 @@ func (p *PriorityQueue) Update(ctx context.Context, logger klog.Logger, oldPod, 
 		return
 	}
 	// If pod is not in any of the queues, we put it in the active queue.
-	pInfo := p.newQueuedPodInfo(ctx, newPod)
+	pInfo := p.newQueuedPodInfo(ctx, logger, newPod)
 	if added := p.moveToActiveQ(logger, pInfo, framework.EventUnscheduledPodUpdate.Label(), false); added {
 		p.activeQ.broadcast()
 	}
@@ -1243,12 +1246,6 @@ func (p *PriorityQueue) AssignedPodUpdated(logger klog.Logger, oldPod, newPod *v
 		p.movePodsToActiveOrBackoffQueue(logger, p.getUnschedulablePodsWithCrossTopologyTerm(logger, newPod), event, oldPod, newPod)
 	}
 	p.lock.Unlock()
-}
-
-// updateNominatedPodAndSignature updates the nominated pod and recomputes the signature.
-func (p *PriorityQueue) updateNominatedPodAndSignature(ctx context.Context, logger klog.Logger, pInfo *framework.QueuedPodInfo, oldPod, newPod *v1.Pod) {
-	p.UpdateNominatedPod(logger, oldPod, pInfo.PodInfo)
-	pInfo.PodSignature = p.signPod(ctx, newPod)
 }
 
 // NOTE: this function assumes a lock has been acquired in the caller.
@@ -1514,9 +1511,7 @@ func (p *PriorityQueue) NominatedPodsForNode(nodeName string) []fwk.PodInfo {
 
 // signPod computes the scheduling signature for the given pod when OpportunisticBatching is enabled.
 // The signature is used to cache and reuse scheduling results for identical pods.
-func (p *PriorityQueue) signPod(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
-	logger := klog.FromContext(ctx)
-
+func (p *PriorityQueue) signPod(ctx context.Context, logger klog.Logger, pod *v1.Pod) fwk.PodSignature {
 	if !utilfeature.DefaultFeatureGate.Enabled(features.OpportunisticBatching) {
 		return nil
 	}
@@ -1537,7 +1532,7 @@ func (p *PriorityQueue) signPod(ctx context.Context, pod *v1.Pod) fwk.PodSignatu
 }
 
 // newQueuedPodInfo builds a QueuedPodInfo object.
-func (p *PriorityQueue) newQueuedPodInfo(ctx context.Context, pod *v1.Pod, plugins ...string) *framework.QueuedPodInfo {
+func (p *PriorityQueue) newQueuedPodInfo(ctx context.Context, logger klog.Logger, pod *v1.Pod, plugins ...string) *framework.QueuedPodInfo {
 	now := p.clock.Now()
 	// ignore this err since apiserver doesn't properly validate affinity terms
 	// and we can't fix the validation for backwards compatibility.
@@ -1546,7 +1541,7 @@ func (p *PriorityQueue) newQueuedPodInfo(ctx context.Context, pod *v1.Pod, plugi
 		PodInfo:                 podInfo,
 		Timestamp:               now,
 		InitialAttemptTimestamp: nil,
-		PodSignature:            p.signPod(ctx, pod),
+		PodSignature:            p.signPod(ctx, logger, pod),
 		UnschedulablePlugins:    sets.New(plugins...),
 		NeedsPodGroupScheduling: p.isGenericWorkloadEnabled && pod.Spec.SchedulingGroup != nil,
 	}
