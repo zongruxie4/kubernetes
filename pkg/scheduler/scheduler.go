@@ -404,9 +404,7 @@ func New(ctx context.Context,
 	// Extract pod signing functions from each profile
 	podSigners := make(map[string]internalqueue.PodSigner)
 	for profileName, profile := range profiles {
-		podSigners[profileName] = func(ctx context.Context, pod *v1.Pod, recordPluginStats bool) fwk.PodSignature {
-			return profile.SignPod(ctx, pod, recordPluginStats)
-		}
+		podSigners[profileName] = profile.SignPod
 	}
 
 	podQueue := internalqueue.NewSchedulingQueue(
