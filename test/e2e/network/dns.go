@@ -23,6 +23,7 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/kubernetes/pkg/features"
@@ -35,6 +36,7 @@ import (
 	"k8s.io/kubernetes/test/e2e/network/common"
 	imageutils "k8s.io/kubernetes/test/utils/image"
 	admissionapi "k8s.io/pod-security-admission/api"
+	"k8s.io/utils/ptr"
 
 	"github.com/onsi/ginkgo/v2"
 )
@@ -187,6 +189,81 @@ var _ = common.SIGDescribe("DNS", func() {
 		ginkgo.By("creating a pod to probe DNS")
 		pod := createDNSPod(f.Namespace.Name, []dnsQuerier{muslProber, glibcProber}, dnsTestPodHostName, dnsTestServiceName)
 		pod.ObjectMeta.Labels = testServiceSelector
+
+		validateDNSResults(ctx, f, pod, append(muslFileNames, glibcFileNames...))
+	})
+
+	framework.It("should provide DNS for a service with multiple EndpointSlices and no Endpoints", func(ctx context.Context) {
+		ginkgo.By("Creating a test headless, selectorless service")
+		service := e2eservice.CreateServiceSpec(dnsTestServiceName, "", true, nil)
+		_, err := f.ClientSet.CoreV1().Services(f.Namespace.Name).Create(ctx, service, metav1.CreateOptions{})
+		framework.ExpectNoError(err, "failed to create headless service: %s", dnsTestServiceName)
+
+		ginkgo.By("Manually creating two EndpointSlices for the service")
+		addressType := discoveryv1.AddressTypeIPv4
+		if framework.TestContext.ClusterIsIPv6() {
+			addressType = discoveryv1.AddressTypeIPv6
+		}
+		slice1 := &discoveryv1.EndpointSlice{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: dnsTestServiceName + "-",
+				Labels: map[string]string{
+					discoveryv1.LabelServiceName: dnsTestServiceName,
+					discoveryv1.LabelManagedBy:   "e2e-test-" + f.Namespace.Name,
+				},
+			},
+			AddressType: addressType,
+			Endpoints: []discoveryv1.Endpoint{{
+				Addresses:  []string{"1.2.3.4"},
+				Conditions: discoveryv1.EndpointConditions{Ready: ptr.To(true)},
+			}},
+			Ports: []discoveryv1.EndpointPort{{
+				Name:     ptr.To("http"),
+				Port:     ptr.To[int32](80),
+				Protocol: ptr.To(v1.ProtocolTCP),
+			}},
+		}
+		_, err = f.ClientSet.DiscoveryV1().EndpointSlices(f.Namespace.Name).Create(ctx, slice1, metav1.CreateOptions{})
+		framework.ExpectNoError(err)
+
+		slice2 := &discoveryv1.EndpointSlice{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: dnsTestServiceName + "-",
+				Labels: map[string]string{
+					discoveryv1.LabelServiceName: dnsTestServiceName,
+					discoveryv1.LabelManagedBy:   "e2e-test-" + f.Namespace.Name,
+				},
+			},
+			AddressType: addressType,
+			Endpoints: []discoveryv1.Endpoint{{
+				Addresses:  []string{"5.6.7.8"},
+				Conditions: discoveryv1.EndpointConditions{Ready: ptr.To(true)},
+			}},
+			Ports: []discoveryv1.EndpointPort{{
+				Name:     ptr.To("https"),
+				Port:     ptr.To[int32](443),
+				Protocol: ptr.To(v1.ProtocolTCP),
+			}},
+		}
+		_, err = f.ClientSet.DiscoveryV1().EndpointSlices(f.Namespace.Name).Create(ctx, slice2, metav1.CreateOptions{})
+		framework.ExpectNoError(err)
+
+		namesToResolve := []string{
+			fmt.Sprintf("%s.%s.svc.%s", service.Name, f.Namespace.Name, framework.TestContext.ClusterDNSDomain),
+			fmt.Sprintf("_http._tcp.%s.%s.svc.%s", service.Name, f.Namespace.Name, framework.TestContext.ClusterDNSDomain),
+			fmt.Sprintf("_https._tcp.%s.%s.svc.%s", service.Name, f.Namespace.Name, framework.TestContext.ClusterDNSDomain),
+		}
+
+		muslProbeCmd, muslFileNames := createProbeCommand(namesToResolve, nil, "", "musl", f.Namespace.Name, framework.TestContext.ClusterDNSDomain, framework.TestContext.ClusterIsIPv6())
+		muslProber := dnsQuerier{name: "musl", image: imageutils.Agnhost, cmd: muslProbeCmd}
+		glibcProbeCmd, glibcFileNames := createProbeCommand(namesToResolve, nil, "", "glibc", f.Namespace.Name, framework.TestContext.ClusterDNSDomain, framework.TestContext.ClusterIsIPv6())
+		glibcProber := dnsQuerier{name: "glibc", image: imageutils.GlibcDnsTesting, cmd: glibcProbeCmd}
+		ginkgo.By("Running these commands against musl: " + muslProbeCmd + "\n")
+		ginkgo.By("Running these commands against glibc: " + glibcProbeCmd + "\n")
+
+		// Run a pod which probes DNS and exposes the results by HTTP.
+		ginkgo.By("creating a pod to probe DNS")
+		pod := createDNSPod(f.Namespace.Name, []dnsQuerier{muslProber, glibcProber}, dnsTestPodHostName, dnsTestServiceName)
 
 		validateDNSResults(ctx, f, pod, append(muslFileNames, glibcFileNames...))
 	})
