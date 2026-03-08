@@ -655,9 +655,6 @@ func (sched *Scheduler) findNodesThatFitPod(ctx context.Context, schedFramework 
 	if utilfeature.DefaultFeatureGate.Enabled(features.OpportunisticBatching) {
 		// We get the node hint even if we have a nominated name for simplicity, but we could potentially avoid it
 		// in this scenario in the future.
-		if podInfo.PodSignature == nil {
-			podInfo.PodSignature = schedFramework.SignPod(ctx, pod, state.ShouldRecordPluginMetrics())
-		}
 		nodeHint = schedFramework.GetNodeHint(ctx, pod, podInfo.PodSignature, state, sched.CurrentCycle())
 	}
 
