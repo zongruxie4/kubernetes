@@ -411,7 +411,7 @@ var (
 	// - The external-snapshot-metadata sidecar deployed alongside the CSI driver
 	// - The SnapshotMetadataService CRD (cbt.storage.k8s.io/v1beta1) installed
 	// - A storage driver that implements the CapSnapshotMetadata capability
-	SnapshotMetadata = framework.WithFeature(framework.ValidFeatures.Add("SnapshotMetadata"))
+	SnapshotMetadata = framework.WithFeature(framework.ValidFeatures.Add("snapshotmetadata"))
 
 	// TODO: document the feature (owning SIG, when to use this feature for a test)
 	StackdriverAcceleratorMonitoring = framework.WithFeature(framework.ValidFeatures.Add("StackdriverAcceleratorMonitoring"))
