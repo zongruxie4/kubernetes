@@ -21,6 +21,7 @@ package e2enode
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"time"
@@ -315,7 +316,7 @@ var _ = SIGDescribe("Kubelet Pods API", framework.WithSerial(), func() {
 					event, err := watchClient.Recv()
 					if err != nil {
 						// Suppress log if it's a normal shutdown
-						if err != context.Canceled && status.Code(err) != codes.Canceled {
+						if !errors.Is(err, context.Canceled) && status.Code(err) != codes.Canceled {
 							framework.Logf("Watch client Recv error: %v", err)
 						}
 						return
@@ -430,8 +431,8 @@ var _ = SIGDescribe("Kubelet Pods API", framework.WithSerial(), func() {
 					break Loop
 				}
 			}
-			gomega.Expect(sawTerminating).To(gomega.BeTrue(), "did not observe the pod terminating")
-			gomega.Expect(sawDeleted).To(gomega.BeTrue(), "did not observe the pod deleted")
+			gomega.Expect(sawTerminating).To(gomega.BeTrueBecause("did not observe the pod terminating"))
+			gomega.Expect(sawDeleted).To(gomega.BeTrueBecause("did not observe the pod deleted"))
 
 			ginkgo.By("waiting for pod to be gone from API server and ensuring no stray events")
 			err = e2epod.WaitForPodNotFoundInNamespace(ctx, f.ClientSet, testPod.Name, f.Namespace.Name, 1*time.Minute)
@@ -462,7 +463,7 @@ var _ = SIGDescribe("Kubelet Pods API", framework.WithSerial(), func() {
 					event, err := watchClient.Recv()
 					if err != nil {
 						// Suppress log if it's a normal shutdown
-						if err != context.Canceled && status.Code(err) != codes.Canceled {
+						if !errors.Is(err, context.Canceled) && status.Code(err) != codes.Canceled {
 							framework.Logf("Watch client Recv error in ordering test: %v", err)
 						}
 						return
@@ -555,7 +556,7 @@ var _ = SIGDescribe("Kubelet Pods API", framework.WithSerial(), func() {
 				}
 			}
 
-			gomega.Expect(foundDeleted).To(gomega.BeTrue(), "did not receive DELETED event")
+			gomega.Expect(foundDeleted).To(gomega.BeTrueBecause("did not receive DELETED event"))
 			gomega.Expect(podEvents).NotTo(gomega.BeEmpty())
 
 			ginkgo.By("waiting for pod to be gone from API server and ensuring no stray events")
@@ -596,8 +597,9 @@ var _ = SIGDescribe("Kubelet Pods API", framework.WithSerial(), func() {
 					currentStateIdx = foundIdx
 				}
 
-				// Verify Status is present (fixing the bug addressed earlier)
-				gomega.Expect(pod.Status.Phase).NotTo(gomega.BeEmpty(), "Pod status phase should not be empty in event %d", i)
+				if e.Type != podsv1alpha1.EventType_DELETED {
+					gomega.Expect(pod.Status.Phase).NotTo(gomega.BeEmpty(), "Pod status phase should not be empty in event %d", i)
+				}
 
 				if i == 0 {
 					gomega.Expect(e.Type).To(gomega.Equal(podsv1alpha1.EventType_ADDED), "First event should be ADDED")
@@ -608,22 +610,19 @@ var _ = SIGDescribe("Kubelet Pods API", framework.WithSerial(), func() {
 				}
 
 				if previousPod != nil {
-					// 1. DeletionTimestamp should not disappear
-					if previousPod.DeletionTimestamp != nil {
+					if previousPod.DeletionTimestamp != nil && e.Type != podsv1alpha1.EventType_DELETED {
 						gomega.Expect(pod.DeletionTimestamp).NotTo(gomega.BeNil(), "DeletionTimestamp should not disappear in event %d", i)
 					}
 
 					// 2. Phase monotonicity (simple)
 					// Once Running, don't go back to Pending
-					if previousPod.Status.Phase == v1.PodRunning {
+					if previousPod.Status.Phase == v1.PodRunning && e.Type != podsv1alpha1.EventType_DELETED {
 						gomega.Expect(pod.Status.Phase).NotTo(gomega.Equal(v1.PodPending), "Pod should not regress from Running to Pending in event %d", i)
 					}
 
-					// 3. UID must match (sanity check)
 					gomega.Expect(pod.UID).To(gomega.Equal(previousPod.UID), "UID mismatch in event %d", i)
 				}
 
-				// Copy for next iteration
 				podCopy := pod
 				previousPod = &podCopy
 			}

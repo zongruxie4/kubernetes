@@ -127,7 +127,7 @@ func TestWatchPods(t *testing.T) {
 	}
 
 	go func() {
-		server.WatchPods(&podsv1alpha1.WatchPodsRequest{}, mockStream)
+		_ = server.WatchPods(&podsv1alpha1.WatchPodsRequest{}, mockStream)
 	}()
 
 	// Verify initial ADDED event
@@ -283,7 +283,7 @@ func TestErrorsAndMetrics(t *testing.T) {
 		broadcaster.Broadcast(podsapi.PodWatchEvent{UID: "2"})
 
 		// Wait for the background goroutine to process the events and update metrics
-		err := wait.PollImmediate(10*time.Millisecond, 2*time.Second, func() (bool, error) {
+		err := wait.PollUntilContextTimeout(context.Background(), 10*time.Millisecond, 2*time.Second, true, func(ctx context.Context) (bool, error) {
 			count, err := testutil.GetCounterMetricValue(metrics.PodWatchEventsDroppedTotal)
 			if err != nil {
 				return false, err
@@ -303,7 +303,7 @@ func TestErrorsAndMetrics(t *testing.T) {
 
 func TestSerialize(t *testing.T) {
 	apiObjectFuzzer := fuzzer.FuzzerFor(fuzzer.MergeFuzzerFuncs(metafuzzer.Funcs, corefuzzer.Funcs), rand.NewSource(152), legacyscheme.Codecs)
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		pod := &v1.Pod{}
 		apiObjectFuzzer.Fill(pod)
 		podBytes, err := pod.Marshal()
@@ -341,7 +341,7 @@ func TestBroadcaster_SlowClient(t *testing.T) {
 	numFastClients := 3
 	numEvents := 10
 	fastClients := make([]chan podsapi.PodWatchEvent, numFastClients)
-	for i := 0; i < numFastClients; i++ {
+	for i := range numFastClients {
 		fastClients[i] = make(chan podsapi.PodWatchEvent, numEvents)
 		broadcaster.Register(fastClients[i])
 	}
@@ -349,12 +349,12 @@ func TestBroadcaster_SlowClient(t *testing.T) {
 	slowClient := make(chan podsapi.PodWatchEvent)
 	broadcaster.Register(slowClient)
 
-	for i := 0; i < numEvents; i++ {
+	for i := range numEvents {
 		broadcaster.Broadcast(podsapi.PodWatchEvent{UID: types.UID(fmt.Sprintf("event-%d", i))})
 	}
 
-	for i := 0; i < numFastClients; i++ {
-		for j := 0; j < numEvents; j++ {
+	for i := range numFastClients {
+		for j := range numEvents {
 			select {
 			case event := <-fastClients[i]:
 				expectedUID := types.UID(fmt.Sprintf("event-%d", j))
@@ -365,7 +365,7 @@ func TestBroadcaster_SlowClient(t *testing.T) {
 		}
 	}
 
-	err := wait.PollImmediate(10*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), 10*time.Millisecond, 2*time.Second, true, func(ctx context.Context) (bool, error) {
 		select {
 		case _, ok := <-slowClient:
 			if !ok {
@@ -420,7 +420,9 @@ func TestStatusOverlay(t *testing.T) {
 			Ctx:     ctx,
 			EventCh: make(chan *podsv1alpha1.WatchPodsEvent, 10),
 		}
-		go server.WatchPods(&podsv1alpha1.WatchPodsRequest{}, mockStream)
+		go func() {
+			_ = server.WatchPods(&podsv1alpha1.WatchPodsRequest{}, mockStream)
+		}()
 
 		event := <-mockStream.EventCh
 		assert.Equal(t, podsv1alpha1.EventType_ADDED, event.Type)

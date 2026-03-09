@@ -63,8 +63,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	versionutil "k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/apiserver/pkg/server/dynamiccertificates"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/apiserver/pkg/server/dynamiccertificates"
 	"k8s.io/apiserver/pkg/server/flagz"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	coreinformersv1 "k8s.io/client-go/informers/core/v1"
@@ -3370,7 +3370,7 @@ func (kl *Kubelet) ListenAndServePods(ctx context.Context) {
 	if utilfeature.DefaultFeatureGate.Enabled(features.PodsAPI) {
 		endpoint, err := util.LocalEndpoint(kl.getPodsAPIDir(), pods.Socket)
 		if err != nil {
-			klog.ErrorS(err, "Failed to get local endpoint for pod api")
+			klog.FromContext(ctx).Error(err, "Failed to get local endpoint for pod api")
 			return
 		}
 		server.ListenAndServePodsServer(
