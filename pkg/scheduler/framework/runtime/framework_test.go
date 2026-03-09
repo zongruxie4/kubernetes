@@ -2271,9 +2271,10 @@ func TestFilterPlugins(t *testing.T) {
 
 func TestPostFilterPlugins(t *testing.T) {
 	tests := []struct {
-		name       string
-		plugins    []*TestPlugin
-		wantStatus *fwk.Status
+		name        string
+		skipPlugins bool
+		plugins     []*TestPlugin
+		wantStatus  *fwk.Status
 	}{
 		{
 			name: "a single plugin makes a Pod schedulable",
@@ -2284,6 +2285,21 @@ func TestPostFilterPlugins(t *testing.T) {
 				},
 			},
 			wantStatus: fwk.NewStatus(fwk.Success, injectReason),
+		},
+		{
+			name:        "skips all post filters if state has SkipPostFilterPlugins",
+			skipPlugins: true,
+			plugins: []*TestPlugin{
+				{
+					name: "TestPlugin1",
+					inj:  injectedResult{PostFilterStatus: int(fwk.Unschedulable)},
+				},
+				{
+					name: "TestPlugin2",
+					inj:  injectedResult{PostFilterStatus: int(fwk.Success)},
+				},
+			},
+			wantStatus: fwk.NewStatus(fwk.Unschedulable, "All PostFilter plugins are skipped"),
 		},
 		{
 			name: "plugin1 failed to make a Pod schedulable, followed by plugin2 which makes the Pod schedulable",
@@ -2387,6 +2403,8 @@ func TestPostFilterPlugins(t *testing.T) {
 			defer func() {
 				_ = f.Close()
 			}()
+			state := framework.NewCycleState()
+			state.SetSkipAllPostFilterPlugins(tt.skipPlugins)
 			_, gotStatus := f.RunPostFilterPlugins(ctx, state, pod, nil)
 
 			if diff := cmp.Diff(tt.wantStatus, gotStatus, statusCmpOpts...); diff != "" {

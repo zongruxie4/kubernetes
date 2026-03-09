@@ -1128,6 +1128,10 @@ func (f *frameworkImpl) RunPostFilterPlugins(ctx context.Context, state fwk.Cycl
 		metrics.FrameworkExtensionPointDuration.WithLabelValues(metrics.PostFilter, status.Code().String(), f.profileName).Observe(metrics.SinceInSeconds(startTime))
 	}()
 
+	if state.ShouldSkipAllPostFilterPlugins() {
+		return nil, fwk.NewStatus(fwk.Unschedulable, "All PostFilter plugins are skipped")
+	}
+
 	logger := klog.FromContext(ctx)
 	verboseLogs := logger.V(4).Enabled()
 	if verboseLogs {
