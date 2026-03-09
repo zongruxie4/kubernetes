@@ -2444,7 +2444,7 @@ func TestCSIDriverValidationPreventPodSchedulingIfMissingEnabledDisabled(t *test
 	}, {
 		name:                               "feature enabled, non-nil value",
 		featureEnabled:                     true,
-		preventPodSchedulingIfMissingValue: ptr.To(true),
+		preventPodSchedulingIfMissingValue: new(true),
 		expectError:                        false,
 	}, {
 		name:                               "feature disabled, nil value",
@@ -2454,7 +2454,7 @@ func TestCSIDriverValidationPreventPodSchedulingIfMissingEnabledDisabled(t *test
 	}, {
 		name:                               "feature disabled, non-nil value",
 		featureEnabled:                     false,
-		preventPodSchedulingIfMissingValue: ptr.To(true),
+		preventPodSchedulingIfMissingValue: new(true),
 		expectError:                        false,
 	}}
 	for _, test := range tests {
@@ -2463,11 +2463,11 @@ func TestCSIDriverValidationPreventPodSchedulingIfMissingEnabledDisabled(t *test
 			csiDriver := &storage.CSIDriver{
 				ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 				Spec: storage.CSIDriverSpec{
-					AttachRequired:                ptr.To(true),
-					PodInfoOnMount:                ptr.To(true),
-					RequiresRepublish:             ptr.To(true),
-					StorageCapacity:               ptr.To(true),
-					SELinuxMount:                  ptr.To(true),
+					AttachRequired:                new(true),
+					PodInfoOnMount:                new(true),
+					RequiresRepublish:             new(true),
+					StorageCapacity:               new(true),
+					SELinuxMount:                  new(true),
 					PreventPodSchedulingIfMissing: test.preventPodSchedulingIfMissingValue,
 				},
 			}
@@ -2497,18 +2497,18 @@ func TestCSIDriverValidationPreventPodSchedulingIfMissingEnabledDisabled(t *test
 		name:           "feature enabled, nil->set",
 		featureEnabled: true,
 		oldValue:       nil,
-		newValue:       ptr.To(true),
+		newValue:       new(true),
 		expectError:    false,
 	}, {
 		name:           "feature enabled, set->set",
 		featureEnabled: true,
-		oldValue:       ptr.To(true),
-		newValue:       ptr.To(true),
+		oldValue:       new(true),
+		newValue:       new(true),
 		expectError:    false,
 	}, {
 		name:           "feature enabled, set->nil",
 		featureEnabled: true,
-		oldValue:       ptr.To(true),
+		oldValue:       new(true),
 		newValue:       nil,
 		expectError:    true, // populated by defaulting and required when feature is enabled
 	}, {
@@ -2521,18 +2521,18 @@ func TestCSIDriverValidationPreventPodSchedulingIfMissingEnabledDisabled(t *test
 		name:           "feature disabled, nil->set",
 		featureEnabled: false,
 		oldValue:       nil,
-		newValue:       ptr.To(true),
+		newValue:       new(true),
 		expectError:    false,
 	}, {
 		name:           "feature disabled, set->set",
 		featureEnabled: false,
-		oldValue:       ptr.To(true),
-		newValue:       ptr.To(true),
+		oldValue:       new(true),
+		newValue:       new(true),
 		expectError:    false,
 	}, {
 		name:           "feature disabled, set->nil",
 		featureEnabled: false,
-		oldValue:       ptr.To(true),
+		oldValue:       new(true),
 		newValue:       nil,
 		expectError:    false,
 	}}
@@ -2542,11 +2542,11 @@ func TestCSIDriverValidationPreventPodSchedulingIfMissingEnabledDisabled(t *test
 			oldCSIDriver := &storage.CSIDriver{
 				ObjectMeta: metav1.ObjectMeta{Name: "foo", ResourceVersion: "1"},
 				Spec: storage.CSIDriverSpec{
-					AttachRequired:                ptr.To(true),
-					PodInfoOnMount:                ptr.To(true),
-					RequiresRepublish:             ptr.To(true),
-					StorageCapacity:               ptr.To(true),
-					SELinuxMount:                  ptr.To(true),
+					AttachRequired:                new(true),
+					PodInfoOnMount:                new(true),
+					RequiresRepublish:             new(true),
+					StorageCapacity:               new(true),
+					SELinuxMount:                  new(true),
 					PreventPodSchedulingIfMissing: test.oldValue,
 				},
 			}
