@@ -98,7 +98,7 @@ type PodSigner func(ctx context.Context, pod *v1.Pod, recordPluginStats bool) fw
 // makes it easy to use those data structures as a SchedulingQueue.
 type SchedulingQueue interface {
 	fwk.PodNominator
-	Add(ctx context.Context, logger klog.Logger, pod *v1.Pod)
+	Add(ctx context.Context, pod *v1.Pod)
 	// Activate moves the given pods to activeQ.
 	// If a pod isn't found in unschedulablePods or backoffQ and it's in-flight,
 	// the wildcard event is registered so that the pod will be requeued when it comes back.
@@ -123,7 +123,7 @@ type SchedulingQueue interface {
 	// Done must be called for pod returned by Pop. This allows the queue to
 	// keep track of which pods are currently being processed.
 	Done(types.UID)
-	Update(ctx context.Context, logger klog.Logger, oldPod, newPod *v1.Pod)
+	Update(ctx context.Context, oldPod, newPod *v1.Pod)
 	Delete(pod *v1.Pod)
 	// Important Note: preCheck shouldn't include anything that depends on the in-tree plugins' logic.
 	// (e.g., filter Pods based on added/updated Node's capacity, etc.)
@@ -738,11 +738,12 @@ func (p *PriorityQueue) moveToBackoffQ(logger klog.Logger, pInfo *framework.Queu
 
 // Add adds a pod to the active queue. It should be called only when a new pod
 // is added so there is no chance the pod is already in active/unschedulable/backoff queues
-func (p *PriorityQueue) Add(ctx context.Context, logger klog.Logger, pod *v1.Pod) {
+func (p *PriorityQueue) Add(ctx context.Context, pod *v1.Pod) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	pInfo := p.newQueuedPodInfo(ctx, logger, pod)
+	pInfo := p.newQueuedPodInfo(ctx, pod)
+	logger := klog.FromContext(ctx)
 	if added := p.moveToActiveQ(logger, pInfo, framework.EventUnscheduledPodAdd.Label(), false); added {
 		p.activeQ.broadcast()
 	}
@@ -1099,9 +1100,10 @@ func isPodUpdated(oldPod, newPod *v1.Pod) bool {
 // the item from the unschedulable queue if pod is updated in a way that it may
 // become schedulable and adds the updated one to the active queue.
 // If pod is not present in any of the queues, it is added to the active queue.
-func (p *PriorityQueue) Update(ctx context.Context, logger klog.Logger, oldPod, newPod *v1.Pod) {
+func (p *PriorityQueue) Update(ctx context.Context, oldPod, newPod *v1.Pod) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
+	logger := klog.FromContext(ctx)
 
 	var events []fwk.ClusterEvent
 	if p.isSchedulingQueueHintEnabled {
@@ -1131,7 +1133,7 @@ func (p *PriorityQueue) Update(ctx context.Context, logger klog.Logger, oldPod, 
 			// If the pod is already in the active queue, just update it there.
 			if pInfo := unlockedActiveQ.update(newPod, oldPodInfo); pInfo != nil {
 				p.UpdateNominatedPod(logger, oldPod, pInfo.PodInfo)
-				pInfo.PodSignature = p.signPod(ctx, logger, newPod)
+				pInfo.PodSignature = p.signPod(ctx, newPod)
 				updated = true
 				return
 			}
@@ -1139,7 +1141,7 @@ func (p *PriorityQueue) Update(ctx context.Context, logger klog.Logger, oldPod, 
 			// If the pod is in the backoff queue, update it there.
 			if pInfo := p.backoffQ.update(newPod, oldPodInfo); pInfo != nil {
 				p.UpdateNominatedPod(logger, oldPod, pInfo.PodInfo)
-				pInfo.PodSignature = p.signPod(ctx, logger, newPod)
+				pInfo.PodSignature = p.signPod(ctx, newPod)
 				updated = true
 				return
 			}
@@ -1153,7 +1155,7 @@ func (p *PriorityQueue) Update(ctx context.Context, logger klog.Logger, oldPod, 
 	if pInfo := p.unschedulablePods.get(newPod); pInfo != nil {
 		_ = pInfo.Update(newPod)
 		p.UpdateNominatedPod(logger, oldPod, pInfo.PodInfo)
-		pInfo.PodSignature = p.signPod(ctx, logger, newPod)
+		pInfo.PodSignature = p.signPod(ctx, newPod)
 
 		if p.isSchedulingQueueHintEnabled {
 			// When unscheduled Pods are updated, we check with QueueingHint
@@ -1197,7 +1199,7 @@ func (p *PriorityQueue) Update(ctx context.Context, logger klog.Logger, oldPod, 
 		return
 	}
 	// If pod is not in any of the queues, we put it in the active queue.
-	pInfo := p.newQueuedPodInfo(ctx, logger, newPod)
+	pInfo := p.newQueuedPodInfo(ctx, newPod)
 	if added := p.moveToActiveQ(logger, pInfo, framework.EventUnscheduledPodUpdate.Label(), false); added {
 		p.activeQ.broadcast()
 	}
@@ -1515,7 +1517,7 @@ func (p *PriorityQueue) NominatedPodsForNode(nodeName string) []fwk.PodInfo {
 
 // signPod computes the scheduling signature for the given pod when OpportunisticBatching is enabled.
 // The signature is used to cache and reuse scheduling results for identical pods.
-func (p *PriorityQueue) signPod(ctx context.Context, logger klog.Logger, pod *v1.Pod) fwk.PodSignature {
+func (p *PriorityQueue) signPod(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
 	if !p.isOpportunisticBatchingEnabled {
 		return nil
 	}
@@ -1526,6 +1528,7 @@ func (p *PriorityQueue) signPod(ctx context.Context, logger klog.Logger, pod *v1
 
 	signer, ok := p.podSigners[pod.Spec.SchedulerName]
 	if !ok {
+		logger := klog.FromContext(ctx)
 		utilruntime.HandleErrorWithLogger(logger, nil, "No signer registered for scheduler profile", "pod", klog.KObj(pod), "scheduler", pod.Spec.SchedulerName)
 		return nil
 	}
@@ -1536,7 +1539,7 @@ func (p *PriorityQueue) signPod(ctx context.Context, logger klog.Logger, pod *v1
 }
 
 // newQueuedPodInfo builds a QueuedPodInfo object.
-func (p *PriorityQueue) newQueuedPodInfo(ctx context.Context, logger klog.Logger, pod *v1.Pod, plugins ...string) *framework.QueuedPodInfo {
+func (p *PriorityQueue) newQueuedPodInfo(ctx context.Context, pod *v1.Pod, plugins ...string) *framework.QueuedPodInfo {
 	now := p.clock.Now()
 	// ignore this err since apiserver doesn't properly validate affinity terms
 	// and we can't fix the validation for backwards compatibility.
@@ -1545,7 +1548,7 @@ func (p *PriorityQueue) newQueuedPodInfo(ctx context.Context, logger klog.Logger
 		PodInfo:                 podInfo,
 		Timestamp:               now,
 		InitialAttemptTimestamp: nil,
-		PodSignature:            p.signPod(ctx, logger, pod),
+		PodSignature:            p.signPod(ctx, pod),
 		UnschedulablePlugins:    sets.New(plugins...),
 		NeedsPodGroupScheduling: p.isGenericWorkloadEnabled && pod.Spec.SchedulingGroup != nil,
 	}
