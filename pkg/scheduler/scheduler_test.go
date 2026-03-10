@@ -509,6 +509,7 @@ func initScheduler(ctx context.Context, cache internalcache.Cache, queue interna
 		SchedulingQueue: queue,
 		APIDispatcher:   apiDispatcher,
 		Profiles:        profile.Map{testSchedulerName: fwk},
+		ctx:             ctx,
 		logger:          logger,
 	}
 	s.applyDefaultHandlers()

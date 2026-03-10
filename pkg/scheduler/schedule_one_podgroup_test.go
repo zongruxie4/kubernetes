@@ -166,6 +166,7 @@ func TestPodGroupInfoForPod(t *testing.T) {
 			sched := &Scheduler{
 				PodGroupManager: manager,
 				SchedulingQueue: q,
+				ctx:             ctx,
 			}
 
 			result, err := sched.podGroupInfoForPod(ctx, tt.pInfo)
@@ -240,7 +241,8 @@ func TestFrameworkForPodGroup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sched := &Scheduler{Profiles: tt.profiles}
+			_, ctx := ktesting.NewTestContext(t)
+			sched := &Scheduler{Profiles: tt.profiles, ctx: ctx}
 			pgInfo := &framework.QueuedPodGroupInfo{QueuedPodInfos: tt.pods}
 			_, err := sched.frameworkForPodGroup(pgInfo)
 			if tt.expectError {
@@ -299,6 +301,7 @@ func TestSkipPodGroupPodSchedule(t *testing.T) {
 	sched := &Scheduler{
 		SchedulingQueue: internalqueue.NewTestQueue(ctx, nil),
 		Cache:           cache,
+		ctx:             ctx,
 	}
 
 	// Assume pod p3
@@ -373,6 +376,7 @@ func TestPodGroupCycle_UpdateSnapshotError(t *testing.T) {
 		Profiles:        profile.Map{"test-scheduler": schedFwk},
 		SchedulingQueue: internalqueue.NewTestQueue(ctx, nil),
 		Cache:           cache,
+		ctx:             ctx,
 		FailureHandler: func(ctx context.Context, fwk framework.Framework, p *framework.QueuedPodInfo, status *fwk.Status, ni *fwk.NominatingInfo, start time.Time) {
 			failureHandlerCalled = true
 			if cmp.Equal(updateSnapshotErr.Error(), status.AsError()) {
@@ -831,6 +835,7 @@ func TestPodGroupSchedulingAlgorithm(t *testing.T) {
 					nodeInfoSnapshot: internalcache.NewEmptySnapshot(),
 					SchedulingQueue:  queue,
 					Profiles:         profile.Map{"test-scheduler": schedFwk},
+					ctx:              ctx,
 				}
 				sched.SchedulePod = sched.schedulePod
 
@@ -1243,6 +1248,7 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 				Cache:           cache,
 				Profiles:        profile.Map{"test-scheduler": schedFwk},
 				SchedulingQueue: internalqueue.NewTestQueue(ctx, nil),
+				ctx:             ctx,
 				FailureHandler: func(ctx context.Context, fwk framework.Framework, p *framework.QueuedPodInfo, status *fwk.Status, ni *fwk.NominatingInfo, start time.Time) {
 					lock.Lock()
 					if ni != nil && ni.NominatedNodeName != "" {

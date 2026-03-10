@@ -257,6 +257,7 @@ func TestUpdateAssignedPodInCache(t *testing.T) {
 				Cache:           internalcache.New(ctx, nil),
 				SchedulingQueue: internalqueue.NewTestQueue(ctx, nil),
 				logger:          logger,
+				ctx:             ctx,
 			}
 			sched.addAssignedPodToCache(tt.oldPod)
 			sched.updateAssignedPodInCache(tt.oldPod, tt.newPod)
@@ -642,6 +643,7 @@ func TestAddAllEventHandlers(t *testing.T) {
 				StopEverything:  ctx.Done(),
 				SchedulingQueue: schedulingQueue,
 				logger:          logger,
+				ctx:             ctx,
 			}
 
 			dynclient := dyfake.NewSimpleDynamicClient(scheme)
@@ -797,6 +799,7 @@ func TestAddPod(t *testing.T) {
 			sched := &Scheduler{
 				Cache:           internalcache.New(ctx, nil),
 				SchedulingQueue: internalqueue.NewTestQueue(ctx, nil),
+				ctx:             ctx,
 				logger:          logger,
 				Profiles: profile.Map{
 					"supported-scheduler": nil,
@@ -932,6 +935,7 @@ func TestUpdatePod(t *testing.T) {
 			sched := &Scheduler{
 				Cache:           internalcache.New(ctx, nil),
 				SchedulingQueue: internalqueue.NewTestQueue(ctx, nil),
+				ctx:             ctx,
 				logger:          logger,
 				Profiles: profile.Map{
 					"supported-scheduler": schedFramework,
@@ -1051,6 +1055,7 @@ func TestDeletePod(t *testing.T) {
 			sched := &Scheduler{
 				Cache:           internalcache.New(ctx, nil),
 				SchedulingQueue: internalqueue.NewTestQueue(ctx, nil),
+				ctx:             ctx,
 				logger:          logger,
 				Profiles: profile.Map{
 					"supported-scheduler": schedFramework,
