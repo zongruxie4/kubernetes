@@ -137,6 +137,8 @@ type ResourceConsumer struct {
 	requestSizeCustomMetric  int
 	sidecarStatus            SidecarStatusType
 	sidecarType              SidecarWorkloadType
+	cpuPerPod                chan int
+	stopCPUPerPod            chan int
 }
 
 // ExternalMetricsController provides methods to control the external metrics server at runtime
@@ -415,6 +417,8 @@ func NewResourceConsumer(ctx context.Context, name, nsName string, kind schema.G
 		stopCPU:                  make(chan int),
 		stopMem:                  make(chan int),
 		stopCustomMetric:         make(chan int),
+		cpuPerPod:                make(chan int),
+		stopCPUPerPod:            make(chan int),
 		consumptionTimeInSeconds: consumptionTimeInSeconds,
 		sleepTime:                time.Duration(consumptionTimeInSeconds) * time.Second,
 		requestSizeInMillicores:  requestSizeInMillicores,
@@ -430,6 +434,7 @@ func NewResourceConsumer(ctx context.Context, name, nsName string, kind schema.G
 	rc.ConsumeMem(initMemoryTotal)
 	go rc.makeConsumeCustomMetric(ctx)
 	rc.ConsumeCustomMetric(initCustomMetric)
+	go rc.makeConsumeCPUPerPodRequests(ctx)
 	return rc
 }
 
@@ -634,6 +639,122 @@ func (rc *ResourceConsumer) sendConsumeCustomMetric(ctx context.Context, delta i
 	framework.ExpectNoError(err)
 }
 
+/*
+ConsumeCPUPerPod sends CPU load directly to each consumer pod via the
+Kubernetes pod proxy API, bypassing kube-proxy's non-deterministic load
+balancing. millicoresTotal is divided evenly across all running pods,
+guaranteeing each pod receives an equal share regardless of cluster network config.
+*/
+func (rc *ResourceConsumer) ConsumeCPUPerPod(millicoresTotal int) {
+	framework.Logf("RC %s: consume %v millicores in total (evenly distributed per pod)", rc.name, millicoresTotal)
+	rc.cpuPerPod <- millicoresTotal
+}
+
+func (rc *ResourceConsumer) makeConsumeCPUPerPodRequests(ctx context.Context) {
+	defer ginkgo.GinkgoRecover()
+	rc.stopWaitGroup.Add(1)
+	defer rc.stopWaitGroup.Done()
+	tick := time.After(time.Duration(0))
+	milliCoresPerPod := 0
+	for {
+		select {
+		case milliCoresPerPod = <-rc.cpuPerPod:
+			if milliCoresPerPod != 0 {
+				framework.Logf("RC %s setting per-pod CPU to %v millicores", rc.name, milliCoresPerPod)
+			} else {
+				framework.Logf("RC %s disabling per-pod CPU consumption", rc.name)
+			}
+		case <-tick:
+			if milliCoresPerPod != 0 {
+				replicas, err := rc.GetReplicas(ctx)
+				if err != nil {
+					framework.Logf("RC %s failed to get replicas: %v", rc.name, err)
+				} else {
+					totalMillicores := milliCoresPerPod * replicas
+					framework.Logf("RC %s sending request to consume %d millicores/pod x %d replicas = %d total",
+						rc.name, milliCoresPerPod, replicas, totalMillicores)
+					rc.sendConsumeCPURequest(ctx, totalMillicores)
+				}
+			}
+			tick = time.After(rc.sleepTime)
+		case <-ctx.Done():
+			framework.Logf("RC %s stopping per-pod CPU consumer: %v", rc.name, ctx.Err())
+			return
+		case <-rc.stopCPUPerPod:
+			framework.Logf("RC %s stopping per-pod CPU consumer", rc.name)
+			return
+		}
+	}
+}
+
+/*
+sendConsumeCPURequestPerPod lists all running pods for this ResourceConsumer
+and sends a CPU consumption request to each one directly via the pod proxy
+endpoint. This ensures each pod receives exactly millicoresTotal/numPods
+millicores, regardless of kube-proxy load balancing behavior.
+*/
+func (rc *ResourceConsumer) sendConsumeCPURequestPerPod(ctx context.Context, millicoresTotal int) {
+	pods, err := rc.clientSet.CoreV1().Pods(rc.nsName).List(ctx, metav1.ListOptions{
+		LabelSelector: "name=" + rc.name,
+	})
+	if err != nil {
+		framework.Logf("RC %s: failed to list pods for per-pod CPU consumption: %v", rc.name, err)
+		return
+	}
+
+	runningPods := make([]v1.Pod, 0, len(pods.Items))
+	for _, pod := range pods.Items {
+		if pod.Status.Phase == v1.PodRunning && pod.DeletionTimestamp == nil {
+			runningPods = append(runningPods, pod)
+		}
+	}
+
+	if len(runningPods) == 0 {
+		framework.Logf("RC %s: no running pods found for per-pod CPU consumption", rc.name)
+		return
+	}
+
+	perPodMillicores := millicoresTotal / len(runningPods)
+	if perPodMillicores == 0 {
+		framework.Logf("RC %s: per-pod millicores rounded to 0, skipping", rc.name)
+		return
+	}
+
+	framework.Logf("RC %s: sending %d millicores to each of %d pods via pod proxy",
+		rc.name, perPodMillicores, len(runningPods))
+
+	var wg sync.WaitGroup
+	for _, pod := range runningPods {
+		wg.Add(1)
+		podName := pod.Name
+		go func() {
+			defer wg.Done()
+			err := framework.Gomega().Eventually(ctx, func(ctx context.Context) error {
+				_, reqErr := rc.clientSet.CoreV1().RESTClient().Post().
+					Namespace(rc.nsName).
+					Resource("pods").
+					Name(podName).
+					SubResource("proxy").
+					Suffix("ConsumeCPU").
+					Param("millicores", strconv.Itoa(perPodMillicores)).
+					Param("durationSec", strconv.Itoa(rc.consumptionTimeInSeconds)).
+					Param("requestSizeMillicores", strconv.Itoa(perPodMillicores)).
+					DoRaw(ctx)
+				if reqErr != nil {
+					framework.Logf("RC %s: failed to send CPU request to pod %s: %v", rc.name, podName, reqErr)
+					return reqErr
+				}
+				return nil
+			}).WithTimeout(serviceInitializationTimeout).WithPolling(serviceInitializationInterval).Should(gomega.Succeed())
+			if ctx.Err() != nil {
+				return
+			}
+			framework.ExpectNoError(err)
+		}()
+	}
+	wg.Wait()
+}
+
 // GetReplicas get the replicas
 func (rc *ResourceConsumer) GetReplicas(ctx context.Context) (int, error) {
 	switch rc.kind {
@@ -719,6 +840,7 @@ func (rc *ResourceConsumer) Pause() {
 	rc.stopCPU <- 0
 	rc.stopMem <- 0
 	rc.stopCustomMetric <- 0
+	rc.stopCPUPerPod <- 0
 	rc.stopWaitGroup.Wait()
 }
 
@@ -728,6 +850,7 @@ func (rc *ResourceConsumer) Resume(ctx context.Context) {
 	go rc.makeConsumeCPURequests(ctx)
 	go rc.makeConsumeMemRequests(ctx)
 	go rc.makeConsumeCustomMetric(ctx)
+	go rc.makeConsumeCPUPerPodRequests(ctx)
 }
 
 // CleanUp clean up the background goroutines responsible for consuming resources.
@@ -736,6 +859,7 @@ func (rc *ResourceConsumer) CleanUp(ctx context.Context) {
 	close(rc.stopCPU)
 	close(rc.stopMem)
 	close(rc.stopCustomMetric)
+	close(rc.stopCPUPerPod)
 	rc.stopWaitGroup.Wait()
 	// Wait some time to ensure all child goroutines are finished.
 	time.Sleep(10 * time.Second)
@@ -749,6 +873,9 @@ func (rc *ResourceConsumer) CleanUp(ctx context.Context) {
 	}
 
 	framework.ExpectNoError(rc.clientSet.CoreV1().Services(rc.nsName).Delete(ctx, rc.name, metav1.DeleteOptions{}))
+	if err := rc.clientSet.CoreV1().Services(rc.nsName).Delete(ctx, rc.name+"-headless", metav1.DeleteOptions{}); err != nil {
+		framework.Logf("Warning: could not delete headless service %s: %v", rc.name+"-headless", err)
+	}
 	framework.ExpectNoError(e2eresource.DeleteResourceAndWaitForGC(ctx, rc.clientSet, schema.GroupKind{Group: "apps", Kind: "ReplicaSet"}, rc.nsName, rc.controllerName))
 	framework.ExpectNoError(rc.clientSet.CoreV1().Services(rc.nsName).Delete(ctx, rc.name+"-ctrl", metav1.DeleteOptions{}))
 	// Cleanup sidecar related resources
@@ -766,6 +893,25 @@ func createService(ctx context.Context, c clientset.Interface, name, ns string, 
 			Labels:      map[string]string{"name": name},
 		},
 		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       portName,
+				Port:       port,
+				TargetPort: intstr.FromInt32(int32(targetPort)),
+			}},
+			Selector: selectors,
+		},
+	}, metav1.CreateOptions{})
+}
+
+func createHeadlessService(ctx context.Context, c clientset.Interface, name, ns string, annotations, selectors map[string]string, port int32, targetPort int) (*v1.Service, error) {
+	return c.CoreV1().Services(ns).Create(ctx, &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Annotations: annotations,
+			Labels:      map[string]string{"name": name},
+		},
+		Spec: v1.ServiceSpec{
+			ClusterIP: "None", // headless: DNS returns individual pod IPs, not a VIP
 			Ports: []v1.ServicePort{{
 				Name:       portName,
 				Port:       port,
@@ -875,6 +1021,8 @@ func runServiceAndSidecarForResourceConsumer(ctx context.Context, c clientset.In
 func runServiceAndWorkloadForResourceConsumer(ctx context.Context, c clientset.Interface, resourceClient dynamic.ResourceInterface, apiExtensionClient crdclientset.Interface, ns, name string, kind schema.GroupVersionKind, replicas int, cpuLimitMillis, memLimitMb int64, podAnnotations, serviceAnnotations map[string]string, additionalContainers []v1.Container, podResources *v1.ResourceRequirements) {
 	ginkgo.By(fmt.Sprintf("Running consuming RC %s via %s with %v replicas", name, kind, replicas))
 	_, err := createService(ctx, c, name, ns, serviceAnnotations, map[string]string{"name": name}, port, targetPort)
+	framework.ExpectNoError(err)
+	_, err = createHeadlessService(ctx, c, name+"-headless", ns, serviceAnnotations, map[string]string{"name": name}, port, targetPort)
 	framework.ExpectNoError(err)
 
 	rcConfig := testutils.RCConfig{

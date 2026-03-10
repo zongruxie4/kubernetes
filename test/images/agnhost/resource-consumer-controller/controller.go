@@ -19,11 +19,13 @@ package resconsumerctrl
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -43,6 +45,7 @@ var CmdResourceConsumerController = &cobra.Command{
 var (
 	port                     int
 	consumerPort             int
+	consumerTargetPort       int
 	consumerServiceName      string
 	consumerServiceNamespace string
 	dnsDomain                string
@@ -73,6 +76,7 @@ func getDNSDomain() string {
 func init() {
 	CmdResourceConsumerController.Flags().IntVar(&port, "port", 8080, "Port number.")
 	CmdResourceConsumerController.Flags().IntVar(&consumerPort, "consumer-port", 8080, "Port number of consumers.")
+	CmdResourceConsumerController.Flags().IntVar(&consumerTargetPort, "consumer-target-port", 8080, "Target (container) port for direct pod connections via headless DNS.")
 	CmdResourceConsumerController.Flags().StringVar(&consumerServiceName, "consumer-service-name", "resource-consumer", "Name of service containing resource consumers.")
 	CmdResourceConsumerController.Flags().StringVar(&consumerServiceNamespace, "consumer-service-namespace", "default", "Namespace of service containing resource consumers.")
 }
@@ -84,12 +88,15 @@ func main(cmd *cobra.Command, args []string) {
 
 type controller struct {
 	responseWriterLock sync.Mutex
+	httpClient         *http.Client
 	waitGroup          sync.WaitGroup
 }
 
 func newController() *controller {
-	c := &controller{}
-	return c
+	return &controller{
+		// 30s timeout prevents hung goroutines on stale pod IPs
+		httpClient: &http.Client{Timeout: 30 * time.Second},
+	}
 }
 
 func (c *controller) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -121,7 +128,6 @@ func (c *controller) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (c *controller) handleConsumeCPU(w http.ResponseWriter, query url.Values) {
-	// getting string data for consumeCPU
 	durationSecString := query.Get(common.DurationSecQuery)
 	millicoresString := query.Get(common.MillicoresQuery)
 	requestSizeInMillicoresString := query.Get(common.RequestSizeInMillicoresQuery)
@@ -130,7 +136,6 @@ func (c *controller) handleConsumeCPU(w http.ResponseWriter, query url.Values) {
 		return
 	}
 
-	// convert data (strings to ints) for consumeCPU
 	durationSec, durationSecError := strconv.Atoi(durationSecString)
 	millicores, millicoresError := strconv.Atoi(millicoresString)
 	requestSizeInMillicores, requestSizeInMillicoresError := strconv.Atoi(requestSizeInMillicoresString)
@@ -139,9 +144,39 @@ func (c *controller) handleConsumeCPU(w http.ResponseWriter, query url.Values) {
 		return
 	}
 
+	// Attempt headless DNS resolution: <service>-headless.<ns>.svc.<domain>
+	// returns one A record per pod, allowing deterministic per-pod distribution.
+	// consumerTargetPort (default 8080) is the actual container port not
+	// consumerPort (80) which is the ClusterIP service port.
+	headlessDNS := fmt.Sprintf("%s-headless.%s.svc.%s",
+		consumerServiceName, consumerServiceNamespace, getDNSDomain())
+	podAddrs, err := net.LookupHost(headlessDNS)
+
+	if err == nil && len(podAddrs) > 0 {
+		perPodMillicores := millicores / len(podAddrs)
+		if perPodMillicores == 0 {
+			perPodMillicores = 1
+		}
+		fmt.Fprintf(w, "RC manager (per-pod): sending %d millicores to each of %d pods via headless DNS\n",
+			perPodMillicores, len(podAddrs))
+		c.waitGroup.Add(len(podAddrs))
+		for _, addr := range podAddrs {
+			// Use consumerTargetPort (8080) not consumerPort (80): pods listen
+			// directly on the container port, not the service port.
+			podURL := fmt.Sprintf("http://%s:%d%s", addr, consumerTargetPort, common.ConsumeCPUAddress)
+			go c.sendOneCPURequestToURL(w, podURL, perPodMillicores, durationSec)
+		}
+		c.waitGroup.Wait()
+		return
+	}
+
+	// Fallback: original ClusterIP behavior. Gracefully degrades to old
+	// non-deterministic routing if headless service is unavailable.
+	log.Printf("headless DNS lookup for %s failed (%v), using ClusterIP fallback", headlessDNS, err)
 	count := millicores / requestSizeInMillicores
 	rest := millicores - count*requestSizeInMillicores
-	fmt.Fprintf(w, "RC manager: sending %v requests to consume %v millicores each and 1 request to consume %v millicores\n", count, requestSizeInMillicores, rest)
+	fmt.Fprintf(w, "RC manager: sending %v requests to consume %v millicores each and 1 request to consume %v millicores\n",
+		count, requestSizeInMillicores, rest)
 	if count > 0 {
 		c.waitGroup.Add(count)
 		c.sendConsumeCPURequests(w, count, requestSizeInMillicores, durationSec)
@@ -224,6 +259,26 @@ func (c *controller) sendConsumeCPURequests(w http.ResponseWriter, requests, mil
 	for range requests {
 		go c.sendOneConsumeCPURequest(w, millicores, durationSec)
 	}
+}
+
+// sendOneCPURequestToURL sends a ConsumeCPU POST directly to a pod IP URL.
+// Uses c.httpClient (30s timeout) to prevent goroutine leaks on stale pod IPs.
+func (c *controller) sendOneCPURequestToURL(w http.ResponseWriter, podURL string, millicores, durationSec int) {
+	defer c.waitGroup.Done()
+	params := url.Values{}
+	params.Set(common.MillicoresQuery, strconv.Itoa(millicores))
+	params.Set(common.DurationSecQuery, strconv.Itoa(durationSec))
+	params.Set(common.RequestSizeInMillicoresQuery, strconv.Itoa(millicores))
+	targetURL := podURL + "?" + params.Encode()
+
+	resp, err := c.httpClient.Post(targetURL, "text/plain", nil)
+	if err != nil {
+		c.responseWriterLock.Lock()
+		defer c.responseWriterLock.Unlock()
+		fmt.Fprintf(w, "Failed to send to pod at %s: %v\n", podURL, err)
+		return
+	}
+	defer resp.Body.Close()
 }
 
 func (c *controller) sendConsumeMemRequests(w http.ResponseWriter, requests, megabytes, durationSec int) {
