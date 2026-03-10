@@ -627,7 +627,6 @@ func (gc *GarbageCollector) attemptToDeleteItem(ctx context.Context, item *node)
 		policy := metav1.DeletePropagationForeground
 		err := gc.deleteObject(item.identity, latest.ResourceVersion, latest.OwnerReferences, &policy)
 		if errors.IsNotFound(err) {
-			// the item was deleted externally, enqueue a virtual delete event
 			gc.dependencyGraphBuilder.enqueueVirtualDeleteEvent(item.identity)
 			return enqueuedVirtualDeleteEventErr
 		}
@@ -654,7 +653,6 @@ func (gc *GarbageCollector) attemptToDeleteItem(ctx context.Context, item *node)
 		)
 		err := gc.deleteObject(item.identity, latest.ResourceVersion, latest.OwnerReferences, &policy)
 		if errors.IsNotFound(err) {
-			// the item was deleted externally, enqueue a virtual delete event
 			gc.dependencyGraphBuilder.enqueueVirtualDeleteEvent(item.identity)
 			return enqueuedVirtualDeleteEventErr
 		}
