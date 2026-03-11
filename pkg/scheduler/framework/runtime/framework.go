@@ -850,17 +850,27 @@ func (f *frameworkImpl) computeBatchablePlugins() {
 // there is no way to compare this pod against others, and will turn off a number of optimizations
 // for this pod.
 func (f *frameworkImpl) SignPod(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
+	logger := klog.FromContext(ctx)
+	var status *fwk.Status
+
+	startTime := time.Now()
+	defer func() {
+		f.metricsRecorder.ObserveFrameworkDurationAsync(metrics.Sign, status.Code().String(), f.profileName, metrics.SinceInSeconds(startTime))
+	}()
+
 	if !f.enableSignatures {
 		return nil
 	}
 
-	logger := klog.FromContext(ctx)
 	sig := map[string]any{
 		fwk.SchedulerNameSignerName: pod.Spec.SchedulerName,
 	}
 
 	for _, plugin := range f.batchablePlugins {
+		startTime := time.Now()
 		fragments, status := plugin.SignPod(ctx, pod)
+		f.metricsRecorder.ObservePluginDurationAsync(metrics.Sign, plugin.Name(), status.Code().String(), metrics.SinceInSeconds(startTime))
+
 		if !status.IsSuccess() {
 			if status.Code() == fwk.Error {
 				logger.Error(status.AsError(), "SignPod failed for plugin", "plugin", plugin.Name())
