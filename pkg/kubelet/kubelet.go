@@ -63,7 +63,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	versionutil "k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/server/dynamiccertificates"
 	"k8s.io/apiserver/pkg/server/flagz"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -694,9 +693,11 @@ func NewMainKubelet(ctx context.Context,
 	klet.podManager = kubepod.NewBasicPodManager()
 
 	klet.statusManager = status.NewManager(klet.kubeClient, klet.podManager, klet, kubeDeps.PodStartupLatencyTracker)
+
 	if utilfeature.DefaultFeatureGate.Enabled(features.PodsAPI) {
 		broadcaster := pods.NewBroadcaster()
 		klet.podsServer = pods.NewPodsServer(broadcaster, klet.podManager, klet.statusManager)
+		klet.statusManager.AddPodUpdateNotifier(klet.podsServer)
 	}
 	klet.allocationManager = allocation.NewManager(
 		klet.getRootDir(),
@@ -2091,17 +2092,7 @@ func (kl *Kubelet) SyncPod(ctx context.Context, updateType kubetypes.SyncPodType
 		metrics.PodStartDuration.Observe(metrics.SinceInSeconds(firstSeenTime))
 	}
 
-	finalStatus, changed := kl.statusManager.SetPodStatus(logger, pod, apiPodStatus)
-	if changed && kl.podsServer != nil {
-		eventType := watch.Modified
-		// If the status manager doesn't yet have a status for this pod (ok == false),
-		// it indicates this is the first time the pod is being synced and should
-		// be broadcast as an Added event.
-		if !ok {
-			eventType = watch.Added
-		}
-		kl.podsServer.OnPodUpdated(pod, finalStatus, eventType)
-	}
+	kl.statusManager.SetPodStatus(logger, pod, apiPodStatus)
 
 	// If the network plugin is not ready, only start the pod if it uses the host network
 	if err := kl.runtimeState.networkErrors(); err != nil && !kubecontainer.IsHostNetworkPod(pod) {
@@ -2315,10 +2306,7 @@ func (kl *Kubelet) SyncTerminatingPod(ctx context.Context, pod *v1.Pod, podStatu
 	if podStatusFn != nil {
 		podStatusFn(&apiPodStatus)
 	}
-	finalStatus, changed := kl.statusManager.SetPodStatus(logger, pod, apiPodStatus)
-	if changed && kl.podsServer != nil {
-		kl.podsServer.OnPodUpdated(pod, finalStatus, watch.Modified)
-	}
+	kl.statusManager.SetPodStatus(logger, pod, apiPodStatus)
 
 	if gracePeriod != nil {
 		logger.V(4).Info("Pod terminating with grace period", "pod", klog.KObj(pod), "podUID", pod.UID, "gracePeriod", *gracePeriod)
@@ -2404,10 +2392,7 @@ func (kl *Kubelet) SyncTerminatingPod(ctx context.Context, pod *v1.Pod, podStatu
 	// information about the container end states (including exit codes) - when
 	// SyncTerminatedPod is called the containers may already be removed.
 	apiPodStatus = kl.generateAPIPodStatus(ctx, pod, stoppedPodStatus, true)
-	finalStatus, changed = kl.statusManager.SetPodStatus(logger, pod, apiPodStatus)
-	if changed && kl.podsServer != nil {
-		kl.podsServer.OnPodUpdated(pod, finalStatus, watch.Modified)
-	}
+	kl.statusManager.SetPodStatus(logger, pod, apiPodStatus)
 
 	// we have successfully stopped all containers, the pod is terminating, our status is "done"
 	logger.V(4).Info("Pod termination stopped all running containers", "pod", klog.KObj(pod), "podUID", pod.UID)
@@ -2527,9 +2512,6 @@ func (kl *Kubelet) SyncTerminatedPod(ctx context.Context, pod *v1.Pod, podStatus
 
 	// mark the final pod status
 	kl.statusManager.TerminatePod(logger, pod)
-	if kl.podsServer != nil {
-		kl.podsServer.OnPodRemoved(pod)
-	}
 	logger.V(4).Info("Pod is terminated and will need no more status updates", "pod", klog.KObj(pod), "podUID", pod.UID)
 
 	return nil
@@ -2600,15 +2582,11 @@ func (kl *Kubelet) deletePod(ctx context.Context, pod *v1.Pod) error {
 func (kl *Kubelet) rejectPod(ctx context.Context, pod *v1.Pod, reason, message string) {
 	logger := klog.FromContext(ctx)
 	kl.recorder.WithLogger(logger).Eventf(pod, v1.EventTypeWarning, reason, "%s", message)
-	status := v1.PodStatus{
+	kl.statusManager.SetPodStatus(logger, pod, v1.PodStatus{
 		QOSClass: v1qos.GetPodQOS(pod), // keep it as is
 		Phase:    v1.PodFailed,
 		Reason:   reason,
-		Message:  "Pod was rejected: " + message}
-	finalStatus, changed := kl.statusManager.SetPodStatus(logger, pod, status)
-	if changed && kl.podsServer != nil {
-		kl.podsServer.OnPodUpdated(pod, finalStatus, watch.Modified)
-	}
+		Message:  "Pod was rejected: " + message})
 }
 
 func recordAdmissionRejection(reason string) {

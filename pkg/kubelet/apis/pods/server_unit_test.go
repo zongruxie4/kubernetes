@@ -58,8 +58,8 @@ func TestStartEventLoop(t *testing.T) {
 	broadcaster.Register(clientChannel)
 	defer broadcaster.Unregister(clientChannel)
 
-	server.OnPodUpdated(pod1, v1.PodStatus{Phase: v1.PodPending}, watch.Added)
-	server.OnPodUpdated(pod1, v1.PodStatus{Phase: v1.PodSucceeded}, watch.Modified)
+	server.OnPodUpdated(pod1, v1.PodStatus{Phase: v1.PodPending}, true)
+	server.OnPodUpdated(pod1, v1.PodStatus{Phase: v1.PodSucceeded}, false)
 	server.OnPodRemoved(pod1)
 
 	event := <-clientChannel
@@ -144,7 +144,7 @@ func TestWatchPods(t *testing.T) {
 	assert.Empty(t, event.Pod)
 
 	// Trigger an update
-	server.OnPodUpdated(pod1, pod1.Status, watch.Modified)
+	server.OnPodUpdated(pod1, pod1.Status, false)
 
 	// Verify MODIFIED event
 	event = <-mockStream.EventCh
@@ -269,7 +269,7 @@ func TestErrorsAndMetrics(t *testing.T) {
 		server := podsapi.NewPodsServerForTest(broadcaster, mockManager, mockStatus)
 		pod1 := &v1.Pod{ObjectMeta: metav1.ObjectMeta{UID: "pod1-uid", Name: "pod1", Namespace: "ns1"}}
 		mockStatus.On("GetPodStatus", mock.Anything).Return(v1.PodStatus{}, false)
-		server.OnPodUpdated(pod1, pod1.Status, watch.Added)
+		server.OnPodUpdated(pod1, pod1.Status, true)
 
 		// Reset the metric before the test
 		metrics.PodWatchEventsDroppedTotal.Reset()

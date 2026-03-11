@@ -146,7 +146,11 @@ func NewPodsServerForTest(broadcaster *broadcaster, podManager pod.Manager, stat
 }
 
 // OnPodUpdated is called when a pod's spec and status are coherent.
-func (s *PodsServer) OnPodUpdated(pod *v1.Pod, status v1.PodStatus, eventType watch.EventType) {
+func (s *PodsServer) OnPodUpdated(pod *v1.Pod, status v1.PodStatus, isAdded bool) {
+	eventType := watch.Modified
+	if isAdded {
+		eventType = watch.Added
+	}
 	podCopy := *pod
 	podCopy.Status = status
 	s.broadcaster.Broadcast(PodWatchEvent{Type: eventType, UID: pod.UID, Pod: &podCopy})
