@@ -112,9 +112,6 @@ type Scheduler struct {
 
 	nextStartNodeIndex int
 
-	// ctx is the context of the scheduler
-	ctx context.Context
-
 	// logger *must* be initialized when creating a Scheduler,
 	// otherwise logging functions will access a nil sink and
 	// panic.
@@ -452,7 +449,6 @@ func New(ctx context.Context,
 		StopEverything:                         stopEverything,
 		SchedulingQueue:                        podQueue,
 		Profiles:                               profiles,
-		ctx:                                    ctx,
 		logger:                                 logger,
 		APIDispatcher:                          apiDispatcher,
 		nominatedNodeNameForExpectationEnabled: feature.DefaultFeatureGate.Enabled(features.NominatedNodeNameForExpectation),
