@@ -666,15 +666,8 @@ func (rc *ResourceConsumer) makeConsumeCPUPerPodRequests(ctx context.Context) {
 			}
 		case <-tick:
 			if milliCoresPerPod != 0 {
-				replicas, err := rc.GetReplicas(ctx)
-				if err != nil {
-					framework.Logf("RC %s failed to get replicas: %v", rc.name, err)
-				} else {
-					totalMillicores := milliCoresPerPod * replicas
-					framework.Logf("RC %s sending request to consume %d millicores/pod x %d replicas = %d total",
-						rc.name, milliCoresPerPod, replicas, totalMillicores)
-					rc.sendConsumeCPURequest(ctx, totalMillicores)
-				}
+				framework.Logf("RC %s sending per-pod CPU request: %d millicores total", rc.name, milliCoresPerPod)
+				rc.sendConsumeCPURequest(ctx, milliCoresPerPod)
 			}
 			tick = time.After(rc.sleepTime)
 		case <-ctx.Done():
@@ -685,74 +678,6 @@ func (rc *ResourceConsumer) makeConsumeCPUPerPodRequests(ctx context.Context) {
 			return
 		}
 	}
-}
-
-/*
-sendConsumeCPURequestPerPod lists all running pods for this ResourceConsumer
-and sends a CPU consumption request to each one directly via the pod proxy
-endpoint. This ensures each pod receives exactly millicoresTotal/numPods
-millicores, regardless of kube-proxy load balancing behavior.
-*/
-func (rc *ResourceConsumer) sendConsumeCPURequestPerPod(ctx context.Context, millicoresTotal int) {
-	pods, err := rc.clientSet.CoreV1().Pods(rc.nsName).List(ctx, metav1.ListOptions{
-		LabelSelector: "name=" + rc.name,
-	})
-	if err != nil {
-		framework.Logf("RC %s: failed to list pods for per-pod CPU consumption: %v", rc.name, err)
-		return
-	}
-
-	runningPods := make([]v1.Pod, 0, len(pods.Items))
-	for _, pod := range pods.Items {
-		if pod.Status.Phase == v1.PodRunning && pod.DeletionTimestamp == nil {
-			runningPods = append(runningPods, pod)
-		}
-	}
-
-	if len(runningPods) == 0 {
-		framework.Logf("RC %s: no running pods found for per-pod CPU consumption", rc.name)
-		return
-	}
-
-	perPodMillicores := millicoresTotal / len(runningPods)
-	if perPodMillicores == 0 {
-		framework.Logf("RC %s: per-pod millicores rounded to 0, skipping", rc.name)
-		return
-	}
-
-	framework.Logf("RC %s: sending %d millicores to each of %d pods via pod proxy",
-		rc.name, perPodMillicores, len(runningPods))
-
-	var wg sync.WaitGroup
-	for _, pod := range runningPods {
-		wg.Add(1)
-		podName := pod.Name
-		go func() {
-			defer wg.Done()
-			err := framework.Gomega().Eventually(ctx, func(ctx context.Context) error {
-				_, reqErr := rc.clientSet.CoreV1().RESTClient().Post().
-					Namespace(rc.nsName).
-					Resource("pods").
-					Name(podName).
-					SubResource("proxy").
-					Suffix("ConsumeCPU").
-					Param("millicores", strconv.Itoa(perPodMillicores)).
-					Param("durationSec", strconv.Itoa(rc.consumptionTimeInSeconds)).
-					Param("requestSizeMillicores", strconv.Itoa(perPodMillicores)).
-					DoRaw(ctx)
-				if reqErr != nil {
-					framework.Logf("RC %s: failed to send CPU request to pod %s: %v", rc.name, podName, reqErr)
-					return reqErr
-				}
-				return nil
-			}).WithTimeout(serviceInitializationTimeout).WithPolling(serviceInitializationInterval).Should(gomega.Succeed())
-			if ctx.Err() != nil {
-				return
-			}
-			framework.ExpectNoError(err)
-		}()
-	}
-	wg.Wait()
 }
 
 // GetReplicas get the replicas
