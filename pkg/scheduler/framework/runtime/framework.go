@@ -849,30 +849,18 @@ func (f *frameworkImpl) computeBatchablePlugins() {
 // is unable to construct a signature for the pod, the result will be nil, which means
 // there is no way to compare this pod against others, and will turn off a number of optimizations
 // for this pod.
-func (f *frameworkImpl) SignPod(ctx context.Context, pod *v1.Pod, recordPluginStats bool) fwk.PodSignature {
-	logger := klog.FromContext(ctx)
-	var status *fwk.Status
-
-	if recordPluginStats {
-		startTime := time.Now()
-		defer func() {
-			metrics.FrameworkExtensionPointDuration.WithLabelValues(metrics.Sign, status.Code().String(), f.profileName).Observe(metrics.SinceInSeconds(startTime))
-		}()
-	}
-
+func (f *frameworkImpl) SignPod(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
 	if !f.enableSignatures {
 		return nil
 	}
 
+	logger := klog.FromContext(ctx)
 	sig := map[string]any{
 		fwk.SchedulerNameSignerName: pod.Spec.SchedulerName,
 	}
 
 	for _, plugin := range f.batchablePlugins {
-		startTime := time.Now()
 		fragments, status := plugin.SignPod(ctx, pod)
-		f.metricsRecorder.ObservePluginDurationAsync(metrics.Sign, plugin.Name(), status.Code().String(), metrics.SinceInSeconds(startTime))
-
 		if !status.IsSuccess() {
 			if status.Code() == fwk.Error {
 				logger.Error(status.AsError(), "SignPod failed for plugin", "plugin", plugin.Name())

@@ -4916,7 +4916,7 @@ func TestPriorityQueue_signPod(t *testing.T) {
 			name:              "Feature gate disabled",
 			enableFeatureGate: false,
 			signers: map[string]PodSigner{
-				"default-scheduler": func(ctx context.Context, pod *v1.Pod, recordStats bool) fwk.PodSignature {
+				"default-scheduler": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
 					return fwk.PodSignature("sig-1")
 				},
 			},
@@ -4934,7 +4934,7 @@ func TestPriorityQueue_signPod(t *testing.T) {
 			name:              "Signer not found for scheduler",
 			enableFeatureGate: true,
 			signers: map[string]PodSigner{
-				"default-scheduler": func(ctx context.Context, pod *v1.Pod, recordStats bool) fwk.PodSignature {
+				"default-scheduler": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
 					return fwk.PodSignature("sig-1")
 				},
 			},
@@ -4945,7 +4945,7 @@ func TestPriorityQueue_signPod(t *testing.T) {
 			name:              "Successful signature computation",
 			enableFeatureGate: true,
 			signers: map[string]PodSigner{
-				"default-scheduler": func(ctx context.Context, pod *v1.Pod, recordStats bool) fwk.PodSignature {
+				"default-scheduler": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
 					return fwk.PodSignature("sig-1")
 				},
 			},
@@ -4957,7 +4957,7 @@ func TestPriorityQueue_signPod(t *testing.T) {
 			name:              "Signer returns nil (unsignable pod)",
 			enableFeatureGate: true,
 			signers: map[string]PodSigner{
-				"default-scheduler": func(ctx context.Context, pod *v1.Pod, recordStats bool) fwk.PodSignature {
+				"default-scheduler": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
 					return nil
 				},
 			},
@@ -5003,7 +5003,7 @@ func TestPriorityQueue_SignatureReuse(t *testing.T) {
 
 	callCount := 0
 	signers := map[string]PodSigner{
-		"default-scheduler": func(ctx context.Context, pod *v1.Pod, recordStats bool) fwk.PodSignature {
+		"default-scheduler": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
 			callCount++
 			return fwk.PodSignature(fmt.Sprintf("sig-%s", pod.Name))
 		},
@@ -5068,7 +5068,7 @@ func TestPriorityQueue_UpdateRecomputesSignature(t *testing.T) {
 	defer cancel()
 
 	signers := map[string]PodSigner{
-		"default-scheduler": func(ctx context.Context, pod *v1.Pod, recordStats bool) fwk.PodSignature {
+		"default-scheduler": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
 			// Signature based on label value
 			if val, ok := pod.Labels["key"]; ok {
 				return fwk.PodSignature(fmt.Sprintf("sig-%s", val))
@@ -5114,10 +5114,10 @@ func TestPriorityQueue_MultipleProfiles(t *testing.T) {
 	defer cancel()
 
 	signers := map[string]PodSigner{
-		"scheduler-1": func(ctx context.Context, pod *v1.Pod, recordStats bool) fwk.PodSignature {
+		"scheduler-1": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
 			return fwk.PodSignature("sig-scheduler-1")
 		},
-		"scheduler-2": func(ctx context.Context, pod *v1.Pod, recordStats bool) fwk.PodSignature {
+		"scheduler-2": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
 			return fwk.PodSignature("sig-scheduler-2")
 		},
 	}

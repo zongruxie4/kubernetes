@@ -62,7 +62,6 @@ var ExtensionPoints = []string{
 	Reserve,
 	Unreserve,
 	Permit,
-	Sign,
 }
 
 const (

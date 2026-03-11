@@ -1520,7 +1520,7 @@ func TestSignatures(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			signature := schedFramework.SignPod(ctx, podWithID("foo", ""), true)
+			signature := schedFramework.SignPod(ctx, podWithID("foo", ""))
 			if !bytes.Equal(signature, item.expectedSignature) {
 				t.Fatal(fmt.Errorf("Test %s got signature %s, expected %s", item.name, signature, item.expectedSignature))
 			}

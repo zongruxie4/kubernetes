@@ -91,7 +91,7 @@ type PreEnqueueCheck func(pod *v1.Pod) bool
 // PodSigner creates a scheduling signature for a pod that represents its scheduling requirements.
 // The signature is used by the opportunistic batching feature (KEP-5598) to reuse scheduling decisions.
 // Returns nil if the pod is "unsignable" (some plugins cannot create a stable signature for it).
-type PodSigner func(ctx context.Context, pod *v1.Pod, recordPluginStats bool) fwk.PodSignature
+type PodSigner func(ctx context.Context, pod *v1.Pod) fwk.PodSignature
 
 // SchedulingQueue is an interface for a queue to store pods waiting to be scheduled.
 // The interface follows a pattern similar to cache.FIFO and cache.Heap and
@@ -1533,9 +1533,7 @@ func (p *PriorityQueue) signPod(ctx context.Context, pod *v1.Pod) fwk.PodSignatu
 		return nil
 	}
 
-	// Use same sampling mechanism as plugins
-	shouldRecordMetric := rand.Intn(100) < p.pluginMetricsSamplePercent
-	return signer(ctx, pod, shouldRecordMetric)
+	return signer(ctx, pod)
 }
 
 // newQueuedPodInfo builds a QueuedPodInfo object.
