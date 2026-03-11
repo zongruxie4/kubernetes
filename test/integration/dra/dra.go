@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand/v2"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -116,8 +117,13 @@ const (
 	schedulingTimeout = time.Minute
 )
 
-func TestDRA(t *testing.T) { testDRA(ktesting.Init(t)) }
-func testDRA(tCtx ktesting.TContext) {
+func Run(t *testing.T, whatRE string) { run(ktesting.Init(t), whatRE) }
+func run(tCtx ktesting.TContext, whatRE string) {
+	re, err := regexp.Compile(whatRE)
+	if err != nil {
+		tCtx.Fatalf("%s: %v", whatRE, err)
+	}
+
 	// Each sub-test brings up the API server in a certain
 	// configuration. These sub-tests must run sequentially because they
 	// change the global DefaultFeatureGate. For each configuration,
@@ -265,6 +271,10 @@ func testDRA(tCtx ktesting.TContext) {
 			},
 		},
 	} {
+		if !re.MatchString(name) {
+			continue
+		}
+
 		tCtx.Run(name, func(tCtx ktesting.TContext) {
 			var entries []string
 			for key, value := range tc.features {
