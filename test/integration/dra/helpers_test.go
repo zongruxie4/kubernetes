@@ -52,6 +52,7 @@ func must[R, P, O any](tCtx ktesting.TContext, call func(context.Context, P, O) 
 
 // createTestNamespace creates a namespace with a name that is derived from the
 // current test name:
+// - Strip TestDRA prefix.
 // - Non-alpha-numeric characters replaced by hyphen.
 // - Truncated in the middle to make it short enough for GenerateName.
 // - Hyphen plus random suffix added by the apiserver.
@@ -59,6 +60,7 @@ func createTestNamespace(tCtx ktesting.TContext, labels map[string]string) strin
 	tCtx.Helper()
 	name := regexp.MustCompile(`[^[:alnum:]_-]`).ReplaceAllString(tCtx.Name(), "-")
 	name = strings.ToLower(name)
+	name = strings.TrimPrefix(name, "testdra-")
 	// Make sure the generated name leaves enough room so we
 	// can use it as a prefix for the driver name.
 	if len(name) > (56 - len(driverNameSuffix)) {

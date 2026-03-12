@@ -116,7 +116,8 @@ const (
 	schedulingTimeout = time.Minute
 )
 
-func TestDRA(t *testing.T) {
+func TestDRA(t *testing.T) { testDRA(ktesting.Init(t)) }
+func testDRA(tCtx ktesting.TContext) {
 	// Each sub-test brings up the API server in a certain
 	// configuration. These sub-tests must run sequentially because they
 	// change the global DefaultFeatureGate. For each configuration,
@@ -136,20 +137,20 @@ func TestDRA(t *testing.T) {
 			apis:     map[schema.GroupVersion]bool{resourceapi.SchemeGroupVersion: false},
 			features: map[featuregate.Feature]bool{features.DynamicResourceAllocation: false},
 			f: func(tCtx ktesting.TContext) {
-				tCtx.Run("APIDisabled", testAPIDisabled)
-				tCtx.Run("Pod", func(tCtx ktesting.TContext) { testPod(tCtx, false) })
+				runSubTest(tCtx, "APIDisabled", testAPIDisabled)
+				runSubTest(tCtx, "Pod", func(tCtx ktesting.TContext) { testPod(tCtx, false) })
 			},
 		},
 		"default": {
 			apis:     map[schema.GroupVersion]bool{},
 			features: map[featuregate.Feature]bool{},
 			f: func(tCtx ktesting.TContext) {
-				tCtx.Run("Pod", func(tCtx ktesting.TContext) { testPod(tCtx, true) })
-				tCtx.Run("EvictClusterWithSlices", func(tCtx ktesting.TContext) { testEvictCluster(tCtx, useNoRule) })
+				runSubTest(tCtx, "Pod", func(tCtx ktesting.TContext) { testPod(tCtx, true) })
+				runSubTest(tCtx, "EvictClusterWithSlices", func(tCtx ktesting.TContext) { testEvictCluster(tCtx, useNoRule) })
 				// Number of devices per slice is chosen so that Filter takes a few seconds:
 				// without a timeout, the test doesn't run too long, but long enough that a short timeout triggers.
-				tCtx.Run("FilterTimeout", func(tCtx ktesting.TContext) { testFilterTimeout(tCtx, 20) })
-				tCtx.Run("UsesAllResources", testUsesAllResources)
+				runSubTest(tCtx, "FilterTimeout", func(tCtx ktesting.TContext) { testFilterTimeout(tCtx, 20) })
+				runSubTest(tCtx, "UsesAllResources", testUsesAllResources)
 			},
 		},
 		"GA": {
@@ -158,24 +159,24 @@ func TestDRA(t *testing.T) {
 				featuregate.Feature("AllBeta"): false,
 			},
 			f: func(tCtx ktesting.TContext) {
-				tCtx.Run("AdminAccess", func(tCtx ktesting.TContext) { testAdminAccess(tCtx, false) })
-				tCtx.Run("PartitionableDevices", func(tCtx ktesting.TContext) { testPartitionableDevices(tCtx, false) })
-				tCtx.Run("PrioritizedList", func(tCtx ktesting.TContext) { testPrioritizedList(tCtx, true) })
-				tCtx.Run("Pod", func(tCtx ktesting.TContext) { testPod(tCtx, true) })
-				tCtx.Run("PublishResourceSlices", func(tCtx ktesting.TContext) {
+				runSubTest(tCtx, "AdminAccess", func(tCtx ktesting.TContext) { testAdminAccess(tCtx, false) })
+				runSubTest(tCtx, "PartitionableDevices", func(tCtx ktesting.TContext) { testPartitionableDevices(tCtx, false) })
+				runSubTest(tCtx, "PrioritizedList", func(tCtx ktesting.TContext) { testPrioritizedList(tCtx, true) })
+				runSubTest(tCtx, "Pod", func(tCtx ktesting.TContext) { testPod(tCtx, true) })
+				runSubTest(tCtx, "PublishResourceSlices", func(tCtx ktesting.TContext) {
 					testPublishResourceSlices(tCtx, true, features.DRADeviceTaints, features.DRAPartitionableDevices, features.DRADeviceBindingConditions)
 				})
-				tCtx.Run("ExplicitExtendedResource", func(tCtx ktesting.TContext) { testExtendedResource(tCtx, false, true) })
-				tCtx.Run("ImplicitExtendedResource", func(tCtx ktesting.TContext) { testExtendedResource(tCtx, false, false) })
-				tCtx.Run("ResourceClaimDeviceStatus", func(tCtx ktesting.TContext) { testResourceClaimDeviceStatus(tCtx, false) })
-				tCtx.Run("DeviceBindingConditions", func(tCtx ktesting.TContext) { testDeviceBindingConditions(tCtx, false) })
-				tCtx.Run("ResourceSliceController", func(tCtx ktesting.TContext) {
+				runSubTest(tCtx, "ExplicitExtendedResource", func(tCtx ktesting.TContext) { testExtendedResource(tCtx, false, true) })
+				runSubTest(tCtx, "ImplicitExtendedResource", func(tCtx ktesting.TContext) { testExtendedResource(tCtx, false, false) })
+				runSubTest(tCtx, "ResourceClaimDeviceStatus", func(tCtx ktesting.TContext) { testResourceClaimDeviceStatus(tCtx, false) })
+				runSubTest(tCtx, "DeviceBindingConditions", func(tCtx ktesting.TContext) { testDeviceBindingConditions(tCtx, false) })
+				runSubTest(tCtx, "ResourceSliceController", func(tCtx ktesting.TContext) {
 					namespace := createTestNamespace(tCtx, nil)
 					tCtx = tCtx.WithNamespace(namespace)
 					TestCreateResourceSlices(tCtx, 100)
 				})
-				tCtx.Run("ShareResourceClaimSequentially", testShareResourceClaimSequentially)
-				tCtx.Run("UsesAllResources", testUsesAllResources)
+				runSubTest(tCtx, "ShareResourceClaimSequentially", testShareResourceClaimSequentially)
+				runSubTest(tCtx, "UsesAllResources", testUsesAllResources)
 			},
 		},
 		// This scenario verifies that features which have graduated to GA can
@@ -187,7 +188,7 @@ func TestDRA(t *testing.T) {
 				features.DRAPrioritizedList:    false,
 			},
 			f: func(tCtx ktesting.TContext) {
-				tCtx.Run("PrioritizedList", func(tCtx ktesting.TContext) { testPrioritizedList(tCtx, false) })
+				runSubTest(tCtx, "PrioritizedList", func(tCtx ktesting.TContext) { testPrioritizedList(tCtx, false) })
 			},
 		},
 		"v1beta1": {
@@ -197,7 +198,7 @@ func TestDRA(t *testing.T) {
 			},
 			features: map[featuregate.Feature]bool{features.DynamicResourceAllocation: true},
 			f: func(tCtx ktesting.TContext) {
-				tCtx.Run("PublishResourceSlices", func(tCtx ktesting.TContext) {
+				runSubTest(tCtx, "PublishResourceSlices", func(tCtx ktesting.TContext) {
 					testPublishResourceSlices(tCtx, false, features.DRADeviceBindingConditions)
 				})
 			},
@@ -212,7 +213,7 @@ func TestDRA(t *testing.T) {
 				features.DRADeviceTaintRules:       true,
 			},
 			f: func(tCtx ktesting.TContext) {
-				tCtx.Run("PublishResourceSlices", func(tCtx ktesting.TContext) {
+				runSubTest(tCtx, "PublishResourceSlices", func(tCtx ktesting.TContext) {
 					testPublishResourceSlices(tCtx, false, features.DRADeviceBindingConditions)
 				})
 			},
@@ -239,33 +240,32 @@ func TestDRA(t *testing.T) {
 			f: func(tCtx ktesting.TContext) {
 				// These tests must run in parallel as much as possible to keep overall runtime low!
 
-				tCtx.Run("AdminAccess", func(tCtx ktesting.TContext) { testAdminAccess(tCtx, true) })
-				tCtx.Run("Convert", testConvert)
-				tCtx.Run("ControllerManagerMetrics", testControllerManagerMetrics)
-				tCtx.Run("DeviceBindingConditions", func(tCtx ktesting.TContext) { testDeviceBindingConditions(tCtx, true) })
-				tCtx.Run("PartitionableDevices", func(tCtx ktesting.TContext) { testPartitionableDevices(tCtx, true) })
-				tCtx.Run("PrioritizedList", func(tCtx ktesting.TContext) { testPrioritizedList(tCtx, true) })
-				tCtx.Run("PrioritizedListScoring", func(tCtx ktesting.TContext) { testPrioritizedListScoring(tCtx) })
-				tCtx.Run("PublishResourceSlices", func(tCtx ktesting.TContext) { testPublishResourceSlices(tCtx, true) })
-				tCtx.Run("ExplicitExtendedResource", func(tCtx ktesting.TContext) { testExtendedResource(tCtx, true, true) })
-				tCtx.Run("ImplicitExtendedResource", func(tCtx ktesting.TContext) { testExtendedResource(tCtx, true, false) })
-				tCtx.Run("ResourceClaimDeviceStatus", func(tCtx ktesting.TContext) { testResourceClaimDeviceStatus(tCtx, true) })
-				tCtx.Run("MaxResourceSlice", testMaxResourceSlice)
-				tCtx.Run("EvictClusterWithV1alpha3Rule", func(tCtx ktesting.TContext) { testEvictCluster(tCtx, useV1alpha3Rule) })
-				tCtx.Run("EvictClusterWithV1beta2Rule", func(tCtx ktesting.TContext) { testEvictCluster(tCtx, useV1beta2Rule) })
-				tCtx.Run("EvictClusterWithSlices", func(tCtx ktesting.TContext) { testEvictCluster(tCtx, useNoRule) })
-				tCtx.Run("InvalidResourceSlices", testInvalidResourceSlices)
+				runSubTest(tCtx, "AdminAccess", func(tCtx ktesting.TContext) { testAdminAccess(tCtx, true) })
+				runSubTest(tCtx, "Convert", testConvert)
+				runSubTest(tCtx, "ControllerManagerMetrics", testControllerManagerMetrics)
+				runSubTest(tCtx, "DeviceBindingConditions", func(tCtx ktesting.TContext) { testDeviceBindingConditions(tCtx, true) })
+				runSubTest(tCtx, "PartitionableDevices", func(tCtx ktesting.TContext) { testPartitionableDevices(tCtx, true) })
+				runSubTest(tCtx, "PrioritizedList", func(tCtx ktesting.TContext) { testPrioritizedList(tCtx, true) })
+				runSubTest(tCtx, "PrioritizedListScoring", func(tCtx ktesting.TContext) { testPrioritizedListScoring(tCtx) })
+				runSubTest(tCtx, "PublishResourceSlices", func(tCtx ktesting.TContext) { testPublishResourceSlices(tCtx, true) })
+				runSubTest(tCtx, "ExplicitExtendedResource", func(tCtx ktesting.TContext) { testExtendedResource(tCtx, true, true) })
+				runSubTest(tCtx, "ImplicitExtendedResource", func(tCtx ktesting.TContext) { testExtendedResource(tCtx, true, false) })
+				runSubTest(tCtx, "ResourceClaimDeviceStatus", func(tCtx ktesting.TContext) { testResourceClaimDeviceStatus(tCtx, true) })
+				runSubTest(tCtx, "MaxResourceSlice", testMaxResourceSlice)
+				runSubTest(tCtx, "EvictClusterWithV1alpha3Rule", func(tCtx ktesting.TContext) { testEvictCluster(tCtx, useV1alpha3Rule) })
+				runSubTest(tCtx, "EvictClusterWithV1beta2Rule", func(tCtx ktesting.TContext) { testEvictCluster(tCtx, useV1beta2Rule) })
+				runSubTest(tCtx, "EvictClusterWithSlices", func(tCtx ktesting.TContext) { testEvictCluster(tCtx, useNoRule) })
+				runSubTest(tCtx, "InvalidResourceSlices", testInvalidResourceSlices)
 				// Number of devices per slice is chosen so that Filter takes a few seconds: The allocator
 				// in the experimental channel has an improvement that requires a higher number here than
 				// in the incubating and stable channels.
-				tCtx.Run("FilterTimeout", func(tCtx ktesting.TContext) { testFilterTimeout(tCtx, 20) })
-				tCtx.Run("ShareResourceClaimSequentially", testShareResourceClaimSequentially)
-				tCtx.Run("UsesAllResources", testUsesAllResources)
+				runSubTest(tCtx, "FilterTimeout", func(tCtx ktesting.TContext) { testFilterTimeout(tCtx, 20) })
+				runSubTest(tCtx, "ShareResourceClaimSequentially", testShareResourceClaimSequentially)
+				runSubTest(tCtx, "UsesAllResources", testUsesAllResources)
 			},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			tCtx := ktesting.Init(t)
+		tCtx.Run(name, func(tCtx ktesting.TContext) {
 			var entries []string
 			for key, value := range tc.features {
 				entries = append(entries, fmt.Sprintf("%s=%t", key, value))
@@ -274,13 +274,13 @@ func TestDRA(t *testing.T) {
 				entries = append(entries, fmt.Sprintf("%s=%t", key, value))
 			}
 			sort.Strings(entries)
-			t.Logf("Config: %s", strings.Join(entries, ","))
+			tCtx.Logf("Config: %s", strings.Join(entries, ","))
 
 			// We need to set emulation version for DynamicResourceAllocation feature gate, which is locked at 1.35.
 			if draEnabled, draExists := tc.features[features.DynamicResourceAllocation]; draExists && !draEnabled {
-				featuregatetesting.SetFeatureGateEmulationVersionDuringTest(t, utilfeature.DefaultFeatureGate, version.MustParse("1.34"))
+				featuregatetesting.SetFeatureGateEmulationVersionDuringTest(tCtx, utilfeature.DefaultFeatureGate, version.MustParse("1.34"))
 			}
-			featuregatetesting.SetFeatureGatesDuringTest(t, utilfeature.DefaultFeatureGate, tc.features)
+			featuregatetesting.SetFeatureGatesDuringTest(tCtx, utilfeature.DefaultFeatureGate, tc.features)
 
 			etcdOptions := framework.SharedEtcd()
 			apiServerOptions := kubeapiservertesting.NewDefaultTestServerOptions()
@@ -290,7 +290,12 @@ func TestDRA(t *testing.T) {
 				runtimeConfigs = append(runtimeConfigs, fmt.Sprintf("%s=%t", key, value))
 			}
 			apiServerFlags = append(apiServerFlags, "--runtime-config="+strings.Join(runtimeConfigs, ","))
-			server := kubeapiservertesting.StartTestServerOrDie(t, apiServerOptions, apiServerFlags, etcdOptions)
+
+			// Keep the apiserver running despite context cancelation.
+			// We may want to collect some information from it below.
+			// It then gets stopped explicitly at the end of shutdown.
+			server, err := kubeapiservertesting.StartTestServer(tCtx.WithoutCancel(), apiServerOptions, apiServerFlags, etcdOptions)
+			tCtx.ExpectNoError(err, "start apiserver")
 			tCtx.CleanupCtx(func(tCtx ktesting.TContext) {
 				tCtx.Log("Stopping the apiserver...")
 				server.TearDownFn()
@@ -300,6 +305,57 @@ func TestDRA(t *testing.T) {
 			createNodes(tCtx)
 			tCtx = prepareScheduler(tCtx)
 			tCtx = prepareClaimController(tCtx)
+
+			// To isolate different tests properly, each test must ensure that it
+			// only allocates its own devices. We can verify that here by making sure that
+			// driver names of allocated devices contain the namespace. That is how all tests
+			// should construct their driver name(s).
+			//
+			// We run this in parallel to the tests because post-test checking might miss claims.
+			informerFactory := informers.NewSharedInformerFactory(tCtx.Client(), 0)
+			claimHandle, err := informerFactory.Resource().V1().ResourceClaims().Informer().AddEventHandlerWithOptions(cache.ResourceEventHandlerFuncs{
+				UpdateFunc: func(oldObj, newObj any) {
+					oldClaim := oldObj.(*resourceapi.ResourceClaim)
+					newClaim := newObj.(*resourceapi.ResourceClaim)
+
+					// Check an allocation once when it appears.
+					if oldClaim.Status.Allocation == nil && newClaim.Status.Allocation != nil {
+						for _, result := range newClaim.Status.Allocation.Devices.Results {
+							if !strings.Contains(result.Driver, newClaim.Namespace) {
+								tCtx.Errorf("Claim %s has allocated device %#v from a driver in some other test (%s):\n%s", klog.KObj(newClaim), result, result.Driver, format.Object(newClaim, 1))
+								break
+							}
+						}
+					}
+				},
+			}, cache.HandlerOptions{
+				Logger: ptr.To(tCtx.Logger()),
+			})
+			tCtx.ExpectNoError(err, "add claim event handler")
+			informerFactory.StartWithContext(tCtx)
+			tCtx.Cleanup(func() {
+				tCtx.Cancel("test is done")
+				_ = informerFactory.Resource().V1().ResourceClaims().Informer().RemoveEventHandler(claimHandle)
+				informerFactory.Shutdown()
+			})
+
+			// Dump some information in case of a test failure before continuing with the shutdown.
+			// If we timed out, then we should still get this done, even if the shutdown itself
+			// then fails.
+			tCtx.CleanupCtx(func(tCtx ktesting.TContext) {
+				if !tCtx.Failed() {
+					return
+				}
+
+				namespaces, _ := tCtx.Client().CoreV1().Namespaces().List(tCtx, metav1.ListOptions{})
+				tCtx.Logf("Namespaces:\n%s", format.Object(namespaces, 0))
+				claims, _ := tCtx.Client().ResourceV1().ResourceClaims("").List(tCtx, metav1.ListOptions{})
+				tCtx.Logf("ResourceClaims:\n%s", format.Object(claims, 0))
+				classes, _ := tCtx.Client().ResourceV1().DeviceClasses().List(tCtx, metav1.ListOptions{})
+				tCtx.Logf("DeviceClasses:\n%s", format.Object(classes, 0))
+				slices, _ := tCtx.Client().ResourceV1().ResourceSlices().List(tCtx, metav1.ListOptions{})
+				tCtx.Logf("ResourceSlices:\n%s", format.Object(slices, 0))
+			})
 
 			tc.f(tCtx)
 		})
@@ -357,6 +413,20 @@ func createNodes(tCtx ktesting.TContext) {
 		} else {
 			tCtx.Logf("Nodes:\n%s", format.Object(nodes.Items, 1))
 		}
+	})
+}
+
+// runSubTest re-initializes the client inside the sub-test to ensure that the
+// user agent is set based on the sub-test's name. This then shows up in
+// apiserver output. Unfortunately it does not change the credentials and therefore
+// all tests appear as the same manager in ManagedFields.
+//
+// tCtx.Run() itself doesn't do that because the tests might have set REST
+// config and clients differently in the parent context.
+func runSubTest(tCtx ktesting.TContext, name string, cb func(tCtx ktesting.TContext)) {
+	tCtx.Run(name, func(tCtx ktesting.TContext) {
+		tCtx = tCtx.WithRESTConfig(tCtx.RESTConfig())
+		cb(tCtx)
 	})
 }
 
@@ -655,7 +725,7 @@ func testFilterTimeout(tCtx ktesting.TContext, devicesPerSlice int) {
 	claim.Spec.Devices.Requests[0].Exactly.Count = int64(devicesPerSlice + 1) // Impossible to allocate.
 	claim = createClaim(tCtx, namespace, "", class, claim)
 
-	tCtx.Run("disabled", func(tCtx ktesting.TContext) {
+	runSubTest(tCtx, "disabled", func(tCtx ktesting.TContext) {
 		pod := createPod(tCtx, namespace, "", podWithClaimName, claim)
 		startSchedulerWithConfig(tCtx, `
 profiles:
@@ -668,7 +738,7 @@ profiles:
 		expectPodUnschedulable(tCtx, pod, "cannot allocate all claims")
 	})
 
-	tCtx.Run("enabled", func(tCtx ktesting.TContext) {
+	runSubTest(tCtx, "enabled", func(tCtx ktesting.TContext) {
 		pod := createPod(tCtx, namespace, "", podWithClaimName, claim)
 		startSchedulerWithConfig(tCtx, `
 profiles:
@@ -787,7 +857,7 @@ func testPrioritizedListScoring(tCtx ktesting.TContext) {
 
 	startScheduler(tCtx)
 
-	tCtx.Run("single-claim", func(tCtx ktesting.TContext) {
+	runSubTest(tCtx, "single-claim", func(tCtx ktesting.TContext) {
 		var firstAvailable []resourceapi.DeviceSubRequest
 		for i := range nodeInfos {
 			firstAvailable = append(firstAvailable, resourceapi.DeviceSubRequest{
@@ -810,7 +880,7 @@ func testPrioritizedListScoring(tCtx ktesting.TContext) {
 		}).WithTimeout(schedulingTimeout).WithPolling(time.Second).Should(expectedAllocatedClaim(expectedSelectedRequest, nodeInfos[0]))
 	})
 
-	tCtx.Run("multi-claim", func(tCtx ktesting.TContext) {
+	runSubTest(tCtx, "multi-claim", func(tCtx ktesting.TContext) {
 		// Set up two claims where the node in nodeInfos[2] will be the best
 		// option:
 		// nodeInfos[1]: rank 1 in claim1 and rank 3 in claim2, so it will get a score of 14
@@ -1236,7 +1306,7 @@ func testPublishResourceSlices(tCtx ktesting.TContext, haveLatestAPI bool, disab
 
 	// Each sub-test starts with no slices and must clean up after itself.
 
-	tCtx.Run("create", func(tCtx ktesting.TContext) {
+	runSubTest(tCtx, "create", func(tCtx ktesting.TContext) {
 		controller, getStats, expectedStats := setup(tCtx)
 
 		// No further changes necessary.
@@ -1264,7 +1334,7 @@ func testPublishResourceSlices(tCtx ktesting.TContext, haveLatestAPI bool, disab
 		return
 	}
 
-	tCtx.Run("recreate-after-delete", func(tCtx ktesting.TContext) {
+	runSubTest(tCtx, "recreate-after-delete", func(tCtx ktesting.TContext) {
 		_, getStats, expectedStats := setup(tCtx)
 		tCtx.Consistently(getStats).WithTimeout(quiesencePeriod).Should(gomega.Equal(expectedStats))
 
@@ -1280,7 +1350,7 @@ func testPublishResourceSlices(tCtx ktesting.TContext, haveLatestAPI bool, disab
 		}
 	})
 
-	tCtx.Run("fix-after-update", func(tCtx ktesting.TContext) {
+	runSubTest(tCtx, "fix-after-update", func(tCtx ktesting.TContext) {
 		_, getStats, expectedStats := setup(tCtx)
 
 		// Stress the controller by repeatedly updatings the slices.
@@ -1312,7 +1382,14 @@ func testPublishResourceSlices(tCtx ktesting.TContext, haveLatestAPI bool, disab
 func testResourceClaimDeviceStatus(tCtx ktesting.TContext, enabled bool) {
 	tCtx.Parallel()
 
+	// Create a unique namespace and derive strings which should better be globally
+	// unique from it.
 	namespace := createTestNamespace(tCtx, nil)
+	driverNamePrefix := "driver-" + namespace + "-"
+	driverName1 := driverNamePrefix + "one"
+	driverName2 := driverNamePrefix + "two"
+	driverName3 := driverNamePrefix + "three"
+	deviceClass := "class-" + namespace
 
 	claim := &resourceapi.ResourceClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1324,7 +1401,7 @@ func testResourceClaimDeviceStatus(tCtx ktesting.TContext, enabled bool) {
 					{
 						Name: "foo",
 						Exactly: &resourceapi.ExactDeviceRequest{
-							DeviceClassName: "foo",
+							DeviceClassName: deviceClass,
 						},
 					},
 				},
@@ -1336,7 +1413,7 @@ func testResourceClaimDeviceStatus(tCtx ktesting.TContext, enabled bool) {
 	tCtx.ExpectNoError(err, "create ResourceClaim")
 
 	deviceStatus := []resourceapi.AllocatedDeviceStatus{{
-		Driver: "one",
+		Driver: driverName1,
 		Pool:   "global",
 		Device: "my-device",
 		Data: &runtime.RawExtension{
@@ -1371,19 +1448,19 @@ func testResourceClaimDeviceStatus(tCtx ktesting.TContext, enabled bool) {
 			Results: []resourceapi.DeviceRequestAllocationResult{
 				{
 					Request: "foo",
-					Driver:  "one",
+					Driver:  driverName1,
 					Pool:    "global",
 					Device:  "my-device",
 				},
 				{
 					Request: "foo",
-					Driver:  "two",
+					Driver:  driverName2,
 					Pool:    "global",
 					Device:  "another-device",
 				},
 				{
 					Request: "foo",
-					Driver:  "three",
+					Driver:  driverName3,
 					Pool:    "global",
 					Device:  "my-device",
 				},
@@ -1408,12 +1485,12 @@ func testResourceClaimDeviceStatus(tCtx ktesting.TContext, enabled bool) {
 
 	// Exercise SSA.
 	deviceStatusAC := resourceapiac.AllocatedDeviceStatus().
-		WithDriver("two").
+		WithDriver(driverName2).
 		WithPool("global").
 		WithDevice("another-device").
 		WithNetworkData(resourceapiac.NetworkDeviceData().WithInterfaceName("net-2"))
 	deviceStatus = append(deviceStatus, resourceapi.AllocatedDeviceStatus{
-		Driver: "two",
+		Driver: driverName2,
 		Pool:   "global",
 		Device: "another-device",
 		NetworkData: &resourceapi.NetworkDeviceData{
@@ -1430,12 +1507,12 @@ func testResourceClaimDeviceStatus(tCtx ktesting.TContext, enabled bool) {
 	require.Equal(tCtx, deviceStatus, claim.Status.Devices, "after applying device status two")
 
 	deviceStatusAC = resourceapiac.AllocatedDeviceStatus().
-		WithDriver("three").
+		WithDriver(driverName3).
 		WithPool("global").
 		WithDevice("my-device").
 		WithNetworkData(resourceapiac.NetworkDeviceData().WithInterfaceName("net-3"))
 	deviceStatus = append(deviceStatus, resourceapi.AllocatedDeviceStatus{
-		Driver: "three",
+		Driver: driverName3,
 		Pool:   "global",
 		Device: "my-device",
 		NetworkData: &resourceapi.NetworkDeviceData{
@@ -1458,7 +1535,7 @@ func testResourceClaimDeviceStatus(tCtx ktesting.TContext, enabled bool) {
 
 	// Update one entry, remove the other.
 	deviceStatusAC = resourceapiac.AllocatedDeviceStatus().
-		WithDriver("two").
+		WithDriver(driverName2).
 		WithPool("global").
 		WithDevice("another-device").
 		WithNetworkData(resourceapiac.NetworkDeviceData().WithInterfaceName("yet-another-net"))
@@ -1485,7 +1562,7 @@ func testResourceClaimDeviceStatus(tCtx ktesting.TContext, enabled bool) {
 // and prints some information about it.
 func testMaxResourceSlice(tCtx ktesting.TContext) {
 	for name, slice := range NewMaxResourceSlices() {
-		tCtx.Run(name, func(tCtx ktesting.TContext) {
+		runSubTest(tCtx, name, func(tCtx ktesting.TContext) {
 			createdSlice := createSlice(tCtx, slice)
 			totalSize := createdSlice.Size()
 			var managedFieldsSize int
@@ -1823,7 +1900,7 @@ func testInvalidResourceSlices(tCtx ktesting.TContext) {
 	}
 
 	for tn, tc := range testCases {
-		tCtx.Run(tn, func(tCtx ktesting.TContext) {
+		runSubTest(tCtx, tn, func(tCtx ktesting.TContext) {
 			namespace := createTestNamespace(tCtx, nil)
 			class, driverName := createTestClass(tCtx, namespace)
 			for _, slice := range tc.slices {
