@@ -4960,7 +4960,7 @@ func TestPriorityQueue_signPod(t *testing.T) {
 			signature := q.signPod(tCtx, tt.pod)
 
 			if !bytes.Equal(signature, tt.expectedSignature) {
-				t.Errorf("Expected signature %v, got %v", tt.expectedSignature, signature)
+				t.Errorf("Expected signature '%s', got '%s'", string(tt.expectedSignature), string(signature))
 			}
 		})
 	}
@@ -5001,7 +5001,7 @@ func TestPriorityQueue_SignatureReuse(t *testing.T) {
 	}
 	expectedSig := fwk.PodSignature("sig-pod1")
 	if !bytes.Equal(pInfo.PodSignature, expectedSig) {
-		t.Errorf("Expected signature %v, got %v", expectedSig, pInfo.PodSignature)
+		t.Errorf("Expected signature '%s', got '%s'", string(expectedSig), string(pInfo.PodSignature))
 	}
 
 	// Signature should not be recomputed on Pop
@@ -5028,20 +5028,15 @@ func TestQueuedPodInfo_UpdateInvalidatesSignature(t *testing.T) {
 	}
 
 	if pInfo.PodSignature != nil {
-		t.Errorf("Expected signature to be nil after Update, got %v", pInfo.PodSignature)
+		t.Errorf("Expected signature to be nil after Update, got '%s'", string(pInfo.PodSignature))
 	}
 }
 
-func TestPriorityQueue_UpdateRecomputesSignature(t *testing.T) {
+func TestPriorityQueue_AddComputesSignature(t *testing.T) {
 	featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.OpportunisticBatching, true)
-
-	_, ctx := ktesting.NewTestContext(t)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	signers := map[string]PodSigner{
 		"default-scheduler": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
-			// Signature based on label value
 			if val, ok := pod.Labels["key"]; ok {
 				return fwk.PodSignature(fmt.Sprintf("sig-%s", val))
 			}
@@ -5049,32 +5044,88 @@ func TestPriorityQueue_UpdateRecomputesSignature(t *testing.T) {
 		},
 	}
 
-	q := NewTestQueue(ctx, newDefaultQueueSort(), WithPodSigners(signers))
+	tCtx := ktesting.Init(t)
+	q := NewTestQueue(tCtx, newDefaultQueueSort(), WithPodSigners(signers))
 
-	pod1 := st.MakePod().Name("pod1").SchedulerName("default-scheduler").Label("key", "value1").Obj()
-	q.Add(ctx, pod1)
+	pod := st.MakePod().Name("pod1").SchedulerName("default-scheduler").Label("key", "value1").Obj()
+	q.Add(tCtx, pod)
 
-	// Check initial signature
-	pInfo, exists := q.GetPod(pod1.Name, pod1.Namespace)
+	pInfo, exists := q.GetPod(pod.Name, pod.Namespace)
 	if !exists {
-		t.Fatal("Pod not found in queue")
+		t.Fatal("Pod not found in queue after Add")
 	}
 	if !bytes.Equal(pInfo.PodSignature, fwk.PodSignature("sig-value1")) {
-		t.Errorf("Expected signature 'sig-value1', got %v", pInfo.PodSignature)
+		t.Errorf("Expected signature 'sig-value1', got '%s'", string(pInfo.PodSignature))
+	}
+}
+
+func TestPriorityQueue_UpdateRecomputesSignature(t *testing.T) {
+	featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.OpportunisticBatching, true)
+
+	signers := map[string]PodSigner{
+		"default-scheduler": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
+			if val, ok := pod.Labels["key"]; ok {
+				return fwk.PodSignature(fmt.Sprintf("sig-%s", val))
+			}
+			return fwk.PodSignature("sig-default")
+		},
 	}
 
-	// Update pod with different label
+	pod1 := st.MakePod().Name("pod1").SchedulerName("default-scheduler").Label("key", "value1").Obj()
 	pod2 := pod1.DeepCopy()
 	pod2.Labels["key"] = "value2"
-	q.Update(ctx, pod1, pod2)
 
-	// Check signature was recomputed
-	pInfo, exists = q.GetPod(pod2.Name, pod2.Namespace)
-	if !exists {
-		t.Fatal("Pod not found in queue after update")
+	tests := []struct {
+		name        string
+		prepareFunc func(tCtx ktesting.TContext, q *PriorityQueue)
+	}{
+		{
+			name: "pod in activeQ",
+			prepareFunc: func(tCtx ktesting.TContext, q *PriorityQueue) {
+				q.Add(tCtx, pod1)
+			},
+		},
+		{
+			name: "pod in backoffQ",
+			prepareFunc: func(tCtx ktesting.TContext, q *PriorityQueue) {
+				pInfo := q.newQueuedPodInfo(tCtx, pod1)
+				q.backoffQ.add(klog.FromContext(tCtx), pInfo, framework.EventUnscheduledPodAdd.Label())
+			},
+		},
+		{
+			name: "pod in unschedulablePods",
+			prepareFunc: func(tCtx ktesting.TContext, q *PriorityQueue) {
+				pInfo := q.newQueuedPodInfo(tCtx, pod1)
+				q.unschedulablePods.addOrUpdate(pInfo, false, framework.EventUnscheduledPodAdd.Label())
+			},
+		},
+		{
+			name:        "pod not in any queue",
+			prepareFunc: nil,
+		},
 	}
-	if !bytes.Equal(pInfo.PodSignature, fwk.PodSignature("sig-value2")) {
-		t.Errorf("Expected signature 'sig-value2', got %v", pInfo.PodSignature)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tCtx := ktesting.Init(t)
+			q := NewTestQueue(tCtx, newDefaultQueueSort(), WithPodSigners(signers))
+
+			if tt.prepareFunc != nil {
+				tt.prepareFunc(tCtx, q)
+			}
+
+			// Update pod with different label
+			q.Update(tCtx, pod1, pod2)
+
+			// Check signature was recomputed
+			pInfo, exists := q.GetPod(pod2.Name, pod2.Namespace)
+			if !exists {
+				t.Fatal("Pod not found in queue after update")
+			}
+			if !bytes.Equal(pInfo.PodSignature, fwk.PodSignature("sig-value2")) {
+				t.Errorf("Expected signature 'sig-value2', got '%s'", string(pInfo.PodSignature))
+			}
+		})
 	}
 }
 
@@ -5109,12 +5160,12 @@ func TestPriorityQueue_MultipleProfiles(t *testing.T) {
 	pInfo3, _ := q.GetPod(pod3.Name, pod3.Namespace)
 
 	if !bytes.Equal(pInfo1.PodSignature, fwk.PodSignature("sig-scheduler-1")) {
-		t.Errorf("Pod1: expected 'sig-scheduler-1', got %v", pInfo1.PodSignature)
+		t.Errorf("Pod1: expected 'sig-scheduler-1', got '%s'", string(pInfo1.PodSignature))
 	}
 	if !bytes.Equal(pInfo2.PodSignature, fwk.PodSignature("sig-scheduler-2")) {
-		t.Errorf("Pod2: expected 'sig-scheduler-2', got %v", pInfo2.PodSignature)
+		t.Errorf("Pod2: expected 'sig-scheduler-2', got '%s'", string(pInfo2.PodSignature))
 	}
 	if pInfo3.PodSignature != nil {
-		t.Errorf("Pod3: expected nil signature (no signer), got %v", pInfo3.PodSignature)
+		t.Errorf("Pod3: expected nil signature (no signer), got '%s'", string(pInfo3.PodSignature))
 	}
 }
