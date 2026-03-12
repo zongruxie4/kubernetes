@@ -1529,7 +1529,7 @@ func (p *PriorityQueue) signPod(ctx context.Context, pod *v1.Pod) fwk.PodSignatu
 	signer, ok := p.podSigners[pod.Spec.SchedulerName]
 	if !ok {
 		logger := klog.FromContext(ctx)
-		utilruntime.HandleErrorWithLogger(logger, nil, "No signer registered for scheduler profile", "pod", klog.KObj(pod), "scheduler", pod.Spec.SchedulerName)
+		utilruntime.HandleErrorWithContext(ctx, nil, "No signer registered for scheduler profile", "pod", klog.KObj(pod), "schedulerName", pod.Spec.SchedulerName)
 		return nil
 	}
 
