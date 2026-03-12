@@ -138,7 +138,7 @@ func NewMetricsAsyncRecorder(bufferSize int, interval time.Duration, stopCh <-ch
 	return recorder
 }
 
-// ObserveFrameworkDurationAsync observes the framework_extension_point_duration_seconds metric.
+// ObserveFrameworkExtensionPointDurationAsync observes the framework_extension_point_duration_seconds metric.
 // The metric will be flushed to Prometheus asynchronously.
 func (r *MetricAsyncRecorder) ObserveFrameworkExtensionPointDurationAsync(extensionPoint, status, profileName string, value float64) {
 	r.observeMetricAsync(FrameworkExtensionPointDuration, value, extensionPoint, status, profileName)

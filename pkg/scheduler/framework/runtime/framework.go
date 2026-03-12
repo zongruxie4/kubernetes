@@ -855,7 +855,7 @@ func (f *frameworkImpl) SignPod(ctx context.Context, pod *v1.Pod) fwk.PodSignatu
 
 	startTime := time.Now()
 	defer func() {
-		f.metricsRecorder.ObserveFrameworkDurationAsync(metrics.Sign, status.Code().String(), f.profileName, metrics.SinceInSeconds(startTime))
+		f.metricsRecorder.ObserveFrameworkExtensionPointDurationAsync(metrics.Sign, status.Code().String(), f.profileName, metrics.SinceInSeconds(startTime))
 	}()
 
 	if !f.enableSignatures {

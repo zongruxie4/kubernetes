@@ -630,6 +630,8 @@ func (pqi *QueuedPodInfo) DeepCopy() *QueuedPodInfo {
 	}
 }
 
+// Update updates the pod in QueuedPodInfo and clears the cached PodSignature,
+// since the updated pod may no longer match the signature computed for the previous version.
 func (pqi *QueuedPodInfo) Update(pod *v1.Pod) error {
 	pqi.PodSignature = nil
 	return pqi.PodInfo.Update(pod)
