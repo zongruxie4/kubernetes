@@ -1,4 +1,12 @@
 rules:
+- destination: streaming
+  branches:
+  - name: master
+    source:
+      branch: master
+      dirs:
+      - staging/src/k8s.io/streaming
+  library: true
 - destination: apimachinery
   branches:
   - name: master
@@ -1314,14 +1322,6 @@ rules:
       branch: master
       dirs:
       - staging/src/k8s.io/cri-streaming
-  library: true
-- destination: streaming
-  branches:
-  - name: master
-    source:
-      branch: master
-      dirs:
-      - staging/src/k8s.io/streaming
   library: true
 - destination: kubelet
   branches:
