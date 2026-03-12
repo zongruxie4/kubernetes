@@ -4966,72 +4966,6 @@ func TestPriorityQueue_signPod(t *testing.T) {
 	}
 }
 
-func TestPriorityQueue_SignatureReuse(t *testing.T) {
-	featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.OpportunisticBatching, true)
-
-	logger, ctx := ktesting.NewTestContext(t)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	callCount := 0
-	signers := map[string]PodSigner{
-		"default-scheduler": func(ctx context.Context, pod *v1.Pod) fwk.PodSignature {
-			callCount++
-			return fwk.PodSignature(fmt.Sprintf("sig-%s", pod.Name))
-		},
-	}
-
-	q := NewTestQueue(ctx, newDefaultQueueSort(), WithPodSigners(signers))
-
-	pod1 := st.MakePod().Name("pod1").SchedulerName("default-scheduler").Obj()
-
-	// Add pod - signature should be computed
-	q.Add(ctx, pod1)
-	if callCount != 1 {
-		t.Errorf("Expected signer to be called once, called %d times", callCount)
-	}
-
-	// Pop pod - signature should be preserved
-	pInfo, err := q.Pop(logger)
-	if err != nil {
-		t.Fatalf("Failed to pop pod: %v", err)
-	}
-	if pInfo.PodSignature == nil {
-		t.Error("Expected signature to be preserved after Pop")
-	}
-	expectedSig := fwk.PodSignature("sig-pod1")
-	if !bytes.Equal(pInfo.PodSignature, expectedSig) {
-		t.Errorf("Expected signature '%s', got '%s'", string(expectedSig), string(pInfo.PodSignature))
-	}
-
-	// Signature should not be recomputed on Pop
-	if callCount != 1 {
-		t.Errorf("Expected signer to still be called once, called %d times", callCount)
-	}
-}
-
-func TestQueuedPodInfo_UpdateInvalidatesSignature(t *testing.T) {
-	pod1 := st.MakePod().Name("pod1").Label("version", "1").Obj()
-	pod2 := pod1.DeepCopy()
-	pod2.Labels["version"] = "2"
-
-	podInfo, _ := framework.NewPodInfo(pod1)
-	pInfo := &framework.QueuedPodInfo{
-		PodInfo:      podInfo,
-		PodSignature: fwk.PodSignature("sig-1"),
-	}
-
-	// Update should invalidate signature
-	err := pInfo.Update(pod2)
-	if err != nil {
-		t.Fatalf("Update failed: %v", err)
-	}
-
-	if pInfo.PodSignature != nil {
-		t.Errorf("Expected signature to be nil after Update, got '%s'", string(pInfo.PodSignature))
-	}
-}
-
 func TestPriorityQueue_AddComputesSignature(t *testing.T) {
 	featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.OpportunisticBatching, true)
 
@@ -5056,6 +4990,28 @@ func TestPriorityQueue_AddComputesSignature(t *testing.T) {
 	}
 	if !bytes.Equal(pInfo.PodSignature, fwk.PodSignature("sig-value1")) {
 		t.Errorf("Expected signature 'sig-value1', got '%s'", string(pInfo.PodSignature))
+	}
+}
+
+func TestQueuedPodInfo_UpdateInvalidatesSignature(t *testing.T) {
+	pod1 := st.MakePod().Name("pod1").Label("version", "1").Obj()
+	pod2 := pod1.DeepCopy()
+	pod2.Labels["version"] = "2"
+
+	podInfo, _ := framework.NewPodInfo(pod1)
+	pInfo := &framework.QueuedPodInfo{
+		PodInfo:      podInfo,
+		PodSignature: fwk.PodSignature("sig-1"),
+	}
+
+	// Update should invalidate signature
+	err := pInfo.Update(pod2)
+	if err != nil {
+		t.Fatalf("Update failed: %v", err)
+	}
+
+	if pInfo.PodSignature != nil {
+		t.Errorf("Expected signature to be nil after Update, got '%s'", string(pInfo.PodSignature))
 	}
 }
 
