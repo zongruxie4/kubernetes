@@ -34,8 +34,21 @@ import (
 	"k8s.io/kubernetes/test/e2e/storage/utils"
 )
 
-func getVolumeGroupSnapshot(labels map[string]interface{}, ns, snapshotClassName string) *unstructured.Unstructured {
-	snapshot := &unstructured.Unstructured{
+// MakeVolumeGroupSnapshot constructs a VolumeGroupSnapshot object with a label selector.
+// snapshotClassName is optional; if empty, the cluster's default VolumeGroupSnapshotClass
+// will be used by the controller.
+func MakeVolumeGroupSnapshot(ns string, matchLabels map[string]interface{}, snapshotClassName string) *unstructured.Unstructured {
+	spec := map[string]interface{}{
+		"source": map[string]interface{}{
+			"selector": map[string]interface{}{
+				"matchLabels": matchLabels,
+			},
+		},
+	}
+	if snapshotClassName != "" {
+		spec["volumeGroupSnapshotClassName"] = snapshotClassName
+	}
+	return &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"kind":       "VolumeGroupSnapshot",
 			"apiVersion": utils.VolumeGroupSnapshotAPIVersion,
@@ -43,18 +56,13 @@ func getVolumeGroupSnapshot(labels map[string]interface{}, ns, snapshotClassName
 				"generateName": "group-snapshot-",
 				"namespace":    ns,
 			},
-			"spec": map[string]interface{}{
-				"volumeGroupSnapshotClassName": snapshotClassName,
-				"source": map[string]interface{}{
-					"selector": map[string]interface{}{
-						"matchLabels": labels,
-					},
-				},
-			},
+			"spec": spec,
 		},
 	}
+}
 
-	return snapshot
+func getVolumeGroupSnapshot(labels map[string]interface{}, ns, snapshotClassName string) *unstructured.Unstructured {
+	return MakeVolumeGroupSnapshot(ns, labels, snapshotClassName)
 }
 
 // VolumeGroupSnapshotResource represents a volumegroupsnapshot class, a volumegroupsnapshot and its bound contents for a specific test case
