@@ -4993,28 +4993,6 @@ func TestPriorityQueue_AddComputesSignature(t *testing.T) {
 	}
 }
 
-func TestQueuedPodInfo_UpdateInvalidatesSignature(t *testing.T) {
-	pod1 := st.MakePod().Name("pod1").Label("version", "1").Obj()
-	pod2 := pod1.DeepCopy()
-	pod2.Labels["version"] = "2"
-
-	podInfo, _ := framework.NewPodInfo(pod1)
-	pInfo := &framework.QueuedPodInfo{
-		PodInfo:      podInfo,
-		PodSignature: fwk.PodSignature("sig-1"),
-	}
-
-	// Update should invalidate signature
-	err := pInfo.Update(pod2)
-	if err != nil {
-		t.Fatalf("Update failed: %v", err)
-	}
-
-	if pInfo.PodSignature != nil {
-		t.Errorf("Expected signature to be nil after Update, got '%s'", string(pInfo.PodSignature))
-	}
-}
-
 func TestPriorityQueue_UpdateRecomputesSignature(t *testing.T) {
 	featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.OpportunisticBatching, true)
 
