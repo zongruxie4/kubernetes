@@ -335,9 +335,15 @@ func TestPodGroupCycle_UpdateSnapshotError(t *testing.T) {
 	qInfo1 := &framework.QueuedPodInfo{PodInfo: &framework.PodInfo{Pod: p1}}
 	qInfo2 := &framework.QueuedPodInfo{PodInfo: &framework.PodInfo{Pod: p2}}
 
+	testPG := &schedulingv1alpha2.PodGroup{
+		ObjectMeta: metav1.ObjectMeta{Name: "pg", Namespace: "default"},
+	}
+
 	pgInfo := &framework.QueuedPodGroupInfo{
 		QueuedPodInfos: []*framework.QueuedPodInfo{qInfo1, qInfo2},
 		PodGroupInfo: &framework.PodGroupInfo{
+			Name:            "pg",
+			Namespace:       "default",
 			UnscheduledPods: []*v1.Pod{p1, p2},
 		},
 	}
@@ -374,15 +380,22 @@ func TestPodGroupCycle_UpdateSnapshotError(t *testing.T) {
 		},
 	}
 
+	client := clientsetfake.NewClientset(testPG)
+	pgIndexer := toolscache.NewIndexer(toolscache.MetaNamespaceKeyFunc, toolscache.Indexers{toolscache.NamespaceIndex: toolscache.MetaNamespaceIndexFunc})
+	if err := pgIndexer.Add(testPG); err != nil {
+		t.Fatalf("Failed to add PodGroup to indexer: %v", err)
+	}
+
 	var failureHandlerCalled bool
 	sched := &Scheduler{
 		Profiles:        profile.Map{"test-scheduler": schedFwk},
 		SchedulingQueue: internalqueue.NewTestQueue(ctx, nil),
 		Cache:           cache,
-		client:          clientsetfake.NewClientset(),
+		client:          client,
+		podGroupLister:  schedulinglisters.NewPodGroupLister(pgIndexer),
 		FailureHandler: func(ctx context.Context, fwk framework.Framework, p *framework.QueuedPodInfo, status *fwk.Status, ni *fwk.NominatingInfo, start time.Time) {
 			failureHandlerCalled = true
-			if cmp.Equal(updateSnapshotErr.Error(), status.AsError()) {
+			if updateSnapshotErr.Error() != status.AsError().Error() {
 				t.Errorf("Expected status error %q, got %q", updateSnapshotErr, status.AsError())
 			}
 		},
@@ -1318,7 +1331,9 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 			cache.AddNode(klog.FromContext(ctx), testNode)
 
 			pgIndexer := toolscache.NewIndexer(toolscache.MetaNamespaceKeyFunc, toolscache.Indexers{toolscache.NamespaceIndex: toolscache.MetaNamespaceIndexFunc})
-			pgIndexer.Add(testPG)
+			if err := pgIndexer.Add(testPG); err != nil {
+				t.Fatalf("Failed to add PodGroup to indexer: %v", err)
+			}
 
 			sched := &Scheduler{
 				client:          client,
@@ -1482,7 +1497,9 @@ func TestUpdatePodGroupScheduledCondition(t *testing.T) {
 			pgIndexer := toolscache.NewIndexer(toolscache.MetaNamespaceKeyFunc, toolscache.Indexers{toolscache.NamespaceIndex: toolscache.MetaNamespaceIndexFunc})
 			if tt.existingPG != nil {
 				client = clientsetfake.NewClientset(tt.existingPG)
-				pgIndexer.Add(tt.existingPG)
+				if err := pgIndexer.Add(tt.existingPG); err != nil {
+					t.Fatalf("Failed to add PodGroup to indexer: %v", err)
+				}
 			} else {
 				client = clientsetfake.NewClientset()
 			}

@@ -312,7 +312,10 @@ func New(ctx context.Context,
 
 	podLister := informerFactory.Core().V1().Pods().Lister()
 	nodeLister := informerFactory.Core().V1().Nodes().Lister()
-	podGroupLister := informerFactory.Scheduling().V1alpha2().PodGroups().Lister()
+	var podGroupLister schedulinglisters.PodGroupLister
+	if feature.DefaultFeatureGate.Enabled(features.GenericWorkload) {
+		podGroupLister = informerFactory.Scheduling().V1alpha2().PodGroups().Lister()
+	}
 
 	snapshot := internalcache.NewEmptySnapshot()
 	metricsRecorder := metrics.NewMetricsAsyncRecorder(1000, time.Second, stopEverything)

@@ -528,9 +528,7 @@ func (sched *Scheduler) submitPodGroupAlgorithmResult(ctx context.Context, sched
 		utilruntime.HandleErrorWithContext(ctx, podGroupResult.status.AsError(), "Error scheduling pod group", "podGroup", klog.KObj(podGroupInfo), "errorPods", len(podGroupInfo.QueuedPodInfos))
 		metrics.PodGroupScheduleError(schedFwk.ProfileName(), metrics.SinceInSeconds(start))
 	}
-	if condition != nil {
-		sched.updatePodGroupScheduledCondition(ctx, podGroupInfo, condition)
-	}
+	sched.updatePodGroupScheduledCondition(ctx, podGroupInfo, condition)
 }
 
 // updatePodGroupScheduledCondition patches the given condition on a PodGroup.

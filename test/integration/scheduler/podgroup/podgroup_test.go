@@ -24,12 +24,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 	schedulingapi "k8s.io/api/scheduling/v1alpha2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	"k8s.io/client-go/kubernetes"
 	featuregatetesting "k8s.io/component-base/featuregate/testing"
-	scheduling "k8s.io/kubernetes/pkg/apis/scheduling"
 	"k8s.io/kubernetes/pkg/features"
 	"k8s.io/kubernetes/pkg/scheduler"
 	"k8s.io/kubernetes/pkg/scheduler/backend/queue"
@@ -51,6 +50,14 @@ func podInUnschedulablePods(t *testing.T, queue queue.SchedulingQueue, podName s
 
 func TestPodGroupScheduling(t *testing.T) {
 	node := st.MakeNode().Name("node").Capacity(map[v1.ResourceName]string{v1.ResourceCPU: "4"}).Obj()
+
+	workload := st.MakeWorkload().Name("workload").
+		PodGroupTemplate(st.MakePodGroupTemplate().Name("t1").MinCount(3)).
+		PodGroupTemplate(st.MakePodGroupTemplate().Name("t2").BasicPolicy()).
+		Obj()
+	otherWorkload := st.MakeWorkload().Name("other-workload").
+		PodGroupTemplate(st.MakePodGroupTemplate().Name("t").MinCount(3)).
+		Obj()
 
 	gangPodGroup := st.MakePodGroup().Name("pg1").TemplateRef("t1", "workload").MinCount(3).Obj()
 
@@ -87,9 +94,8 @@ func TestPodGroupScheduling(t *testing.T) {
 		numUnschedulable int
 	}
 
-	type waitForPodGroupCondition struct {
+	type podGroupConditionCheck struct {
 		podGroupName    string
-		conditionType   string
 		conditionStatus metav1.ConditionStatus
 		reason          string
 	}
@@ -104,7 +110,7 @@ func TestPodGroupScheduling(t *testing.T) {
 		waitForPodsUnschedulable     []string
 		waitForPodsScheduled         []string
 		waitForAnyPodsScheduled      *waitForAnyPodsScheduled
-		waitForPodGroupCondition     *waitForPodGroupCondition
+		waitForPodGroupCondition     *podGroupConditionCheck
 	}
 
 	tests := []struct {
@@ -125,6 +131,14 @@ func TestPodGroupScheduling(t *testing.T) {
 				{
 					name:                 "Verify all gang pods are scheduled successfully",
 					waitForPodsScheduled: []string{"p1", "p2", "p3"},
+				},
+				{
+					name: "Verify PodGroup condition is set to Scheduled",
+					waitForPodGroupCondition: &podGroupConditionCheck{
+						podGroupName:    "pg1",
+						conditionStatus: metav1.ConditionTrue,
+						reason:          "Scheduled",
+					},
 				},
 			},
 		},
@@ -181,12 +195,28 @@ func TestPodGroupScheduling(t *testing.T) {
 					waitForPodsUnschedulable: []string{"p1", "p2", "p3"},
 				},
 				{
+					name: "Verify PodGroup condition is set to Unschedulable",
+					waitForPodGroupCondition: &podGroupConditionCheck{
+						podGroupName:    "pg1",
+						conditionStatus: metav1.ConditionFalse,
+						reason:          schedulingapi.PodGroupReasonUnschedulable,
+					},
+				},
+				{
 					name:       "Delete the resource-blocking pod",
 					deletePods: []string{"blocker"},
 				},
 				{
 					name:                 "Verify the entire gang is now scheduled",
 					waitForPodsScheduled: []string{"p1", "p2", "p3"},
+				},
+				{
+					name: "Verify PodGroup condition transitions to Scheduled",
+					waitForPodGroupCondition: &podGroupConditionCheck{
+						podGroupName:    "pg1",
+						conditionStatus: metav1.ConditionTrue,
+						reason:          "Scheduled",
+					},
 				},
 			},
 		},
@@ -300,6 +330,14 @@ func TestPodGroupScheduling(t *testing.T) {
 					name:                 "Verify all gang pods are scheduled successfully (after preemption)",
 					waitForPodsScheduled: []string{"p1", "p2", "p3", "p4"},
 				},
+				{
+					name: "Verify PodGroup condition is set to Scheduled after preemption completes",
+					waitForPodGroupCondition: &podGroupConditionCheck{
+						podGroupName:    "pg1",
+						conditionStatus: metav1.ConditionTrue,
+						reason:          "Scheduled",
+					},
+				},
 			},
 		},
 		{
@@ -393,83 +431,6 @@ func TestPodGroupScheduling(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "gang PodGroup status set to Scheduled when all pods scheduled",
-			steps: []step{
-				{
-					name:           "Create the PodGroup object",
-					createPodGroup: gangPodGroup,
-				},
-				{
-					name:       "Create all pods belonging to the gang",
-					createPods: []*v1.Pod{p1, p2, p3},
-				},
-				{
-					name:                 "Verify all gang pods are scheduled",
-					waitForPodsScheduled: []string{"p1", "p2", "p3"},
-				},
-				{
-					name: "Verify PodGroup condition is Scheduled",
-					waitForPodGroupCondition: &waitForPodGroupCondition{
-						podGroupName:    "pg1",
-						conditionType:   scheduling.PodGroupScheduled,
-						conditionStatus: metav1.ConditionTrue,
-						reason:          scheduling.PodGroupReasonScheduled,
-					},
-				},
-			},
-		},
-		{
-			name: "gang PodGroup status transitions from Unschedulable to Scheduled",
-			steps: []step{
-				{
-					name:       "Create the resource-blocking pod",
-					createPods: []*v1.Pod{blockerPod},
-				},
-				{
-					name:                 "Schedule the resource-blocking pod",
-					waitForPodsScheduled: []string{"blocker"},
-				},
-				{
-					name:           "Create the PodGroup object",
-					createPodGroup: gangPodGroup,
-				},
-				{
-					name:       "Create gang pods",
-					createPods: []*v1.Pod{p1, p2, p3},
-				},
-				{
-					name:                     "Verify pods become unschedulable",
-					waitForPodsUnschedulable: []string{"p1", "p2", "p3"},
-				},
-				{
-					name: "Verify PodGroup condition is Unschedulable",
-					waitForPodGroupCondition: &waitForPodGroupCondition{
-						podGroupName:    "pg1",
-						conditionType:   scheduling.PodGroupScheduled,
-						conditionStatus: metav1.ConditionFalse,
-						reason:          scheduling.PodGroupReasonUnschedulable,
-					},
-				},
-				{
-					name:       "Delete the resource-blocking pod",
-					deletePods: []string{"blocker"},
-				},
-				{
-					name:                 "Verify the entire gang is now scheduled",
-					waitForPodsScheduled: []string{"p1", "p2", "p3"},
-				},
-				{
-					name: "Verify PodGroup condition transitions to Scheduled",
-					waitForPodGroupCondition: &waitForPodGroupCondition{
-						podGroupName:    "pg1",
-						conditionType:   scheduling.PodGroupScheduled,
-						conditionStatus: metav1.ConditionTrue,
-						reason:          scheduling.PodGroupReasonScheduled,
-					},
-				},
-			},
-		},
 	}
 
 	for _, tt := range tests {
@@ -489,6 +450,14 @@ func TestPodGroupScheduling(t *testing.T) {
 			_, err := cs.CoreV1().Nodes().Create(testCtx.Ctx, node, metav1.CreateOptions{})
 			if err != nil {
 				t.Fatalf("Failed to create node: %v", err)
+			}
+
+			for _, w := range []*schedulingapi.Workload{workload, otherWorkload} {
+				wCopy := w.DeepCopy()
+				wCopy.Namespace = ns
+				if _, err := cs.SchedulingV1alpha2().Workloads(ns).Create(testCtx.Ctx, wCopy, metav1.CreateOptions{}); err != nil {
+					t.Fatalf("Failed to create workload %s: %v", wCopy.Name, err)
+				}
 			}
 
 			for i, step := range tt.steps {
@@ -584,26 +553,34 @@ func TestPodGroupScheduling(t *testing.T) {
 						t.Fatalf("Step %d: Failed to wait for pods to be scheduled or unschedulable: %v", i, err)
 					}
 				case step.waitForPodGroupCondition != nil:
-					wc := step.waitForPodGroupCondition
-					err := wait.PollUntilContextTimeout(testCtx.Ctx, 200*time.Millisecond, wait.ForeverTestTimeout, false,
-						func(ctx context.Context) (bool, error) {
-							pg, err := cs.SchedulingV1alpha2().PodGroups(ns).Get(ctx, wc.podGroupName, metav1.GetOptions{})
-							if err != nil {
-								return false, err
-							}
-							cond := apimeta.FindStatusCondition(pg.Status.Conditions, wc.conditionType)
-							if cond == nil {
-								return false, nil
-							}
-							return cond.Status == wc.conditionStatus && (wc.reason == "" || cond.Reason == wc.reason), nil
-						},
-					)
+					check := step.waitForPodGroupCondition
+					err := wait.PollUntilContextTimeout(testCtx.Ctx, 100*time.Millisecond, wait.ForeverTestTimeout, false,
+						podGroupHasCondition(cs, ns, check.podGroupName, check.conditionStatus, check.reason))
 					if err != nil {
-						t.Fatalf("Step %d: Timed out waiting for PodGroup %s condition %s=%s reason=%s: %v",
-							i, wc.podGroupName, wc.conditionType, wc.conditionStatus, wc.reason, err)
+						t.Fatalf("Step %d: Failed to wait for PodGroup %s condition (status=%s, reason=%s): %v",
+							i, check.podGroupName, check.conditionStatus, check.reason, err)
 					}
 				}
 			}
 		})
+	}
+}
+
+func podGroupHasCondition(cs kubernetes.Interface, ns, name string, status metav1.ConditionStatus, reason string) wait.ConditionWithContextFunc {
+	return func(ctx context.Context) (bool, error) {
+		pg, err := cs.SchedulingV1alpha2().PodGroups(ns).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return false, nil
+			}
+			return false, err
+		}
+		for _, c := range pg.Status.Conditions {
+			if c.Type == schedulingapi.PodGroupScheduled &&
+				c.Status == status && c.Reason == reason {
+				return true, nil
+			}
+		}
+		return false, nil
 	}
 }

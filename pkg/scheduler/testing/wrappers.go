@@ -1619,6 +1619,37 @@ func (wrapper *PodGroupWrapper) TemplateRef(templateName, workloadName string) *
 	return wrapper
 }
 
+// WorkloadWrapper wraps a Workload inside.
+type WorkloadWrapper struct{ schedulingapi.Workload }
+
+// MakeWorkload creates a Workload wrapper.
+func MakeWorkload() *WorkloadWrapper {
+	return &WorkloadWrapper{}
+}
+
+// Obj returns the inner Workload.
+func (wrapper *WorkloadWrapper) Obj() *schedulingapi.Workload {
+	return &wrapper.Workload
+}
+
+// Name sets `name` as the name of the inner Workload.
+func (wrapper *WorkloadWrapper) Name(name string) *WorkloadWrapper {
+	wrapper.Workload.Name = name
+	return wrapper
+}
+
+// Namespace sets `namespace` as the namespace of the inner Workload.
+func (wrapper *WorkloadWrapper) Namespace(namespace string) *WorkloadWrapper {
+	wrapper.Workload.Namespace = namespace
+	return wrapper
+}
+
+// PodGroupTemplate appends a PodGroupTemplate built from the given wrapper.
+func (wrapper *WorkloadWrapper) PodGroupTemplate(t *PodGroupTemplateWrapper) *WorkloadWrapper {
+	wrapper.Workload.Spec.PodGroupTemplates = append(wrapper.Workload.Spec.PodGroupTemplates, t.PodGroupTemplate)
+	return wrapper
+}
+
 // PodGroupTemplateWrapper wraps a PodGroupTemplate inside.
 type PodGroupTemplateWrapper struct{ schedulingapi.PodGroupTemplate }
 

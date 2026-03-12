@@ -38,6 +38,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	eventsv1 "k8s.io/api/events/v1"
+	schedulingv1alpha2 "k8s.io/api/scheduling/v1alpha2"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,6 +51,7 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
+	schedulinglisters "k8s.io/client-go/listers/scheduling/v1alpha2"
 	clienttesting "k8s.io/client-go/testing"
 	clientcache "k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/events"
@@ -1029,6 +1031,9 @@ func TestSchedulerScheduleOne(t *testing.T) {
 		var gotBinding *v1.Binding
 		var gotNominatingInfo *fwk.NominatingInfo
 
+		var pgm podgroupmanager.PodGroupManager
+		var podGroupLister schedulinglisters.PodGroupLister
+
 		if scheduleAsPodGroup {
 			group := &v1.PodSchedulingGroup{
 				PodGroupName: new("pg"),
@@ -1044,7 +1049,35 @@ func TestSchedulerScheduleOne(t *testing.T) {
 			}
 		}
 
-		client := clientsetfake.NewClientset(item.sendPod)
+		if scheduleAsPodGroup {
+			group := &v1.PodSchedulingGroup{
+				PodGroupName: ptr.To("pg"),
+			}
+			// When scheduling a pod as a pod group, set scheduling group to all relevant pods.
+			item.sendPod = withSchedulingGroup(item.sendPod, group)
+			item.expectErrorPod = withSchedulingGroup(item.expectErrorPod, group)
+			item.expectPodInBackoffQ = withSchedulingGroup(item.expectPodInBackoffQ, group)
+			item.expectPodInUnschedulable = withSchedulingGroup(item.expectPodInUnschedulable, group)
+			pgm = podgroupmanager.New(logger)
+			pgm.AddPod(item.sendPod)
+
+			testPG := &schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{Name: "pg", Namespace: item.sendPod.Namespace},
+			}
+			pgIndexer := clientcache.NewIndexer(clientcache.MetaNamespaceKeyFunc, clientcache.Indexers{clientcache.NamespaceIndex: clientcache.MetaNamespaceIndexFunc})
+			if err := pgIndexer.Add(testPG); err != nil {
+				t.Fatalf("Failed to add PodGroup to indexer: %v", err)
+			}
+			podGroupLister = schedulinglisters.NewPodGroupLister(pgIndexer)
+		}
+
+		clientObjs := []runtime.Object{item.sendPod}
+		if scheduleAsPodGroup {
+			clientObjs = append(clientObjs, &schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{Name: "pg", Namespace: item.sendPod.Namespace},
+			})
+		}
+		client := clientsetfake.NewClientset(clientObjs...)
 		informerFactory := informers.NewSharedInformerFactory(client, 0)
 		client.PrependReactor("create", "pods", func(action clienttesting.Action) (bool, runtime.Object, error) {
 			if action.GetSubresource() != "binding" {
@@ -1141,6 +1174,8 @@ func TestSchedulerScheduleOne(t *testing.T) {
 			SchedulingQueue:                        queue,
 			Profiles:                               profile.Map{testSchedulerName: schedFramework},
 			APIDispatcher:                          apiDispatcher,
+			PodGroupManager:                        pgm,
+			podGroupLister:                         podGroupLister,
 			nominatedNodeNameForExpectationEnabled: features.nominatedNodeNameForExpectationEnabled,
 		}
 		queue.Add(ctx, item.sendPod)
