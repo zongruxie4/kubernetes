@@ -576,8 +576,11 @@ var _ = SIGDescribe(feature.HPA, framework.WithSlow(), framework.WithFeatureGate
 				ginkgo.By("waiting for deployment to start initial pods")
 				rc.WaitForReplicas(ctx, initPods, waitDeadline)
 
-				// Set initial stable load using even per-pod distribution.
+				// Set initial stable load using even per-pod distribution and wait for
+				// HPA to observe it before triggering scale-up. This ensures HPA has a
+				// baseline measurement before we push load above the scale-up tolerance.
 				rc.ConsumeCPUPerPod(initCPUUsageTotal)
+				rc.EnsureDesiredReplicasInRange(ctx, initPods, initPods, maxHPAReactionTime+maxResourceConsumerDelay, hpa.Name)
 
 				ginkgo.By("trying to trigger scale up to 11 replicas")
 				rc.ConsumeCPUPerPod(usageForReplicasWithRequest(11, podCPURequest, targetCPUUtilizationPercent))

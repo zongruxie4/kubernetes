@@ -157,7 +157,7 @@ func (c *controller) handleConsumeCPU(w http.ResponseWriter, query url.Values) {
 		if perPodMillicores == 0 {
 			perPodMillicores = 1
 		}
-		fmt.Fprintf(w, "RC manager (per-pod): sending %d millicores to each of %d pods via headless DNS\n",
+		_, _ = fmt.Fprintf(w, "RC manager (per-pod): sending %d millicores to each of %d pods via headless DNS\n",
 			perPodMillicores, len(podAddrs))
 		c.waitGroup.Add(len(podAddrs))
 		for _, addr := range podAddrs {
@@ -175,7 +175,7 @@ func (c *controller) handleConsumeCPU(w http.ResponseWriter, query url.Values) {
 	log.Printf("headless DNS lookup for %s failed (%v), using ClusterIP fallback", headlessDNS, err)
 	count := millicores / requestSizeInMillicores
 	rest := millicores - count*requestSizeInMillicores
-	fmt.Fprintf(w, "RC manager: sending %v requests to consume %v millicores each and 1 request to consume %v millicores\n",
+	_, _ = fmt.Fprintf(w, "RC manager: sending %v requests to consume %v millicores each and 1 request to consume %v millicores\n",
 		count, requestSizeInMillicores, rest)
 	if count > 0 {
 		c.waitGroup.Add(count)
@@ -275,10 +275,10 @@ func (c *controller) sendOneCPURequestToURL(w http.ResponseWriter, podURL string
 	if err != nil {
 		c.responseWriterLock.Lock()
 		defer c.responseWriterLock.Unlock()
-		fmt.Fprintf(w, "Failed to send to pod at %s: %v\n", podURL, err)
+		_, _ = fmt.Fprintf(w, "Failed to send to pod at %s: %v\n", podURL, err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 }
 
 func (c *controller) sendConsumeMemRequests(w http.ResponseWriter, requests, megabytes, durationSec int) {
