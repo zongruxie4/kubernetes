@@ -502,6 +502,7 @@ func (sched *Scheduler) submitPodGroupAlgorithmResult(ctx context.Context, sched
 		}
 		logger.V(2).Info("Successfully scheduled a pod group", "podGroup", klog.KObj(podGroupInfo), "scheduledPods", scheduledPods, "unschedulablePods", unschedulablePods)
 		metrics.PodGroupScheduled(schedFwk.ProfileName(), metrics.SinceInSeconds(start))
+
 	case podGroupResult.status.IsRejected():
 		condition = &metav1.Condition{
 			Type:    schedulingapi.PodGroupScheduled,
@@ -510,14 +511,13 @@ func (sched *Scheduler) submitPodGroupAlgorithmResult(ctx context.Context, sched
 			Message: podGroupResult.status.Message(),
 		}
 		if podGroupResult.waitingOnPreemption {
-			condition.Message = "waiting for preemption to complete"
-
 			logger.V(2).Info("Pod group is waiting for preemption", "podGroup", klog.KObj(podGroupInfo), "unschedulablePods", unschedulablePods)
 			metrics.PodGroupWaitingOnPreemption(schedFwk.ProfileName(), metrics.SinceInSeconds(start))
 		} else {
 			logger.V(2).Info("Unable to schedule a pod group", "podGroup", klog.KObj(podGroupInfo), "unschedulablePods", unschedulablePods)
 			metrics.PodGroupUnschedulable(schedFwk.ProfileName(), metrics.SinceInSeconds(start))
 		}
+
 	default:
 		condition = &metav1.Condition{
 			Type:    schedulingapi.PodGroupScheduled,
@@ -528,17 +528,22 @@ func (sched *Scheduler) submitPodGroupAlgorithmResult(ctx context.Context, sched
 		utilruntime.HandleErrorWithContext(ctx, podGroupResult.status.AsError(), "Error scheduling pod group", "podGroup", klog.KObj(podGroupInfo), "errorPods", len(podGroupInfo.QueuedPodInfos))
 		metrics.PodGroupScheduleError(schedFwk.ProfileName(), metrics.SinceInSeconds(start))
 	}
-	sched.updatePodGroupScheduledCondition(ctx, podGroupInfo, condition)
+	sched.updatePodGroupCondition(ctx, podGroupInfo, condition)
 }
 
-// updatePodGroupScheduledCondition patches the given condition on a PodGroup.
-func (sched *Scheduler) updatePodGroupScheduledCondition(ctx context.Context,
+// updatePodGroupCondition patches the given condition on a PodGroup.
+func (sched *Scheduler) updatePodGroupCondition(ctx context.Context,
 	podGroupInfo *framework.QueuedPodGroupInfo, condition *metav1.Condition) {
 	logger := klog.FromContext(ctx)
 
 	pg, err := sched.podGroupLister.PodGroups(podGroupInfo.Namespace).Get(podGroupInfo.Name)
 	if err != nil {
 		utilruntime.HandleErrorWithLogger(logger, err, "Failed to get PodGroup for status update", "podGroup", klog.KObj(podGroupInfo))
+		return
+	}
+
+	existing := apimeta.FindStatusCondition(pg.Status.Conditions, condition.Type)
+	if existing != nil && existing.Status == metav1.ConditionTrue && condition.Status != metav1.ConditionTrue {
 		return
 	}
 

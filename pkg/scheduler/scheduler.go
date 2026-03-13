@@ -452,7 +452,6 @@ func New(ctx context.Context,
 		logger:                                 logger,
 		APIDispatcher:                          apiDispatcher,
 		nominatedNodeNameForExpectationEnabled: feature.DefaultFeatureGate.Enabled(features.NominatedNodeNameForExpectation),
-		PodGroupManager:                        podGroupManager,
 		podGroupLister:                         podGroupLister,
 		genericWorkloadEnabled:                 feature.DefaultFeatureGate.Enabled(features.GenericWorkload),
 	}

@@ -1644,9 +1644,9 @@ func (wrapper *WorkloadWrapper) Namespace(namespace string) *WorkloadWrapper {
 	return wrapper
 }
 
-// PodGroupTemplate appends a PodGroupTemplate built from the given wrapper.
-func (wrapper *WorkloadWrapper) PodGroupTemplate(t *PodGroupTemplateWrapper) *WorkloadWrapper {
-	wrapper.Workload.Spec.PodGroupTemplates = append(wrapper.Workload.Spec.PodGroupTemplates, t.PodGroupTemplate)
+// PodGroupTemplate appends the given PodGroupTemplate to the Workload spec.
+func (wrapper *WorkloadWrapper) PodGroupTemplate(t *schedulingapi.PodGroupTemplate) *WorkloadWrapper {
+	wrapper.Workload.Spec.PodGroupTemplates = append(wrapper.Workload.Spec.PodGroupTemplates, *t)
 	return wrapper
 }
 

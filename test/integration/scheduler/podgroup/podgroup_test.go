@@ -52,11 +52,11 @@ func TestPodGroupScheduling(t *testing.T) {
 	node := st.MakeNode().Name("node").Capacity(map[v1.ResourceName]string{v1.ResourceCPU: "4"}).Obj()
 
 	workload := st.MakeWorkload().Name("workload").
-		PodGroupTemplate(st.MakePodGroupTemplate().Name("t1").MinCount(3)).
-		PodGroupTemplate(st.MakePodGroupTemplate().Name("t2").BasicPolicy()).
+		PodGroupTemplate(st.MakePodGroupTemplate().Name("t1").MinCount(3).Obj()).
+		PodGroupTemplate(st.MakePodGroupTemplate().Name("t2").BasicPolicy().Obj()).
 		Obj()
 	otherWorkload := st.MakeWorkload().Name("other-workload").
-		PodGroupTemplate(st.MakePodGroupTemplate().Name("t").MinCount(3)).
+		PodGroupTemplate(st.MakePodGroupTemplate().Name("t").MinCount(3).Obj()).
 		Obj()
 
 	gangPodGroup := st.MakePodGroup().Name("pg1").TemplateRef("t1", "workload").MinCount(3).Obj()
@@ -555,7 +555,7 @@ func TestPodGroupScheduling(t *testing.T) {
 				case step.waitForPodGroupCondition != nil:
 					check := step.waitForPodGroupCondition
 					err := wait.PollUntilContextTimeout(testCtx.Ctx, 100*time.Millisecond, wait.ForeverTestTimeout, false,
-						podGroupHasCondition(cs, ns, check.podGroupName, check.conditionStatus, check.reason))
+						podGroupHasScheduledCondition(cs, ns, check.podGroupName, check.conditionStatus, check.reason))
 					if err != nil {
 						t.Fatalf("Step %d: Failed to wait for PodGroup %s condition (status=%s, reason=%s): %v",
 							i, check.podGroupName, check.conditionStatus, check.reason, err)
@@ -566,7 +566,7 @@ func TestPodGroupScheduling(t *testing.T) {
 	}
 }
 
-func podGroupHasCondition(cs kubernetes.Interface, ns, name string, status metav1.ConditionStatus, reason string) wait.ConditionWithContextFunc {
+func podGroupHasScheduledCondition(cs kubernetes.Interface, ns, name string, status metav1.ConditionStatus, reason string) wait.ConditionWithContextFunc {
 	return func(ctx context.Context) (bool, error) {
 		pg, err := cs.SchedulingV1alpha2().PodGroups(ns).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {

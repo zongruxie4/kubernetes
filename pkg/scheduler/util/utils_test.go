@@ -36,6 +36,7 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/ktesting"
 	extenderv1 "k8s.io/kube-scheduler/extender/v1"
+	schedulingapi "k8s.io/kubernetes/pkg/apis/scheduling"
 	st "k8s.io/kubernetes/pkg/scheduler/testing"
 )
 
@@ -338,9 +339,9 @@ func TestPatchPodGroupStatus(t *testing.T) {
 	now := metav1.NewTime(time.Now().Truncate(time.Second))
 
 	tests := []struct {
-		name   string
-		pg     schedulingv1alpha2.PodGroup
-		client *clientsetfake.Clientset
+		name     string
+		podGroup schedulingv1alpha2.PodGroup
+		client   *clientsetfake.Clientset
 		// validateErr checks if error returned from PatchPodGroupStatus is expected one or not.
 		// (true means error is expected one.)
 		validateErr    func(goterr error) bool
@@ -349,7 +350,7 @@ func TestPatchPodGroupStatus(t *testing.T) {
 		{
 			name:   "Should update podgroup conditions successfully",
 			client: clientsetfake.NewClientset(),
-			pg: schedulingv1alpha2.PodGroup{
+			podGroup: schedulingv1alpha2.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "ns",
 					Name:      "pg1",
@@ -358,9 +359,9 @@ func TestPatchPodGroupStatus(t *testing.T) {
 			statusToUpdate: &schedulingv1alpha2.PodGroupStatus{
 				Conditions: []metav1.Condition{
 					{
-						Type:               "PodGroupScheduled",
+						Type:               schedulingapi.PodGroupScheduled,
 						Status:             metav1.ConditionFalse,
-						Reason:             "Unschedulable",
+						Reason:             schedulingapi.PodGroupReasonUnschedulable,
 						Message:            "not enough capacity for the gang",
 						LastTransitionTime: now,
 					},
@@ -370,7 +371,7 @@ func TestPatchPodGroupStatus(t *testing.T) {
 		{
 			name:   "no-op when status is unchanged",
 			client: clientsetfake.NewClientset(),
-			pg: schedulingv1alpha2.PodGroup{
+			podGroup: schedulingv1alpha2.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "ns",
 					Name:      "pg1",
@@ -378,9 +379,9 @@ func TestPatchPodGroupStatus(t *testing.T) {
 				Status: schedulingv1alpha2.PodGroupStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:               "PodGroupScheduled",
+							Type:               schedulingapi.PodGroupScheduled,
 							Status:             metav1.ConditionFalse,
-							Reason:             "Unschedulable",
+							Reason:             schedulingapi.PodGroupReasonUnschedulable,
 							Message:            "not enough capacity",
 							LastTransitionTime: now,
 						},
@@ -390,9 +391,9 @@ func TestPatchPodGroupStatus(t *testing.T) {
 			statusToUpdate: &schedulingv1alpha2.PodGroupStatus{
 				Conditions: []metav1.Condition{
 					{
-						Type:               "PodGroupScheduled",
+						Type:               schedulingapi.PodGroupScheduled,
 						Status:             metav1.ConditionFalse,
-						Reason:             "Unschedulable",
+						Reason:             schedulingapi.PodGroupReasonUnschedulable,
 						Message:            "not enough capacity",
 						LastTransitionTime: now,
 					},
@@ -402,7 +403,7 @@ func TestPatchPodGroupStatus(t *testing.T) {
 		{
 			name:   "nil newStatus returns nil",
 			client: clientsetfake.NewClientset(),
-			pg: schedulingv1alpha2.PodGroup{
+			podGroup: schedulingv1alpha2.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "ns",
 					Name:      "pg1",
@@ -429,7 +430,7 @@ func TestPatchPodGroupStatus(t *testing.T) {
 
 				return client
 			}(),
-			pg: schedulingv1alpha2.PodGroup{
+			podGroup: schedulingv1alpha2.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "ns",
 					Name:      "pg1",
@@ -438,9 +439,9 @@ func TestPatchPodGroupStatus(t *testing.T) {
 			statusToUpdate: &schedulingv1alpha2.PodGroupStatus{
 				Conditions: []metav1.Condition{
 					{
-						Type:               "PodGroupScheduled",
+						Type:               schedulingapi.PodGroupScheduled,
 						Status:             metav1.ConditionFalse,
-						Reason:             "Unschedulable",
+						Reason:             schedulingapi.PodGroupReasonUnschedulable,
 						Message:            "not enough capacity for the gang",
 						LastTransitionTime: now,
 					},
@@ -463,7 +464,7 @@ func TestPatchPodGroupStatus(t *testing.T) {
 
 				return client
 			}(),
-			pg: schedulingv1alpha2.PodGroup{
+			podGroup: schedulingv1alpha2.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "ns",
 					Name:      "pg1",
@@ -473,9 +474,9 @@ func TestPatchPodGroupStatus(t *testing.T) {
 			statusToUpdate: &schedulingv1alpha2.PodGroupStatus{
 				Conditions: []metav1.Condition{
 					{
-						Type:               "PodGroupScheduled",
+						Type:               schedulingapi.PodGroupScheduled,
 						Status:             metav1.ConditionFalse,
-						Reason:             "Unschedulable",
+						Reason:             schedulingapi.PodGroupReasonUnschedulable,
 						Message:            "not enough capacity for the gang",
 						LastTransitionTime: now,
 					},
@@ -486,17 +487,17 @@ func TestPatchPodGroupStatus(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			_, ctx := ktesting.NewTestContext(t)
+			ctx, cancel := context.WithCancel(ctx)
+
 			client := tc.client
-			_, err := client.SchedulingV1alpha2().PodGroups(tc.pg.Namespace).Create(context.TODO(), &tc.pg, metav1.CreateOptions{})
+			_, err := client.SchedulingV1alpha2().PodGroups(tc.podGroup.Namespace).Create(ctx, &tc.podGroup, metav1.CreateOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			_, ctx := ktesting.NewTestContext(t)
-			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
-			err = PatchPodGroupStatus(ctx, client, tc.pg.Name, tc.pg.Namespace, &tc.pg.Status, tc.statusToUpdate)
+			err = PatchPodGroupStatus(ctx, client, tc.podGroup.Name, tc.podGroup.Namespace, &tc.podGroup.Status, tc.statusToUpdate)
 			if err != nil && tc.validateErr == nil {
 				t.Fatal(err)
 			}
@@ -507,12 +508,12 @@ func TestPatchPodGroupStatus(t *testing.T) {
 				return
 			}
 
-			retrievedPG, err := client.SchedulingV1alpha2().PodGroups(tc.pg.Namespace).Get(ctx, tc.pg.Name, metav1.GetOptions{})
+			retrievedPG, err := client.SchedulingV1alpha2().PodGroups(tc.podGroup.Namespace).Get(ctx, tc.podGroup.Name, metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			wantStatus := tc.pg.Status
+			wantStatus := tc.podGroup.Status
 			if tc.statusToUpdate != nil {
 				wantStatus = *tc.statusToUpdate
 			}

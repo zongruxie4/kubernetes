@@ -1031,9 +1031,8 @@ func TestSchedulerScheduleOne(t *testing.T) {
 		var gotBinding *v1.Binding
 		var gotNominatingInfo *fwk.NominatingInfo
 
-		var pgm podgroupmanager.PodGroupManager
 		var podGroupLister schedulinglisters.PodGroupLister
-
+		var clientObjs []runtime.Object
 		if scheduleAsPodGroup {
 			group := &v1.PodSchedulingGroup{
 				PodGroupName: new("pg"),
@@ -1042,24 +1041,7 @@ func TestSchedulerScheduleOne(t *testing.T) {
 			item.sendPod = withSchedulingGroup(item.sendPod, group)
 			item.expectErrorPod = withSchedulingGroup(item.expectErrorPod, group)
 			item.expectPodInBackoffQ = withSchedulingGroup(item.expectPodInBackoffQ, group)
-			if item.expectPodInUnschedulable != nil {
-				// Pods from a pod group skip unschedulablePods structure and land directly in the backoffQ.
-				item.expectPodInBackoffQ = withSchedulingGroup(item.expectPodInUnschedulable, group)
-				item.expectPodInUnschedulable = nil
-			}
-		}
-
-		if scheduleAsPodGroup {
-			group := &v1.PodSchedulingGroup{
-				PodGroupName: ptr.To("pg"),
-			}
-			// When scheduling a pod as a pod group, set scheduling group to all relevant pods.
-			item.sendPod = withSchedulingGroup(item.sendPod, group)
-			item.expectErrorPod = withSchedulingGroup(item.expectErrorPod, group)
-			item.expectPodInBackoffQ = withSchedulingGroup(item.expectPodInBackoffQ, group)
 			item.expectPodInUnschedulable = withSchedulingGroup(item.expectPodInUnschedulable, group)
-			pgm = podgroupmanager.New(logger)
-			pgm.AddPod(item.sendPod)
 
 			testPG := &schedulingv1alpha2.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{Name: "pg", Namespace: item.sendPod.Namespace},
@@ -1069,13 +1051,9 @@ func TestSchedulerScheduleOne(t *testing.T) {
 				t.Fatalf("Failed to add PodGroup to indexer: %v", err)
 			}
 			podGroupLister = schedulinglisters.NewPodGroupLister(pgIndexer)
-		}
-
-		clientObjs := []runtime.Object{item.sendPod}
-		if scheduleAsPodGroup {
-			clientObjs = append(clientObjs, &schedulingv1alpha2.PodGroup{
-				ObjectMeta: metav1.ObjectMeta{Name: "pg", Namespace: item.sendPod.Namespace},
-			})
+			clientObjs = []runtime.Object{item.sendPod, testPG}
+		} else {
+			clientObjs = []runtime.Object{item.sendPod}
 		}
 		client := clientsetfake.NewClientset(clientObjs...)
 		informerFactory := informers.NewSharedInformerFactory(client, 0)
@@ -1174,7 +1152,6 @@ func TestSchedulerScheduleOne(t *testing.T) {
 			SchedulingQueue:                        queue,
 			Profiles:                               profile.Map{testSchedulerName: schedFramework},
 			APIDispatcher:                          apiDispatcher,
-			PodGroupManager:                        pgm,
 			podGroupLister:                         podGroupLister,
 			nominatedNodeNameForExpectationEnabled: features.nominatedNodeNameForExpectationEnabled,
 		}
