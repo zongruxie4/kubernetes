@@ -905,6 +905,7 @@ func NewMainKubelet(ctx context.Context,
 
 		kubeDeps.TLSConfig.MinVersion = kubeDeps.TLSOptions.MinVersion
 		kubeDeps.TLSConfig.CipherSuites = kubeDeps.TLSOptions.CipherSuites
+		kubeDeps.TLSConfig.CurvePreferences = kubeDeps.TLSOptions.CurvePreferences
 
 		getServingCertificate := func() *tls.Certificate { return nil }
 
