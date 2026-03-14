@@ -113,10 +113,10 @@ func (e *WorkloadExecutor) runCreateNodesOp(tCtx ktesting.TContext, opIndex int,
 	if e.opts != nil && e.opts.nodeUpdateFn != nil {
 		nodes, err := waitListAllNodes(tCtx, tCtx.Client())
 		if err != nil {
-			return fmt.Errorf("failed to list nodes for postNodeCreationFn: %w", err)
+			return fmt.Errorf("failed to list nodes for nodeUpdateFn: %w", err)
 		}
-		if err := e.opts.nodeUpdateFn(tCtx, e.workload, nodes); err != nil {
-			return fmt.Errorf("postNodeCreationFn failed: %w", err)
+		if err := e.opts.nodeUpdateFn(tCtx, e.scheduler, e.workload, nodes); err != nil {
+			return fmt.Errorf("nodeUpdateFn failed: %w", err)
 		}
 	}
 	return nil

@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"reflect"
+	"slices"
 	"sort"
 	"testing"
 	"time"
@@ -33,6 +33,7 @@ import (
 	ndf "k8s.io/component-helpers/nodedeclaredfeatures"
 	ndffeatures "k8s.io/component-helpers/nodedeclaredfeatures/features"
 	"k8s.io/kubernetes/pkg/features"
+	"k8s.io/kubernetes/pkg/scheduler"
 	perf "k8s.io/kubernetes/test/integration/scheduler_perf"
 	"k8s.io/kubernetes/test/utils/ktesting"
 )
@@ -130,11 +131,10 @@ func preInitNodeDeclaredFeatures(t ktesting.TContext, w *perf.Workload) (func(),
 	return cleanupMockFeatures, nil
 }
 
-func updateNodesWithDeclaredFeatures(tCtx ktesting.TContext, w *perf.Workload, nodes *v1.NodeList) error {
+func updateNodesWithDeclaredFeatures(tCtx ktesting.TContext, scheduler *scheduler.Scheduler, w *perf.Workload, nodes *v1.NodeList) error {
 	if !w.FeatureGates[features.NodeDeclaredFeatures] {
 		return nil
 	}
-
 	numNodeDeclaredFeatures, err := w.GetParam("numNodeDeclaredFeatures")
 	if err != nil {
 		tCtx.Logf("numNodeDeclaredFeatures param not specified in workload config")
@@ -157,14 +157,16 @@ func updateNodesWithDeclaredFeatures(tCtx ktesting.TContext, w *perf.Workload, n
 		tCtx.Logf("Updated node %s status with %d features", node.Name, len(featureNames))
 	}
 
+	schedulerCache := scheduler.Cache
 	err = wait.PollUntilContextTimeout(tCtx.Context, 100*time.Millisecond, 60*time.Second, true, func(ctx context.Context) (bool, error) {
 		for _, n := range nodes.Items {
-			updatedNode, err := tCtx.Client().CoreV1().Nodes().Get(ctx, n.Name, metav1.GetOptions{})
+			nodeInfo, err := schedulerCache.GetNode(n.Name)
 			if err != nil {
-				return false, err
-			}
+				return false, nil
 
-			if !reflect.DeepEqual(updatedNode.Status.DeclaredFeatures, featureNames) {
+			}
+			cachedNode := nodeInfo.Node()
+			if !slices.Equal(cachedNode.Status.DeclaredFeatures, featureNames) {
 				return false, nil
 			}
 		}

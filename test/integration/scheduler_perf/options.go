@@ -18,6 +18,7 @@ package benchmark
 
 import (
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/kubernetes/pkg/scheduler"
 	frameworkruntime "k8s.io/kubernetes/pkg/scheduler/framework/runtime"
 	"k8s.io/kubernetes/test/utils/ktesting"
 )
@@ -33,8 +34,8 @@ type HookFn func(tCtx ktesting.TContext) error
 // but before he scheduler is started. It returns an optional cleanup function and an error.
 type PreRunFn func(tCtx ktesting.TContext, w *Workload) (func(), error)
 
-// NodeUpdateFn is a function called after nodes are created in a workload.
-type NodeUpdateFn func(tCtx ktesting.TContext, w *Workload, nodes *v1.NodeList) error
+// NodeUpdateFn is a function called after nodes are created in a workload using createNodesOp.
+type NodeUpdateFn func(tCtx ktesting.TContext, scheduler *scheduler.Scheduler, w *Workload, nodes *v1.NodeList) error
 
 type schedulerPerfOptions struct {
 	outOfTreePluginRegistry frameworkruntime.Registry
@@ -53,7 +54,7 @@ func WithPrepareFn(prepareFn HookFn) SchedulerPerfOption {
 }
 
 // WithNodeUpdateFn is the option to set a function that is called
-// after nodes are created within a workload execution.
+// after nodes are created by createNodesOp within a workload execution.
 func WithNodeUpdateFn(fn NodeUpdateFn) SchedulerPerfOption {
 	return func(s *schedulerPerfOptions) {
 		s.nodeUpdateFn = fn

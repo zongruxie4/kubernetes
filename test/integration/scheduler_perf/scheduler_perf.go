@@ -624,7 +624,7 @@ func initTestOutput(tb testing.TB) io.Writer {
 
 var specialFilenameChars = regexp.MustCompile(`[^a-zA-Z0-9-_]`)
 
-func setupTestCase(t testing.TB, tc *testCase, featureGates map[featuregate.Feature]bool, opts *schedulerPerfOptions, workload *Workload) (*scheduler.Scheduler, informers.SharedInformerFactory, ktesting.TContext) {
+func setupTestCase(t testing.TB, tc *testCase, featureGates map[featuregate.Feature]bool, workload *Workload, opts *schedulerPerfOptions) (*scheduler.Scheduler, informers.SharedInformerFactory, ktesting.TContext) {
 	tCtx := ktesting.Init(t, initoption.PerTestOutput(UseTestingLog))
 	artifacts, doArtifacts := os.LookupEnv("ARTIFACTS")
 	if !UseTestingLog && doArtifacts {
@@ -707,7 +707,7 @@ func setupTestCase(t testing.TB, tc *testCase, featureGates map[featuregate.Feat
 	if opts.preRunFn != nil {
 		cleanup, err := opts.preRunFn(tCtx, workload)
 		if err != nil {
-			t.Fatalf("failed to run preInitFn for workload %s: %v", workload.Name, err)
+			t.Fatalf("failed to run preRunFn for workload %s: %v", workload.Name, err)
 		}
 		if cleanup != nil {
 			t.Cleanup(cleanup)
@@ -820,7 +820,7 @@ func RunBenchmarkPerfScheduling(b *testing.B, configFile string, topicName strin
 					fixJSONOutput(b)
 
 					featureGates := featureGatesMerge(tc.FeatureGates, w.FeatureGates)
-					scheduler, informerFactory, tCtx := setupTestCase(b, tc, featureGates, opts, w)
+					scheduler, informerFactory, tCtx := setupTestCase(b, tc, featureGates, w, opts)
 
 					err := w.isValid(tc.MetricsCollectorConfig)
 					if err != nil {
@@ -942,7 +942,7 @@ func RunIntegrationPerfScheduling(t *testing.T, configFile string, options ...Sc
 						t.Skipf("disabled by label filter %q", TestSchedulingLabelFilter)
 					}
 					featureGates := featureGatesMerge(tc.FeatureGates, w.FeatureGates)
-					scheduler, informerFactory, tCtx := setupTestCase(t, tc, featureGates, opts, w)
+					scheduler, informerFactory, tCtx := setupTestCase(t, tc, featureGates, w, opts)
 					err := w.isValid(tc.MetricsCollectorConfig)
 					if err != nil {
 						t.Fatalf("workload %s is not valid: %v", w.Name, err)
