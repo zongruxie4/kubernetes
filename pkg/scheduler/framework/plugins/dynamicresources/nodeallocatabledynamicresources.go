@@ -233,6 +233,33 @@ func (pl *DynamicResources) validateNodeAllocatableDRAClaimSharing(pod *v1.Pod, 
 	return nil
 }
 
+// validatePodLevelRequestsCoverDRA checks if the pod-level requests, if specified, are sufficient to cover
+// the container level and DRA claim requests.
+func (pl *DynamicResources) validatePodLevelRequestsCoverDRA(logger klog.Logger, pod *v1.Pod, requestWithPodLevel v1.ResourceList) *fwk.Status {
+	if !pl.fts.EnablePodLevelResources || pod.Spec.Resources == nil || pod.Spec.Resources.Requests == nil {
+		return nil
+	}
+
+	// Calculate Sum(Containers) + DRA + overhead resources.. Skip pod level resources for this sum
+	optsSum := resourcehelper.PodResourcesOptions{
+		SkipPodLevelResources:                    true,
+		UseDRANodeAllocatableResourceClaimStatus: true,
+	}
+	requestWithoutPodLevel := resourcehelper.PodRequests(pod, optsSum)
+
+	// For resources specified at pod level, check if container and DRA aggregates does not exceed pod level budget.
+	for resName, podLevelReq := range requestWithPodLevel {
+		val, ok := requestWithoutPodLevel[resName]
+		if !ok {
+			continue
+		}
+		if val.Cmp(podLevelReq) > 0 {
+			return fwk.NewStatus(fwk.UnschedulableAndUnresolvable, fmt.Sprintf("pod level request for %s is insufficient to cover the aggregated container and node-allocatable DRA requests", resName))
+		}
+	}
+	return nil
+}
+
 // getPodNodeAllocatableResourceFootprint determines the total nodeAllocatable resource demand of a pod.
 func (pl *DynamicResources) getPodNodeAllocatableResourceFootprint(logger klog.Logger, nodeInfo fwk.NodeInfo, pod *v1.Pod, state *stateData, allocations map[types.UID]*resourceapi.AllocationResult, nodeAllocatableClaims []*resourceapi.ResourceClaim) (*framework.Resource, []v1.NodeAllocatableResourceClaimStatus, *fwk.Status) {
 	nodeAllocatableDRAAllocations := make(map[v1.ObjectReference]*resourceapi.AllocationResult)
@@ -263,15 +290,21 @@ func (pl *DynamicResources) getPodNodeAllocatableResourceFootprint(logger klog.L
 		return nil, nil, statusError(logger, err)
 	}
 
-	// Calculate Effective Container Requests for PodRequests helper
-	opts := resourcehelper.PodResourcesOptions{
+	// Calculate the final totalPodDemand to be used for node fitting
+	optsTotal := resourcehelper.PodResourcesOptions{
 		SkipPodLevelResources:                    !pl.fts.EnablePodLevelResources,
-		UseStatusResources:                       false,
 		UseDRANodeAllocatableResourceClaimStatus: true,
 	}
 	podCopy := pod.DeepCopy()
 	podCopy.Status.NodeAllocatableResourceClaimStatuses = nodeAllocatableStatus
-	totalPodDemandRes := resourcehelper.PodRequests(podCopy, opts)
+	totalPodDemandRes := resourcehelper.PodRequests(podCopy, optsTotal)
+
+	// Validate that pod-level requests, if specified, cover the aggregated container + DRA requests.
+	// The API validation in pkg/apis/core/validation/validation.go only checks pod.Spec.Resources against container
+	// requests within the Spec. It cannot account for DRA-derived resources, which are determined after device allocation.
+	if status := pl.validatePodLevelRequestsCoverDRA(logger, podCopy, totalPodDemandRes); status != nil {
+		return nil, nil, status
+	}
 
 	totalPodDemand := framework.NewResource(totalPodDemandRes)
 	logger.V(5).Info("Total Pod Demand After DRA", "pod", klog.KObj(pod), "demand", totalPodDemand)
