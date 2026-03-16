@@ -17,6 +17,7 @@ limitations under the License.
 package apiserver
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"testing"
@@ -24,12 +25,17 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/sharding"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/features"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	"k8s.io/client-go/dynamic"
 	featuregatetesting "k8s.io/component-base/featuregate/testing"
+	"k8s.io/kubernetes/cmd/kube-apiserver/app/options"
+	"k8s.io/kubernetes/test/integration/etcd"
 	"k8s.io/kubernetes/test/integration/framework"
+	"k8s.io/kubernetes/test/utils/ktesting"
 )
 
 // calculateShardRange divides the 64-bit hash space evenly across shards and
@@ -50,30 +56,24 @@ func calculateShardRange(index, total int) (start, end string) {
 }
 
 func shardSelectorString(index, total int) string {
-	start, end := calculateShardRange(index, total)
-	return fmt.Sprintf("shardRange(object.metadata.uid, '%s', '%s')", start, end)
+	return shardSelectorStringForField("object.metadata.uid", index, total)
 }
 
-// hexLess compares two lowercase hex strings numerically, matching the
-// server-side sharding comparison logic.
-func hexLess(a, b string) bool {
-	if len(a) != len(b) {
-		return len(a) < len(b)
-	}
-	return a < b
+func shardSelectorStringForField(field string, index, total int) string {
+	start, end := calculateShardRange(index, total)
+	return fmt.Sprintf("shardRange(%s, '%s', '%s')", field, start, end)
 }
 
 // objectInShard returns true if the object's UID hash falls within the given shard range.
 func objectInShard(uid string, index, total int) bool {
+	return valueInShard(uid, index, total)
+}
+
+// valueInShard returns true if the hash of value falls within the given shard range.
+func valueInShard(value string, index, total int) bool {
 	start, end := calculateShardRange(index, total)
-	hash := "0x" + sharding.HashField(uid)
-	if hexLess(hash, start) {
-		return false
-	}
-	if !hexLess(hash, end) {
-		return false
-	}
-	return true
+	hash := "0x" + sharding.HashField(value)
+	return !sharding.HexLess(hash, start) && sharding.HexLess(hash, end)
 }
 
 func TestShardedList(t *testing.T) {
@@ -174,6 +174,7 @@ func TestShardedWatch(t *testing.T) {
 	// Create objects and track which shard should see each one.
 	const numObjects = 10
 	expectedShard := make(map[string]int) // UID -> shard index
+	created := make([]*v1.ConfigMap, 0, numObjects)
 
 	for range numObjects {
 		cm, err := client.CoreV1().ConfigMaps(ns.Name).Create(ctx, &v1.ConfigMap{
@@ -184,6 +185,7 @@ func TestShardedWatch(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create configmap: %v", err)
 		}
+		created = append(created, cm)
 		for shard := range numShards {
 			if objectInShard(string(cm.UID), shard, numShards) {
 				expectedShard[string(cm.UID)] = shard
@@ -192,54 +194,85 @@ func TestShardedWatch(t *testing.T) {
 		}
 	}
 
-	// Collect events from each watcher.
-	received := make([]map[string]bool, numShards)
-	for i := range received {
-		received[i] = make(map[string]bool)
+	// Multiplex all watcher channels into a single channel for easy consumption.
+	type shardEvent struct {
+		shard     int
+		eventType watch.EventType
+		uid       string
 	}
-
-	for shard := range numShards {
-		collectEvents(t, watchers[shard], received[shard], expectedShard)
-	}
-
-	// Verify every object was seen by exactly the right shard.
-	for uid, expectedIdx := range expectedShard {
-		if !received[expectedIdx][uid] {
-			t.Errorf("UID %s: expected in shard %d but not received", uid, expectedIdx)
-		}
-		for other := range numShards {
-			if other != expectedIdx && received[other][uid] {
-				t.Errorf("UID %s: received in shard %d but expected only in shard %d", uid, other, expectedIdx)
-			}
-		}
-	}
-}
-
-func collectEvents(t *testing.T, w watch.Interface, seen map[string]bool, expected map[string]int) {
-	t.Helper()
-	timeout := time.After(30 * time.Second)
-	remaining := 0
-	for range expected {
-		remaining++
-	}
-	// We only need events for UIDs in our expected set that belong to this watcher.
-	// But we don't know which watcher this is, so just collect all ADDED events until
-	// we've seen enough or timed out.
-	for {
-		select {
-		case evt, ok := <-w.ResultChan():
-			if !ok {
-				return
-			}
-			if evt.Type == watch.Added {
+	eventCh := make(chan shardEvent, 100)
+	for shard, w := range watchers {
+		go func(shard int, w watch.Interface) {
+			for evt := range w.ResultChan() {
 				cm, ok := evt.Object.(*v1.ConfigMap)
 				if !ok {
 					continue
 				}
-				seen[string(cm.UID)] = true
+				eventCh <- shardEvent{shard: shard, eventType: evt.Type, uid: string(cm.UID)}
 			}
-		case <-timeout:
-			return
+		}(shard, w)
+	}
+
+	// waitForEvents drains the multiplexed channel until count events of the
+	// given type are collected, returning per-shard UID sets.
+	waitForEvents := func(eventType watch.EventType, count int) []map[string]bool {
+		t.Helper()
+		perShard := make([]map[string]bool, numShards)
+		for i := range perShard {
+			perShard[i] = make(map[string]bool)
+		}
+		timeout := time.After(30 * time.Second)
+		collected := 0
+		for collected < count {
+			select {
+			case evt := <-eventCh:
+				if evt.eventType != eventType {
+					continue
+				}
+				perShard[evt.shard][evt.uid] = true
+				collected++
+			case <-timeout:
+				t.Fatalf("timed out waiting for %s events: got %d/%d", eventType, collected, count)
+			}
+		}
+		return perShard
+	}
+
+	// Collect ADDED events.
+	added := waitForEvents(watch.Added, numObjects)
+	verifyShardEvents(t, "ADDED", added, expectedShard, numShards)
+
+	// Update each object by setting an annotation, then collect MODIFIED events.
+	for _, cm := range created {
+		cm.Annotations = map[string]string{"updated": "true"}
+		if _, err := client.CoreV1().ConfigMaps(ns.Name).Update(ctx, cm, metav1.UpdateOptions{}); err != nil {
+			t.Fatalf("failed to update configmap %s: %v", cm.Name, err)
+		}
+	}
+	modified := waitForEvents(watch.Modified, numObjects)
+	verifyShardEvents(t, "MODIFIED", modified, expectedShard, numShards)
+
+	// Delete each object, then collect DELETED events.
+	for _, cm := range created {
+		if err := client.CoreV1().ConfigMaps(ns.Name).Delete(ctx, cm.Name, metav1.DeleteOptions{}); err != nil {
+			t.Fatalf("failed to delete configmap %s: %v", cm.Name, err)
+		}
+	}
+	deleted := waitForEvents(watch.Deleted, numObjects)
+	verifyShardEvents(t, "DELETED", deleted, expectedShard, numShards)
+}
+
+// verifyShardEvents checks that each UID was seen by exactly the expected shard.
+func verifyShardEvents(t *testing.T, eventType string, perShard []map[string]bool, expectedShard map[string]int, numShards int) {
+	t.Helper()
+	for uid, expectedIdx := range expectedShard {
+		if !perShard[expectedIdx][uid] {
+			t.Errorf("%s: UID %s expected in shard %d but not received", eventType, uid, expectedIdx)
+		}
+		for other := range numShards {
+			if other != expectedIdx && perShard[other][uid] {
+				t.Errorf("%s: UID %s received in shard %d but expected only in shard %d", eventType, uid, other, expectedIdx)
+			}
 		}
 	}
 }
@@ -311,5 +344,168 @@ func TestShardedListComplete(t *testing.T) {
 	}
 	if len(list.Items) != numObjects {
 		t.Errorf("expected %d items, got %d", numObjects, len(list.Items))
+	}
+}
+
+func TestShardedListByNamespace(t *testing.T) {
+	featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.ShardedListAndWatch, true)
+
+	ctx, client, _, tearDownFn := setup(t)
+	defer tearDownFn()
+
+	// Create multiple namespaces with one ConfigMap each.
+	const numNamespaces = 10
+	type nsObj struct {
+		namespace string
+		uid       string
+	}
+	var objects []nsObj
+	for i := range numNamespaces {
+		nsName := fmt.Sprintf("shard-ns-%d", i)
+		ns := framework.CreateNamespaceOrDie(client, nsName, t)
+		defer framework.DeleteNamespaceOrDie(client, ns, t)
+
+		cm, err := client.CoreV1().ConfigMaps(nsName).Create(ctx, &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "test"},
+		}, metav1.CreateOptions{})
+		if err != nil {
+			t.Fatalf("failed to create configmap in %s: %v", nsName, err)
+		}
+		objects = append(objects, nsObj{namespace: nsName, uid: string(cm.UID)})
+	}
+
+	const numShards = 3
+	allFound := make(map[string]bool) // UID -> found
+
+	for shard := range numShards {
+		selector := shardSelectorStringForField("object.metadata.namespace", shard, numShards)
+		// List across all namespaces.
+		list, err := client.CoreV1().ConfigMaps("").List(ctx, metav1.ListOptions{
+			ShardSelector: selector,
+		})
+		if err != nil {
+			t.Fatalf("shard %d: failed to list: %v", shard, err)
+		}
+
+		if list.ShardInfo == nil {
+			t.Errorf("shard %d: expected shardInfo to be set", shard)
+		}
+
+		for _, cm := range list.Items {
+			if !valueInShard(cm.Namespace, shard, numShards) {
+				t.Errorf("shard %d: object %s/%s namespace hash should not be in this shard", shard, cm.Namespace, cm.Name)
+			}
+			allFound[string(cm.UID)] = true
+		}
+	}
+
+	// Every object we created must appear in exactly one shard.
+	for _, obj := range objects {
+		if !allFound[obj.uid] {
+			t.Errorf("object in namespace %s (UID %s) was not returned by any shard", obj.namespace, obj.uid)
+		}
+	}
+}
+
+// TestShardedListAllResources verifies that sharding is wired for every API
+// resource. It follows the same discovery+etcd pattern used by the dryrun
+// integration tests.
+func TestShardedListAllResources(t *testing.T) {
+	featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.ShardedListAndWatch, true)
+
+	ctx := ktesting.Init(t)
+	client, config, tearDownFn := framework.StartTestServer(ctx, t, framework.TestServerSetup{
+		ModifyServerRunOptions: func(opts *options.ServerRunOptions) {
+			opts.Admission.GenericAdmission.DisablePlugins = []string{"ServiceAccount"}
+		},
+	})
+	defer tearDownFn()
+
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testNamespace := "shard-allresources"
+	if _, err := client.CoreV1().Namespaces().Create(ctx, &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: testNamespace},
+	}, metav1.CreateOptions{}); err != nil {
+		t.Fatal(err)
+	}
+
+	storageData := etcd.GetEtcdStorageDataForNamespace(testNamespace)
+
+	_, serverResources, err := client.Discovery().ServerGroupsAndResources()
+	if err != nil {
+		t.Fatalf("failed to get ServerGroupsAndResources: %v", err)
+	}
+
+	for _, resourceToTest := range etcd.GetResources(t, serverResources) {
+		mapping := resourceToTest.Mapping
+		gvr := mapping.Resource
+
+		testData, hasData := storageData[gvr]
+		if !hasData {
+			continue
+		}
+
+		// Check that this resource supports list.
+		hasListVerb := false
+		for _, discoveryGroup := range serverResources {
+			for _, r := range discoveryGroup.APIResources {
+				gv, _ := schema.ParseGroupVersion(discoveryGroup.GroupVersion)
+				if gv.WithResource(r.Name) == gvr {
+					for _, verb := range r.Verbs {
+						if verb == "list" {
+							hasListVerb = true
+						}
+					}
+				}
+			}
+		}
+		if !hasListVerb {
+			continue
+		}
+
+		t.Run(gvr.String(), func(t *testing.T) {
+			res, obj, err := etcd.JSONToUnstructured(testData.Stub, testNamespace, mapping, dynamicClient)
+			if err != nil {
+				t.Fatalf("failed to unmarshal stub: %v", err)
+			}
+
+			created, err := res.Create(ctx, obj, metav1.CreateOptions{})
+			if err != nil {
+				t.Fatalf("failed to create %s: %v", gvr, err)
+			}
+			uid := string(created.GetUID())
+
+			// List with 2 shards and verify the object appears in exactly one.
+			const numShards = 2
+			foundInShard := -1
+			for shard := range numShards {
+				selector := shardSelectorString(shard, numShards)
+				listResult, err := res.List(ctx, metav1.ListOptions{
+					ShardSelector: selector,
+				})
+				if err != nil {
+					t.Fatalf("shard %d: list failed for %s: %v", shard, gvr, err)
+				}
+				for _, item := range listResult.Items {
+					if string(item.GetUID()) == uid {
+						if foundInShard >= 0 {
+							t.Errorf("object %s appeared in shard %d and %d", uid, foundInShard, shard)
+						}
+						foundInShard = shard
+					}
+				}
+			}
+			if foundInShard < 0 {
+				t.Errorf("object %s not found in any shard for %s", uid, gvr)
+			}
+
+			if err := res.Delete(context.TODO(), created.GetName(), *metav1.NewDeleteOptions(0)); err != nil {
+				t.Logf("cleanup delete failed for %s: %v", gvr, err)
+			}
+		})
 	}
 }
