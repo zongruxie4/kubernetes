@@ -34,10 +34,10 @@ import (
 	"k8s.io/kubernetes/test/e2e/storage/utils"
 )
 
-// MakeVolumeGroupSnapshot constructs a VolumeGroupSnapshot object with a label selector.
-// snapshotClassName is optional; if empty, the cluster's default VolumeGroupSnapshotClass
+// GetVolumeGroupSnapshot constructs a VolumeGroupSnapshot object with a label selector.
+// vgsclassName is optional; if empty, the cluster's default VolumeGroupSnapshotClass
 // will be used by the controller.
-func MakeVolumeGroupSnapshot(ns string, matchLabels map[string]interface{}, snapshotClassName string) *unstructured.Unstructured {
+func GetVolumeGroupSnapshot(ns string, matchLabels map[string]interface{}, vgsclassName string) *unstructured.Unstructured {
 	spec := map[string]interface{}{
 		"source": map[string]interface{}{
 			"selector": map[string]interface{}{
@@ -45,8 +45,8 @@ func MakeVolumeGroupSnapshot(ns string, matchLabels map[string]interface{}, snap
 			},
 		},
 	}
-	if snapshotClassName != "" {
-		spec["volumeGroupSnapshotClassName"] = snapshotClassName
+	if vgsclassName != "" {
+		spec["volumeGroupSnapshotClassName"] = vgsclassName
 	}
 	return &unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -59,10 +59,6 @@ func MakeVolumeGroupSnapshot(ns string, matchLabels map[string]interface{}, snap
 			"spec": spec,
 		},
 	}
-}
-
-func getVolumeGroupSnapshot(labels map[string]interface{}, ns, snapshotClassName string) *unstructured.Unstructured {
-	return MakeVolumeGroupSnapshot(ns, labels, snapshotClassName)
 }
 
 // VolumeGroupSnapshotResource represents a volumegroupsnapshot class, a volumegroupsnapshot and its bound contents for a specific test case
@@ -106,9 +102,9 @@ func CreateVolumeGroupSnapshot(ctx context.Context, sDriver VolumeGroupSnapshott
 
 	ginkgo.By("creating a dynamic VolumeGroupSnapshot")
 	// Prepare a dynamically provisioned group volume snapshot with certain data
-	volumeGroupSnapshot := getVolumeGroupSnapshot(map[string]interface{}{
+	volumeGroupSnapshot := GetVolumeGroupSnapshot(pvcNamespace, map[string]interface{}{
 		"group": groupName,
-	}, pvcNamespace, gsclass.GetName())
+	}, gsclass.GetName())
 
 	volumeGroupSnapshot, err = dc.Resource(utils.VolumeGroupSnapshotGVR).Namespace(volumeGroupSnapshot.GetNamespace()).Create(ctx, volumeGroupSnapshot, metav1.CreateOptions{})
 	framework.ExpectNoError(err, "Failed to create volume group snapshot")

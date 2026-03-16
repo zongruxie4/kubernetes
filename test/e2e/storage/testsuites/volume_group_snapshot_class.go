@@ -1,5 +1,5 @@
 /*
-Copyright 2024 The Kubernetes Authors.
+Copyright The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,8 +45,8 @@ import (
 // VolumeGroupSnapshotClass selection fails. Sourced from:
 // https://github.com/kubernetes-csi/external-snapshotter/blob/master/pkg/common-controller/groupsnapshot_controller_helper.go
 const (
-	errNoDefaultVGSClass       = "cannot find default group snapshot class"
-	errMultipleDefaultVGSClass = "default snapshot classes were found"
+	errNoDefaultVGSClass         = "cannot find default group snapshot class"
+	errMultipleDefaultVGSClasses = "default snapshot classes were found"
 
 	defaultVGSClassAnnotationKey = "groupsnapshot.storage.kubernetes.io/is-default-class"
 )
@@ -94,8 +94,8 @@ func (s *VolumeGroupSnapshotClassTestSuite) SkipUnsupportedTests(driver storagef
 
 // DefineTests defines the test cases for VolumeGroupSnapshotClass default class selection.
 func (s *VolumeGroupSnapshotClassTestSuite) DefineTests(driver storageframework.TestDriver, pattern storageframework.TestPattern) {
-	labelKey := "group"
-	labelValue := "test-group"
+	labelKey := "pvc-group"
+	labelValue := "test-vgsclass"
 
 	f := framework.NewDefaultFramework("volumegroupsnapshotclass")
 	f.NamespacePodSecurityLevel = admissionapi.LevelPrivileged
@@ -120,13 +120,9 @@ func (s *VolumeGroupSnapshotClassTestSuite) DefineTests(driver storageframework.
 			vr1 := storageframework.CreateVolumeResource(ctx, driver, config, pattern, s.GetTestSuiteInfo().SupportedSizeRange)
 			vr2 := storageframework.CreateVolumeResource(ctx, driver, config, pattern, s.GetTestSuiteInfo().SupportedSizeRange)
 			for _, vr := range []*storageframework.VolumeResource{vr1, vr2} {
-				pvc := vr.Pvc.DeepCopy()
-				if pvc.Labels == nil {
-					pvc.Labels = make(map[string]string)
-				}
-				pvc.Labels[labelKey] = labelValue
-				updatedPVC, err := cs.CoreV1().PersistentVolumeClaims(f.Namespace.Name).Update(ctx, pvc, metav1.UpdateOptions{})
-				framework.ExpectNoError(err, "failed to add label to PVC %s", pvc.Name)
+				patchData := fmt.Appendf(nil, `{"metadata":{"labels":{"%s":"%s"}}}`, labelKey, labelValue)
+				updatedPVC, err := cs.CoreV1().PersistentVolumeClaims(f.Namespace.Name).Patch(ctx, vr.Pvc.Name, types.MergePatchType, patchData, metav1.PatchOptions{})
+				framework.ExpectNoError(err, "failed to add label to PVC %s", vr.Pvc.Name)
 				vr.Pvc = updatedPVC
 			}
 
@@ -172,7 +168,7 @@ func (s *VolumeGroupSnapshotClassTestSuite) DefineTests(driver storageframework.
 		// volumeGroupSnapshotClassName and registers a DeferCleanup to delete it.
 		createVGSWithoutClassName := func(ctx context.Context) *unstructured.Unstructured {
 			vgs, err := f.DynamicClient.Resource(utils.VolumeGroupSnapshotGVR).Namespace(f.Namespace.Name).Create(ctx,
-				storageframework.MakeVolumeGroupSnapshot(f.Namespace.Name, map[string]interface{}{labelKey: labelValue}, ""),
+				storageframework.GetVolumeGroupSnapshot(f.Namespace.Name, map[string]interface{}{labelKey: labelValue}, ""),
 				metav1.CreateOptions{})
 			framework.ExpectNoError(err, "failed to create VolumeGroupSnapshot")
 			ginkgo.DeferCleanup(func(ctx context.Context) {
@@ -215,12 +211,35 @@ func (s *VolumeGroupSnapshotClassTestSuite) DefineTests(driver storageframework.
 			}
 		}
 
+		// expectVolumeGroupSnapshotClassName fetches the named VolumeGroupSnapshot and
+		// asserts spec.volumeGroupSnapshotClassName against expectedClassName.
+		// Pass nil to assert the field is absent.
+		// Pass a pointer to a string to assert the field equals that exact value,
+		// including "" for the edge case where a VolumeGroupSnapshotClass carries a
+		// "groupsnapshot.storage.kubernetes.io/is-default-class"="" annotation.
+		expectVolumeGroupSnapshotClassName := func(ctx context.Context, vgsName string, expectedClassName *string) {
+			ginkgo.GinkgoHelper()
+			vgs, err := f.DynamicClient.Resource(utils.VolumeGroupSnapshotGVR).Namespace(f.Namespace.Name).Get(ctx, vgsName, metav1.GetOptions{})
+			framework.ExpectNoError(err, "failed to get VolumeGroupSnapshot %s", vgsName)
+			spec, ok := vgs.Object["spec"].(map[string]interface{})
+			if !ok {
+				ginkgo.Fail("failed to get VolumeGroupSnapshot spec: spec field is not a map[string]interface{}")
+			}
+			if expectedClassName == nil {
+				gomega.Expect(spec["volumeGroupSnapshotClassName"]).To(gomega.BeNil(),
+					"VolumeGroupSnapshot %s spec.volumeGroupSnapshotClassName should not be set by the controller", vgsName)
+			} else {
+				gomega.Expect(spec["volumeGroupSnapshotClassName"]).To(gomega.Equal(*expectedClassName),
+					"VolumeGroupSnapshot %s spec.volumeGroupSnapshotClassName should be %q", vgsName, *expectedClassName)
+			}
+		}
+
 		f.It("should use default VolumeGroupSnapshotClass when no className is specified", f.WithSerial(), func(ctx context.Context) {
 			removeAndRestoreDefaultVGSClasses(ctx)
 
 			vr1, vr2, pod := createPVCsWithPod(ctx)
 			ginkgo.DeferCleanup(func(ctx context.Context) {
-				e2epod.DeletePodWithWait(ctx, cs, pod)
+				framework.ExpectNoError(e2epod.DeletePodWithWait(ctx, cs, pod))
 				framework.ExpectNoError(vr1.CleanupResource(ctx))
 				framework.ExpectNoError(vr2.CleanupResource(ctx))
 			})
@@ -244,20 +263,16 @@ func (s *VolumeGroupSnapshotClassTestSuite) DefineTests(driver storageframework.
 			framework.ExpectNoError(utils.WaitForVolumeGroupSnapshotReady(ctx, f.DynamicClient, f.Namespace.Name, vgs.GetName(), framework.Poll, f.Timeouts.SnapshotCreate))
 
 			ginkgo.By("verifying the default VolumeGroupSnapshotClass name was written back to the VolumeGroupSnapshot spec")
-			vgs, err := f.DynamicClient.Resource(utils.VolumeGroupSnapshotGVR).Namespace(f.Namespace.Name).Get(ctx, vgs.GetName(), metav1.GetOptions{})
-			framework.ExpectNoError(err, "failed to get VolumeGroupSnapshot")
-			spec, ok := vgs.Object["spec"].(map[string]interface{})
-			gomega.Expect(ok).To(gomega.BeTrue(), "failed to get VolumeGroupSnapshot spec")
-			gomega.Expect(spec["volumeGroupSnapshotClassName"]).To(gomega.Equal(vgsclass.GetName()),
-				"VolumeGroupSnapshot should have the default class name set in spec")
+			expectedClassName := vgsclass.GetName()
+			expectVolumeGroupSnapshotClassName(ctx, vgs.GetName(), &expectedClassName)
 		})
 
-		f.It("should fail to create VolumeGroupSnapshot when no default VolumeGroupSnapshotClass exists", f.WithSerial(), func(ctx context.Context) {
+		f.It("should report error when VolumeGroupSnapshot is created without className and no default class exists", f.WithSerial(), func(ctx context.Context) {
 			removeAndRestoreDefaultVGSClasses(ctx)
 
 			vr1, vr2, pod := createPVCsWithPod(ctx)
 			ginkgo.DeferCleanup(func(ctx context.Context) {
-				e2epod.DeletePodWithWait(ctx, cs, pod)
+				framework.ExpectNoError(e2epod.DeletePodWithWait(ctx, cs, pod))
 				framework.ExpectNoError(vr1.CleanupResource(ctx))
 				framework.ExpectNoError(vr2.CleanupResource(ctx))
 			})
@@ -267,14 +282,17 @@ func (s *VolumeGroupSnapshotClassTestSuite) DefineTests(driver storageframework.
 
 			ginkgo.By("verifying the VolumeGroupSnapshot enters an error state")
 			framework.ExpectNoError(waitForVolumeGroupSnapshotError(ctx, f.DynamicClient, f.Namespace.Name, vgs.GetName(), framework.Poll, f.Timeouts.SnapshotCreate, errNoDefaultVGSClass))
+
+			ginkgo.By("verifying spec.volumeGroupSnapshotClassName was not set by the controller")
+			expectVolumeGroupSnapshotClassName(ctx, vgs.GetName(), nil)
 		})
 
-		f.It("should fail to create VolumeGroupSnapshot when multiple default VolumeGroupSnapshotClasses exist", f.WithSerial(), func(ctx context.Context) {
+		f.It("should report error when VolumeGroupSnapshot is created without className and multiple default classes exist", f.WithSerial(), func(ctx context.Context) {
 			removeAndRestoreDefaultVGSClasses(ctx)
 
 			vr1, vr2, pod := createPVCsWithPod(ctx)
 			ginkgo.DeferCleanup(func(ctx context.Context) {
-				e2epod.DeletePodWithWait(ctx, cs, pod)
+				framework.ExpectNoError(e2epod.DeletePodWithWait(ctx, cs, pod))
 				framework.ExpectNoError(vr1.CleanupResource(ctx))
 				framework.ExpectNoError(vr2.CleanupResource(ctx))
 			})
@@ -287,7 +305,10 @@ func (s *VolumeGroupSnapshotClassTestSuite) DefineTests(driver storageframework.
 			vgs := createVGSWithoutClassName(ctx)
 
 			ginkgo.By("verifying the VolumeGroupSnapshot enters an error state due to multiple default classes")
-			framework.ExpectNoError(waitForVolumeGroupSnapshotError(ctx, f.DynamicClient, f.Namespace.Name, vgs.GetName(), framework.Poll, f.Timeouts.SnapshotCreate, errMultipleDefaultVGSClass))
+			framework.ExpectNoError(waitForVolumeGroupSnapshotError(ctx, f.DynamicClient, f.Namespace.Name, vgs.GetName(), framework.Poll, f.Timeouts.SnapshotCreate, errMultipleDefaultVGSClasses))
+
+			ginkgo.By("verifying spec.volumeGroupSnapshotClassName was not set by the controller")
+			expectVolumeGroupSnapshotClassName(ctx, vgs.GetName(), nil)
 		})
 	})
 }
