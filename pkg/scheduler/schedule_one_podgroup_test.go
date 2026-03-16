@@ -931,6 +931,7 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 
 	tests := []struct {
 		name             string
+		existingPodGroup *schedulingv1alpha2.PodGroup
 		algorithmResult  podGroupAlgorithmResult
 		expectBound      sets.Set[string]
 		expectPreempting sets.Set[string]
@@ -1287,6 +1288,75 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 				Message: "",
 			},
 		},
+		{
+			name: "Already Scheduled, rejected cycle does not regress condition",
+			existingPodGroup: &schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{Name: "pg", Namespace: "default"},
+				Status: schedulingv1alpha2.PodGroupStatus{
+					Conditions: []metav1.Condition{{
+						Type:               schedulingapi.PodGroupScheduled,
+						Status:             metav1.ConditionTrue,
+						Reason:             "Scheduled",
+						Message:            "All pods scheduled",
+						LastTransitionTime: metav1.Now(),
+					}},
+				},
+			},
+			algorithmResult: podGroupAlgorithmResult{
+				status: fwk.NewStatus(fwk.Unschedulable, "extra pods could not be placed"),
+				podResults: []algorithmResult{{
+					scheduleResult: ScheduleResult{SuggestedHost: "", nominatingInfo: clearNominatedNode},
+					status:         fwk.NewStatus(fwk.Unschedulable),
+				}, {
+					scheduleResult: ScheduleResult{SuggestedHost: "", nominatingInfo: clearNominatedNode},
+					status:         fwk.NewStatus(fwk.Unschedulable),
+				}, {
+					scheduleResult: ScheduleResult{SuggestedHost: "", nominatingInfo: clearNominatedNode},
+					status:         fwk.NewStatus(fwk.Unschedulable),
+				}},
+			},
+			expectFailed: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionTrue,
+				Reason:  "Scheduled",
+				Message: "All pods scheduled",
+			},
+		},
+		{
+			name: "Already Scheduled, error cycle does not regress condition",
+			existingPodGroup: &schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{Name: "pg", Namespace: "default"},
+				Status: schedulingv1alpha2.PodGroupStatus{
+					Conditions: []metav1.Condition{{
+						Type:               schedulingapi.PodGroupScheduled,
+						Status:             metav1.ConditionTrue,
+						Reason:             "Scheduled",
+						Message:            "All pods scheduled",
+						LastTransitionTime: metav1.Now(),
+					}},
+				},
+			},
+			algorithmResult: podGroupAlgorithmResult{
+				status: fwk.NewStatus(fwk.Error),
+				podResults: []algorithmResult{{
+					scheduleResult: ScheduleResult{SuggestedHost: "node1"},
+					status:         nil,
+					permitStatus:   nil,
+				}, {
+					scheduleResult: ScheduleResult{SuggestedHost: "", nominatingInfo: clearNominatedNode},
+					status:         fwk.NewStatus(fwk.Error),
+				}},
+			},
+			expectBound:  sets.New[string](),
+			expectFailed: sets.New("p1", "p2", "p3"),
+			expectCondition: &metav1.Condition{
+				Type:    schedulingapi.PodGroupScheduled,
+				Status:  metav1.ConditionTrue,
+				Reason:  "Scheduled",
+				Message: "All pods scheduled",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -1298,7 +1368,11 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 			preemptingPods := sets.New[string]()
 			failedPods := sets.New[string]()
 
-			client := clientsetfake.NewClientset(testNode, testPodGroup)
+			pg := testPodGroup
+			if tt.existingPodGroup != nil {
+				pg = tt.existingPodGroup
+			}
+			client := clientsetfake.NewClientset(testNode, pg)
 			client.PrependReactor("create", "pods", func(action clienttesting.Action) (bool, runtime.Object, error) {
 				if action.GetSubresource() != "binding" {
 					return false, nil, nil
@@ -1341,7 +1415,7 @@ func TestSubmitPodGroupAlgorithmResult(t *testing.T) {
 			cache.AddNode(klog.FromContext(ctx), testNode)
 
 			informerFactory := informers.NewSharedInformerFactory(client, 0)
-			if err := informerFactory.Scheduling().V1alpha2().PodGroups().Informer().GetStore().Add(testPodGroup); err != nil {
+			if err := informerFactory.Scheduling().V1alpha2().PodGroups().Informer().GetStore().Add(pg); err != nil {
 				t.Fatalf("Failed to add PodGroup to informer store: %v", err)
 			}
 
