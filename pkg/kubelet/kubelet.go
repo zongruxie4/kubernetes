@@ -3514,26 +3514,29 @@ func (kl *Kubelet) OnPodSandboxReady(ctx context.Context, pod *v1.Pod) error {
 	logger := klog.FromContext(ctx)
 	logger.V(3).Info("OnPodSandboxReady callback invoked", "pod", klog.KObj(pod), "podUID", pod.UID)
 
-	existingStatus, ok := kl.statusManager.GetPodStatus(pod.UID)
-	if !ok {
-		existingStatus = pod.Status
-	}
+	// update the status asynchronously to avoid blocking the SyncPod flow
+	go func() {
+		existingStatus, ok := kl.statusManager.GetPodStatus(pod.UID)
+		if !ok {
+			existingStatus = pod.Status
+		}
 
-	cachedStatus := existingStatus.DeepCopy()
+		cachedStatus := existingStatus.DeepCopy()
 
-	readySandboxCondition := v1.PodCondition{
-		Type:               v1.PodReadyToStartContainers,
-		Status:             v1.ConditionTrue,
-		ObservedGeneration: podutil.CalculatePodConditionObservedGeneration(cachedStatus, pod.Generation, v1.PodReadyToStartContainers),
-	}
+		readySandboxCondition := v1.PodCondition{
+			Type:               v1.PodReadyToStartContainers,
+			Status:             v1.ConditionTrue,
+			ObservedGeneration: podutil.CalculatePodConditionObservedGeneration(cachedStatus, pod.Generation, v1.PodReadyToStartContainers),
+		}
 
-	cachedStatus.Conditions = utilpod.ReplaceOrAppendPodCondition(cachedStatus.Conditions, &readySandboxCondition)
+		cachedStatus.Conditions = utilpod.ReplaceOrAppendPodCondition(cachedStatus.Conditions, &readySandboxCondition)
 
-	kl.statusManager.SetPodStatus(logger, pod, *cachedStatus)
+		kl.statusManager.SetPodStatus(logger, pod, *cachedStatus)
 
-	logger.V(3).Info("Successfully updated PodReadyToStartContainers condition after sandbox creation",
-		"pod", klog.KObj(pod),
-		"podUID", pod.UID)
+		logger.V(3).Info("Successfully updated PodReadyToStartContainers condition after sandbox creation",
+			"pod", klog.KObj(pod),
+			"podUID", pod.UID)
+	}()
 
 	return nil
 }
