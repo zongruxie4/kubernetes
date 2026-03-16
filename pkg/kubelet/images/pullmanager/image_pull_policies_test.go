@@ -247,7 +247,7 @@ func TestNewNeverVerifyAllowListedPullPolicy(t *testing.T) {
 	}
 }
 
-func TestRemoveTagDigest(t *testing.T) {
+func TestTrimImageTagDigest(t *testing.T) {
 	tests := []struct {
 		name    string
 		image   string
@@ -357,7 +357,7 @@ func TestRemoveTagDigest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := removeTagDigest(tt.image)
+			got, err := trimImageTagDigest(tt.image)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("removeTagDigest(%q) error = %v, wantErr %v", tt.image, err, tt.wantErr)
 			}

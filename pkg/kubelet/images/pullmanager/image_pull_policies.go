@@ -110,7 +110,7 @@ func (p *NeverVerifyAllowlistedImages) RequireCredentialVerificationForImage(ima
 }
 
 func (p *NeverVerifyAllowlistedImages) imageMatches(image string) bool {
-	noTagsName, err := removeTagDigest(image)
+	noTagsName, err := trimImageTagDigest(image)
 	if err != nil {
 		// in a best-effort manner, we should still attempt to match with what
 		// we've got from the user
@@ -163,7 +163,7 @@ func getAllowlistImagePattern(pattern string) (string, bool, error) {
 			return "", false, fmt.Errorf("at least registry hostname is required")
 		}
 	} else { // not a wildcard
-		image, err := removeTagDigest(trimmedPattern)
+		image, err := trimImageTagDigest(trimmedPattern)
 		if err != nil {
 			return "", false, fmt.Errorf("failed to parse as an image name: %w", err)
 		}
@@ -178,7 +178,8 @@ func getAllowlistImagePattern(pattern string) (string, bool, error) {
 	return trimmedPattern, true, nil
 }
 
-func removeTagDigest(image string) (string, error) {
+// trimImageTagDigest trims digest and tag from an image name
+func trimImageTagDigest(image string) (string, error) {
 	imageParsed, err := imageref.Parse(image)
 	if err != nil {
 		return "", err
