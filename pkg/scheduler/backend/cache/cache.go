@@ -649,6 +649,19 @@ func (cache *cacheImpl) RemoveNode(logger klog.Logger, node *v1.Node) error {
 	return nil
 }
 
+// GetNode returns the copy of node stored in the cache.
+// DO NOT use outside of tests.
+func (cache *cacheImpl) GetNode(name string) (*framework.NodeInfo, error) {
+	cache.mu.RLock()
+	defer cache.mu.RUnlock()
+
+	n, ok := cache.nodes[name]
+	if !ok {
+		return nil, fmt.Errorf("node %v does not exist in scheduler cache", name)
+	}
+	return n.info.SnapshotConcrete(), nil
+}
+
 // addNodeImageStates adds states of the images on given node to the given nodeInfo and update the imageStates in
 // scheduler cache. This function assumes the lock to scheduler cache has been acquired.
 func (cache *cacheImpl) addNodeImageStates(node *v1.Node, nodeInfo *framework.NodeInfo) {

@@ -61,6 +61,10 @@ type Cache interface {
 	// DO NOT use outside of tests.
 	PodCount() (int, error)
 
+	// GetNode returns the copy of node stored in the cache.
+	// DO NOT use outside of tests.
+	GetNode(name string) (*framework.NodeInfo, error)
+
 	// AssumePod assumes a pod scheduled and aggregates the pod's information into its node.
 	AssumePod(logger klog.Logger, pod *v1.Pod) error
 
