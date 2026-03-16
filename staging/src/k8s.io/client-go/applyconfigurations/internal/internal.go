@@ -12530,15 +12530,39 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: bool
       type:
         scalar: boolean
+    - name: bools
+      type:
+        list:
+          elementType:
+            scalar: boolean
+          elementRelationship: atomic
     - name: int
       type:
         scalar: numeric
+    - name: ints
+      type:
+        list:
+          elementType:
+            scalar: numeric
+          elementRelationship: atomic
     - name: string
       type:
         scalar: string
+    - name: strings
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
     - name: version
       type:
         scalar: string
+    - name: versions
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
 - name: io.k8s.api.resource.v1.DeviceCapacity
   map:
     fields:
@@ -13298,15 +13322,39 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: bool
       type:
         scalar: boolean
+    - name: bools
+      type:
+        list:
+          elementType:
+            scalar: boolean
+          elementRelationship: atomic
     - name: int
       type:
         scalar: numeric
+    - name: ints
+      type:
+        list:
+          elementType:
+            scalar: numeric
+          elementRelationship: atomic
     - name: string
       type:
         scalar: string
+    - name: strings
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
     - name: version
       type:
         scalar: string
+    - name: versions
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
 - name: io.k8s.api.resource.v1beta1.DeviceCapacity
   map:
     fields:
@@ -13983,15 +14031,39 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: bool
       type:
         scalar: boolean
+    - name: bools
+      type:
+        list:
+          elementType:
+            scalar: boolean
+          elementRelationship: atomic
     - name: int
       type:
         scalar: numeric
+    - name: ints
+      type:
+        list:
+          elementType:
+            scalar: numeric
+          elementRelationship: atomic
     - name: string
       type:
         scalar: string
+    - name: strings
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
     - name: version
       type:
         scalar: string
+    - name: versions
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
 - name: io.k8s.api.resource.v1beta2.DeviceCapacity
   map:
     fields:
