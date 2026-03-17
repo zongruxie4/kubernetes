@@ -2115,7 +2115,7 @@ func testPlugin(tCtx ktesting.TContext) {
 				filter: perNodeResult{
 					workerNode.Name: {
 						// Timeouts return Error so the pod retries via backoff.
-						status: fwk.AsStatus(fmt.Errorf("timed out trying to allocate devices")),
+						status: fwk.AsStatus(fmt.Errorf("node %s: timed out trying to allocate devices", workerNode.Name)),
 					},
 				},
 				// No postfilter: Error aborts scheduling immediately.

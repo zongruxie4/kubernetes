@@ -286,19 +286,6 @@ func expectPodSchedulerError(tCtx ktesting.TContext, pod *v1.Pod, reason string)
 	}), fmt.Sprintf("expected pod to have scheduler error because %q", reason))
 }
 
-func expectPodUnschedulable(tCtx ktesting.TContext, pod *v1.Pod, reason string) {
-	tCtx.Helper()
-	tCtx.ExpectNoError(e2epod.WaitForPodNameUnschedulableInNamespace(tCtx, tCtx.Client(), pod.Name, pod.Namespace), fmt.Sprintf("expected pod to be unschedulable because %q", reason))
-	pod, err := tCtx.Client().CoreV1().Pods(pod.Namespace).Get(tCtx, pod.Name, metav1.GetOptions{})
-	tCtx.ExpectNoError(err)
-	gomega.NewWithT(tCtx).Expect(pod).To(gomega.HaveField("Status.Conditions", gomega.ContainElement(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-		"Type":    gomega.Equal(v1.PodScheduled),
-		"Status":  gomega.Equal(v1.ConditionFalse),
-		"Reason":  gomega.Equal(v1.PodReasonUnschedulable),
-		"Message": gomega.ContainSubstring(reason),
-	}))))
-}
-
 type nodeInfo struct {
 	name       string
 	driverName string
