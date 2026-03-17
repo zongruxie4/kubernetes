@@ -858,9 +858,6 @@ func (rc *ResourceConsumer) CleanUp(ctx context.Context) {
 	}
 
 	framework.ExpectNoError(rc.clientSet.CoreV1().Services(rc.nsName).Delete(ctx, rc.name, metav1.DeleteOptions{}))
-	if err := rc.clientSet.CoreV1().Services(rc.nsName).Delete(ctx, rc.name+"-headless", metav1.DeleteOptions{}); err != nil {
-		framework.Logf("Warning: could not delete headless service %s: %v", rc.name+"-headless", err)
-	}
 	framework.ExpectNoError(e2eresource.DeleteResourceAndWaitForGC(ctx, rc.clientSet, schema.GroupKind{Group: "apps", Kind: "ReplicaSet"}, rc.nsName, rc.controllerName))
 	framework.ExpectNoError(rc.clientSet.CoreV1().Services(rc.nsName).Delete(ctx, rc.name+"-ctrl", metav1.DeleteOptions{}))
 	// Cleanup sidecar related resources
@@ -878,25 +875,6 @@ func createService(ctx context.Context, c clientset.Interface, name, ns string, 
 			Labels:      map[string]string{"name": name},
 		},
 		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       portName,
-				Port:       port,
-				TargetPort: intstr.FromInt32(int32(targetPort)),
-			}},
-			Selector: selectors,
-		},
-	}, metav1.CreateOptions{})
-}
-
-func createHeadlessService(ctx context.Context, c clientset.Interface, name, ns string, annotations, selectors map[string]string, port int32, targetPort int) (*v1.Service, error) {
-	return c.CoreV1().Services(ns).Create(ctx, &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Annotations: annotations,
-			Labels:      map[string]string{"name": name},
-		},
-		Spec: v1.ServiceSpec{
-			ClusterIP: "None", // headless: DNS returns individual pod IPs, not a VIP
 			Ports: []v1.ServicePort{{
 				Name:       portName,
 				Port:       port,
@@ -1006,8 +984,6 @@ func runServiceAndSidecarForResourceConsumer(ctx context.Context, c clientset.In
 func runServiceAndWorkloadForResourceConsumer(ctx context.Context, c clientset.Interface, resourceClient dynamic.ResourceInterface, apiExtensionClient crdclientset.Interface, ns, name string, kind schema.GroupVersionKind, replicas int, cpuLimitMillis, memLimitMb int64, podAnnotations, serviceAnnotations map[string]string, additionalContainers []v1.Container, podResources *v1.ResourceRequirements) {
 	ginkgo.By(fmt.Sprintf("Running consuming RC %s via %s with %v replicas", name, kind, replicas))
 	_, err := createService(ctx, c, name, ns, serviceAnnotations, map[string]string{"name": name}, port, targetPort)
-	framework.ExpectNoError(err)
-	_, err = createHeadlessService(ctx, c, name+"-headless", ns, serviceAnnotations, map[string]string{"name": name}, port, targetPort)
 	framework.ExpectNoError(err)
 
 	rcConfig := testutils.RCConfig{
