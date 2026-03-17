@@ -764,6 +764,67 @@ func TestPatchNodeAllocatableResourceClaimStatus(t *testing.T) {
 	}
 }
 
+func TestClearNodeAllocatableResourceClaimStatus(t *testing.T) {
+	pod := st.MakePod().Name("test-pod").Namespace("test-ns").UID("pod-uid").Obj()
+
+	tests := []struct {
+		name             string
+		initialPodStatus v1.PodStatus
+		wantPatch        bool
+	}{
+		{
+			name:             "no status to clear",
+			initialPodStatus: v1.PodStatus{},
+			wantPatch:        false,
+		},
+		{
+			name: "status cleared",
+			initialPodStatus: v1.PodStatus{
+				NodeAllocatableResourceClaimStatuses: []v1.NodeAllocatableResourceClaimStatus{
+					{
+						ResourceClaimName: "claim1",
+						Containers:        []string{"c1"},
+						Resources: map[v1.ResourceName]resource.Quantity{
+							v1.ResourceCPU: resource.MustParse("1"),
+						},
+					},
+				},
+			},
+			wantPatch: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			podToUpdate := pod.DeepCopy()
+			podToUpdate.Status = *tt.initialPodStatus.DeepCopy()
+
+			fakeClient := fake.NewSimpleClientset(podToUpdate)
+			pl := &DynamicResources{
+				clientset: fakeClient,
+				fts:       feature.NewSchedulerFeaturesFromGates(utilfeature.DefaultFeatureGate),
+			}
+
+			pl.clearNodeAllocatableResourceClaimStatus(ctx, podToUpdate)
+
+			actions := fakeClient.Actions()
+			gotPatch := false
+			for _, action := range actions {
+				if action.Matches("patch", "pods") && action.GetSubresource() == "status" {
+					gotPatch = true
+					break
+				}
+			}
+
+			if gotPatch != tt.wantPatch {
+				t.Errorf("patchNodeAllocatableResourceClaimStatus() gotPatch = %v, want %v", gotPatch, tt.wantPatch)
+			}
+		})
+	}
+}
+
 func TestNodeFitsNativeResources(t *testing.T) {
 	tests := []struct {
 		name       string

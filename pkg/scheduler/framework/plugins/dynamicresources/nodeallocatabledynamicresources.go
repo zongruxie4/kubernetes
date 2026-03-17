@@ -428,3 +428,17 @@ func (pl *DynamicResources) patchNodeAllocatableResourceClaimStatus(ctx context.
 
 	return nil
 }
+
+func (pl *DynamicResources) clearNodeAllocatableResourceClaimStatus(ctx context.Context, pod *v1.Pod) {
+	logger := klog.FromContext(ctx)
+	logger.V(5).Info("Clearing NodeAllocatableResourceClaimStatuses on Unreserve", "pod", klog.KObj(pod))
+
+	targetStatus := pod.Status.DeepCopy()
+	targetStatus.NodeAllocatableResourceClaimStatuses = nil
+
+	if err := schedutil.PatchPodStatus(ctx, pl.clientset, pod.Name, pod.Namespace, &pod.Status, targetStatus); err != nil {
+		logger.Error(err, "Failed to clear NodeAllocatableResourceClaimStatuses on Unreserve", "pod", klog.KObj(pod))
+	} else {
+		logger.V(5).Info("Cleared NodeAllocatableResourceClaimStatuses", "pod", klog.KObj(pod))
+	}
+}

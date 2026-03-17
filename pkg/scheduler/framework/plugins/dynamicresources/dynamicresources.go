@@ -693,7 +693,7 @@ func (pl *DynamicResources) Filter(ctx context.Context, cs fwk.CycleState, pod *
 			}
 		}
 
-		// The claim is allocated,  check if its a node-allocatable resource claim that is already allocated.
+		// The claim is allocated, check if its a node-allocatable resource claim that is already allocated.
 		if pl.fts.EnableDRANodeAllocatableResources {
 			status := pl.validateNodeAllocatableDRAClaimSharing(pod, nodeInfo, claim)
 			if status != nil {
@@ -1079,6 +1079,13 @@ func (pl *DynamicResources) Unreserve(ctx context.Context, cs fwk.CycleState, po
 		}
 	}
 	pl.unreserveExtendedResourceClaim(ctx, pod, state)
+
+	if pl.fts.EnableDRANodeAllocatableResources {
+		nodeAllocations, ok := state.nodeAllocations[nodeName]
+		if ok && len(nodeAllocations.nodeAllocatableResourceClaimStatuses) > 0 {
+			pl.clearNodeAllocatableResourceClaimStatus(ctx, pod)
+		}
+	}
 }
 
 // PreBind gets called in a separate goroutine after it has been determined
