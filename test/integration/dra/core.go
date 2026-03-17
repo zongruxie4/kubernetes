@@ -103,7 +103,7 @@ func testFilterTimeout(tCtx ktesting.TContext, devicesPerSlice int) {
 		deviceNames[i] = fmt.Sprintf("dev-%d", i)
 	}
 	slice := st.MakeResourceSlice("worker-0", driverName).Devices(deviceNames...)
-	createSlice(tCtx, slice.Obj())
+	createdSlice := createSlice(tCtx, slice.Obj())
 	otherSlice := st.MakeResourceSlice("worker-1", driverName).Devices(deviceNames...)
 	createdOtherSlice := createSlice(tCtx, otherSlice.Obj())
 	claim := claim.DeepCopy()
@@ -135,13 +135,21 @@ profiles:
 `)
 		expectPodSchedulerError(tCtx, pod, "timed out trying to allocate devices")
 
-		// Update one slice such that allocation succeeds.
+		// Clear worker-0's devices so the allocator completes quickly
+		// on that node. With Error status (from timeouts), the scheduler
+		// aborts the entire cycle, so no node with a slow allocation
+		// can remain.
+		createdSlice.Spec.Devices = nil
+		_, err := tCtx.Client().ResourceV1().ResourceSlices().Update(tCtx, createdSlice, metav1.UpdateOptions{})
+		tCtx.ExpectNoError(err, "clear worker-0's ResourceSlice")
+
+		// Update worker-1 so allocation succeeds.
 		// The scheduler retries automatically (timeouts go through
 		// backoff queue, not unschedulable pool) and should succeed now.
 		createdOtherSlice.Spec.Devices = append(createdOtherSlice.Spec.Devices, resourceapi.Device{
 			Name: fmt.Sprintf("dev-%d", devicesPerSlice),
 		})
-		_, err := tCtx.Client().ResourceV1().ResourceSlices().Update(tCtx, createdOtherSlice, metav1.UpdateOptions{})
+		_, err = tCtx.Client().ResourceV1().ResourceSlices().Update(tCtx, createdOtherSlice, metav1.UpdateOptions{})
 		tCtx.ExpectNoError(err, "update worker-1's ResourceSlice")
 		tCtx.ExpectNoError(e2epod.WaitForPodScheduled(tCtx, tCtx.Client(), namespace, pod.Name))
 	})
