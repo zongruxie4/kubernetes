@@ -133,10 +133,11 @@ profiles:
     args:
       filterTimeout: 10ms
 `)
-		expectPodUnschedulable(tCtx, pod, "timed out trying to allocate devices")
+		expectPodSchedulerError(tCtx, pod, "timed out trying to allocate devices")
 
 		// Update one slice such that allocation succeeds.
-		// The scheduler must retry and should succeed now.
+		// The scheduler retries automatically (timeouts go through
+		// backoff queue, not unschedulable pool) and should succeed now.
 		createdOtherSlice.Spec.Devices = append(createdOtherSlice.Spec.Devices, resourceapi.Device{
 			Name: fmt.Sprintf("dev-%d", devicesPerSlice),
 		})

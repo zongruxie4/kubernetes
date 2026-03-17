@@ -272,6 +272,20 @@ func waitForClaimAllocatedToDevice(tCtx ktesting.TContext, namespace, claimName 
 	)
 }
 
+func expectPodSchedulerError(tCtx ktesting.TContext, pod *v1.Pod, reason string) {
+	tCtx.Helper()
+	tCtx.ExpectNoError(e2epod.WaitForPodCondition(tCtx, tCtx.Client(), pod.Namespace, pod.Name, v1.PodReasonSchedulerError, time.Minute, func(pod *v1.Pod) (bool, error) {
+		if pod.Status.Phase == v1.PodPending {
+			for _, cond := range pod.Status.Conditions {
+				if cond.Type == v1.PodScheduled && cond.Status == v1.ConditionFalse && cond.Reason == v1.PodReasonSchedulerError && strings.Contains(cond.Message, reason) {
+					return true, nil
+				}
+			}
+		}
+		return false, nil
+	}), fmt.Sprintf("expected pod to have scheduler error because %q", reason))
+}
+
 func expectPodUnschedulable(tCtx ktesting.TContext, pod *v1.Pod, reason string) {
 	tCtx.Helper()
 	tCtx.ExpectNoError(e2epod.WaitForPodNameUnschedulableInNamespace(tCtx, tCtx.Client(), pod.Name, pod.Namespace), fmt.Sprintf("expected pod to be unschedulable because %q", reason))
