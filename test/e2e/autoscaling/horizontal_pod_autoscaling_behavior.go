@@ -550,7 +550,7 @@ var _ = SIGDescribe(feature.HPA, framework.WithSlow(), framework.WithFeatureGate
 			ginkgo.It("should scale up but should not scale down", func(ctx context.Context) {
 				ginkgo.By("setting up resource consumer and HPA")
 				initPods := 10
-				podCPURequest := 500
+				podCPURequest := 200
 				targetCPUUtilizationPercent := 60
 				// Compute initial load for 10 pods.
 				initCPUUsageTotal := usageForReplicasWithRequest(initPods, podCPURequest, targetCPUUtilizationPercent)
