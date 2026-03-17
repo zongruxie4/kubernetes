@@ -1041,16 +1041,15 @@ func TestSchedulerScheduleOne(t *testing.T) {
 			item.sendPod = withSchedulingGroup(item.sendPod, group)
 			item.expectErrorPod = withSchedulingGroup(item.expectErrorPod, group)
 			item.expectPodInBackoffQ = withSchedulingGroup(item.expectPodInBackoffQ, group)
-			item.expectPodInUnschedulable = withSchedulingGroup(item.expectPodInUnschedulable, group)
+			if item.expectPodInUnschedulable != nil {
+				// Pods from a pod group skip unschedulablePods structure and land directly in the backoffQ.
+				item.expectPodInBackoffQ = withSchedulingGroup(item.expectPodInUnschedulable, group)
+				item.expectPodInUnschedulable = nil
+			}
 
 			testPG := &schedulingv1alpha2.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{Name: "pg", Namespace: item.sendPod.Namespace},
 			}
-			pgIndexer := clientcache.NewIndexer(clientcache.MetaNamespaceKeyFunc, clientcache.Indexers{clientcache.NamespaceIndex: clientcache.MetaNamespaceIndexFunc})
-			if err := pgIndexer.Add(testPG); err != nil {
-				t.Fatalf("Failed to add PodGroup to indexer: %v", err)
-			}
-			podGroupLister = schedulinglisters.NewPodGroupLister(pgIndexer)
 			clientObjs = []runtime.Object{item.sendPod, testPG}
 		} else {
 			clientObjs = []runtime.Object{item.sendPod}
@@ -1075,6 +1074,7 @@ func TestSchedulerScheduleOne(t *testing.T) {
 		internalCache := internalcache.New(ctx, apiDispatcher, scheduleAsPodGroup)
 
 		if scheduleAsPodGroup {
+			podGroupLister = informerFactory.Scheduling().V1alpha2().PodGroups().Lister()
 			internalCache.AddPodGroupMember(item.sendPod)
 		}
 		cache := &fakecache.Cache{

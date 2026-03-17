@@ -98,7 +98,7 @@ func MoreImportantPod(pod1, pod2 *v1.Pod) bool {
 // Retriable defines the retriable errors during a scheduling cycle.
 func Retriable(err error) bool {
 	return apierrors.IsInternalError(err) || apierrors.IsServiceUnavailable(err) ||
-		net.IsConnectionRefused(err)
+		apierrors.IsConflict(err) || net.IsConnectionRefused(err)
 }
 
 // PatchPodStatus calculates the delta bytes change from <old.Status> to <newStatus>,

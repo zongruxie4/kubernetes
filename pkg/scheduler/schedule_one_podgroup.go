@@ -412,6 +412,8 @@ func (sched *Scheduler) podGroupPodSchedulingAlgorithm(ctx context.Context, sche
 // If the preemption is required for this pod group, all pods are moved back to the scheduling queue
 // and require the next pod group scheduling cycle to verify the preemption outcome.
 func (sched *Scheduler) submitPodGroupAlgorithmResult(ctx context.Context, schedFwk framework.Framework, podGroupInfo *framework.QueuedPodGroupInfo, podGroupResult podGroupAlgorithmResult, start time.Time) {
+	logger := klog.FromContext(ctx)
+
 	var scheduledPods, unschedulablePods int
 	for i, pInfo := range podGroupInfo.QueuedPodInfos {
 		var podResult algorithmResult
@@ -490,15 +492,6 @@ func (sched *Scheduler) submitPodGroupAlgorithmResult(ctx context.Context, sched
 			unschedulablePods++
 		}
 	}
-	logger := klog.FromContext(ctx)
-
-	// If the PodGroup was already successfully scheduled, don't regress the
-	// condition back to False on a subsequent cycle for extra pods.
-	alreadyScheduled := false
-	if pg, err := sched.podGroupLister.PodGroups(podGroupInfo.Namespace).Get(podGroupInfo.Name); err == nil {
-		existing := apimeta.FindStatusCondition(pg.Status.Conditions, schedulingapi.PodGroupScheduled)
-		alreadyScheduled = existing != nil && existing.Status == metav1.ConditionTrue
-	}
 
 	var condition *metav1.Condition
 	switch {
@@ -513,13 +506,11 @@ func (sched *Scheduler) submitPodGroupAlgorithmResult(ctx context.Context, sched
 		metrics.PodGroupScheduled(schedFwk.ProfileName(), metrics.SinceInSeconds(start))
 
 	case podGroupResult.status.IsRejected():
-		if !alreadyScheduled {
-			condition = &metav1.Condition{
-				Type:    schedulingapi.PodGroupScheduled,
-				Status:  metav1.ConditionFalse,
-				Reason:  schedulingapi.PodGroupReasonUnschedulable,
-				Message: podGroupResult.status.Message(),
-			}
+		condition = &metav1.Condition{
+			Type:    schedulingapi.PodGroupScheduled,
+			Status:  metav1.ConditionFalse,
+			Reason:  schedulingapi.PodGroupReasonUnschedulable,
+			Message: podGroupResult.status.Message(),
 		}
 		if podGroupResult.waitingOnPreemption {
 			logger.V(2).Info("Pod group is waiting for preemption", "podGroup", klog.KObj(podGroupInfo), "unschedulablePods", unschedulablePods)
@@ -530,20 +521,16 @@ func (sched *Scheduler) submitPodGroupAlgorithmResult(ctx context.Context, sched
 		}
 
 	default:
-		if !alreadyScheduled {
-			condition = &metav1.Condition{
-				Type:    schedulingapi.PodGroupScheduled,
-				Status:  metav1.ConditionFalse,
-				Reason:  schedulingapi.PodGroupReasonSchedulerError,
-				Message: podGroupResult.status.AsError().Error(),
-			}
+		condition = &metav1.Condition{
+			Type:    schedulingapi.PodGroupScheduled,
+			Status:  metav1.ConditionFalse,
+			Reason:  schedulingapi.PodGroupReasonSchedulerError,
+			Message: podGroupResult.status.AsError().Error(),
 		}
 		utilruntime.HandleErrorWithContext(ctx, podGroupResult.status.AsError(), "Error scheduling pod group", "podGroup", klog.KObj(podGroupInfo), "errorPods", len(podGroupInfo.QueuedPodInfos))
 		metrics.PodGroupScheduleError(schedFwk.ProfileName(), metrics.SinceInSeconds(start))
 	}
-	if condition != nil {
-		sched.updatePodGroupCondition(ctx, podGroupInfo, condition)
-	}
+	sched.updatePodGroupCondition(ctx, podGroupInfo, condition)
 }
 
 // updatePodGroupCondition patches the given condition on a PodGroup.
@@ -551,6 +538,8 @@ func (sched *Scheduler) updatePodGroupCondition(ctx context.Context,
 	podGroupInfo *framework.QueuedPodGroupInfo, condition *metav1.Condition) {
 	logger := klog.FromContext(ctx)
 
+	// If the PodGroup was already successfully scheduled, don't regress the
+	// condition back to False on a subsequent cycle for extra pods.
 	pg, err := sched.podGroupLister.PodGroups(podGroupInfo.Namespace).Get(podGroupInfo.Name)
 	if err != nil {
 		utilruntime.HandleErrorWithLogger(logger, err, "Failed to get PodGroup for status update", "podGroup", klog.KObj(podGroupInfo))

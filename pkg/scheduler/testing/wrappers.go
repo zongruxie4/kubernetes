@@ -1645,8 +1645,8 @@ func (wrapper *WorkloadWrapper) Namespace(namespace string) *WorkloadWrapper {
 }
 
 // PodGroupTemplate appends the given PodGroupTemplate to the Workload spec.
-func (wrapper *WorkloadWrapper) PodGroupTemplate(t *schedulingapi.PodGroupTemplate) *WorkloadWrapper {
-	wrapper.Workload.Spec.PodGroupTemplates = append(wrapper.Workload.Spec.PodGroupTemplates, *t)
+func (wrapper *WorkloadWrapper) PodGroupTemplate(t schedulingapi.PodGroupTemplate) *WorkloadWrapper {
+	wrapper.Workload.Spec.PodGroupTemplates = append(wrapper.Workload.Spec.PodGroupTemplates, t)
 	return wrapper
 }
 
@@ -1659,8 +1659,8 @@ func MakePodGroupTemplate() *PodGroupTemplateWrapper {
 }
 
 // Obj returns the inner PodGroupTemplate.
-func (wrapper *PodGroupTemplateWrapper) Obj() *schedulingapi.PodGroupTemplate {
-	return &wrapper.PodGroupTemplate
+func (wrapper *PodGroupTemplateWrapper) Obj() schedulingapi.PodGroupTemplate {
+	return wrapper.PodGroupTemplate
 }
 
 // Name sets `name` as the name of the inner PodGroupTemplate.

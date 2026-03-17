@@ -28,8 +28,10 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	schedulingv1alpha2 "k8s.io/api/scheduling/v1alpha2"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/net"
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
 	clienttesting "k8s.io/client-go/testing"
@@ -302,15 +304,16 @@ func TestPatchPodStatus(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			_, ctx := ktesting.NewTestContext(t)
+			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
+
 			client := tc.client
 			_, err := client.CoreV1().Pods(tc.pod.Namespace).Create(context.TODO(), &tc.pod, metav1.CreateOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			_, ctx := ktesting.NewTestContext(t)
-			ctx, cancel := context.WithCancel(ctx)
-			defer cancel()
 			err = PatchPodStatus(ctx, client, tc.pod.Name, tc.pod.Namespace, &tc.pod.Status, &tc.statusToUpdate)
 			if err != nil && tc.validateErr == nil {
 				// shouldn't be error
@@ -483,19 +486,59 @@ func TestPatchPodGroupStatus(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "retry patch request when a conflict error is returned",
+			client: func() *clientsetfake.Clientset {
+				client := clientsetfake.NewClientset()
+
+				reqcount := 0
+				client.PrependReactor("patch", "podgroups", func(action clienttesting.Action) (bool, runtime.Object, error) {
+					defer func() { reqcount++ }()
+					if reqcount == 0 {
+						return true, &schedulingv1alpha2.PodGroup{},
+							apierrors.NewConflict(schema.GroupResource{
+								Resource: "podgroups"}, "pg1",
+								errors.New("the object has been modified"))
+					}
+					if reqcount == 1 {
+						return false, &schedulingv1alpha2.PodGroup{}, nil
+					}
+					return true, nil, errors.New("requests comes in more than three times.")
+				})
+
+				return client
+			}(),
+			podGroup: schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "pg1",
+				},
+			},
+			statusToUpdate: &schedulingv1alpha2.PodGroupStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               schedulingapi.PodGroupScheduled,
+						Status:             metav1.ConditionFalse,
+						Reason:             schedulingapi.PodGroupReasonUnschedulable,
+						Message:            "not enough capacity for the gang",
+						LastTransitionTime: now,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			_, ctx := ktesting.NewTestContext(t)
 			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
 
 			client := tc.client
 			_, err := client.SchedulingV1alpha2().PodGroups(tc.podGroup.Namespace).Create(ctx, &tc.podGroup, metav1.CreateOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer cancel()
 
 			err = PatchPodGroupStatus(ctx, client, tc.podGroup.Name, tc.podGroup.Namespace, &tc.podGroup.Status, tc.statusToUpdate)
 			if err != nil && tc.validateErr == nil {
