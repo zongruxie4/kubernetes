@@ -220,6 +220,7 @@ func testPublishResourceSlices(tCtx ktesting.TContext, haveLatestAPI bool, disab
 						},
 					},
 				},
+				AllNodes: true,
 			},
 		},
 	}
