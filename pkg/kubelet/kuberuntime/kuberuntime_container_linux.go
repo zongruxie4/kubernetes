@@ -156,9 +156,16 @@ func (m *kubeGenericRuntimeManager) generateLinuxContainerResources(ctx context.
 		memoryRequest := container.Resources.Requests.Memory().Value()
 		memoryLimit := container.Resources.Limits.Memory().Value()
 		if memoryRequest != 0 && m.memoryReservationPolicy == kubeletconfiginternal.HardReservationMemoryReservationPolicy {
-			unified[cm.Cgroup2MemoryMin] = strconv.FormatInt(memoryRequest, 10)
+			// Guaranteed pods get memory.min (hard protection).
+			// Burstable pods get memory.low (soft protection).
+			if kubeapiqos.GetPodQOS(pod) == v1.PodQOSGuaranteed {
+				unified[cm.Cgroup2MemoryMin] = strconv.FormatInt(memoryRequest, 10)
+			} else {
+				unified[cm.Cgroup2MemoryLow] = strconv.FormatInt(memoryRequest, 10)
+			}
 		} else {
 			unified[cm.Cgroup2MemoryMin] = "0"
+			unified[cm.Cgroup2MemoryLow] = "0"
 		}
 
 		// Guaranteed pods by their QoS definition requires that memory request equals memory limit and cpu request must equal cpu limit.
