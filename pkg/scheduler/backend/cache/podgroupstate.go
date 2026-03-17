@@ -269,11 +269,11 @@ func (pgs *podGroupState) deletePod(podUID types.UID) {
 
 // assumePod marks a pod as assumed within the pod group state.
 // It must be called under the cache lock.
-func (pgs *podGroupState) assumePod(podUID types.UID) {
+func (pgs *podGroupState) assumePod(pod *v1.Pod) {
 	pgs.lock.Lock()
 	defer pgs.lock.Unlock()
 
-	pgs.podGroupStateData.assumePod(podUID)
+	pgs.podGroupStateData.assumePod(pod)
 }
 
 // forgetPod moves a pod back from the assumed state to unscheduled within the pod group state.
