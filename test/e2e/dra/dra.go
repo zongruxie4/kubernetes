@@ -34,6 +34,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	resourceapi "k8s.io/api/resource/v1"
+	resourcealphaapi "k8s.io/api/resource/v1alpha3"
 	resourcev1beta1 "k8s.io/api/resource/v1beta1"
 	resourcev1beta2 "k8s.io/api/resource/v1beta2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -226,6 +227,30 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 				},
 			)
 		})
+		f.It("resource.k8s.io/v1alpha3 ResourcePoolStatusRequest",
+			f.WithFeatureGate(features.DRAResourcePoolStatus),
+			func(ctx context.Context) {
+				e2econformance.TestResource(ctx, f,
+					&e2econformance.ResourceTestcase[*resourcealphaapi.ResourcePoolStatusRequest]{
+						GVR:        resourcealphaapi.SchemeGroupVersion.WithResource("resourcepoolstatusrequests"),
+						Namespaced: ptr.To(false),
+						InitialSpec: &resourcealphaapi.ResourcePoolStatusRequest{
+							Spec: resourcealphaapi.ResourcePoolStatusRequestSpec{
+								Driver: "dra.example.com",
+							},
+						},
+						UpdateSpec: func(obj *resourcealphaapi.ResourcePoolStatusRequest) *resourcealphaapi.ResourcePoolStatusRequest {
+							// The spec is immutable, so add a label instead.
+							if obj.Labels == nil {
+								obj.Labels = make(map[string]string)
+							}
+							obj.Labels["test.dra.example.com"] = "test"
+							return obj
+						},
+						StrategicMergePatchSpec: `{"metadata": {"labels": {"test.dra.example.com": "test"}}}`,
+					},
+				)
+			})
 	})
 
 	f.Context("kubelet", feature.DynamicResourceAllocation, func() {
@@ -551,6 +576,71 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 				return e2edaemonset.CheckDaemonPodOnNodes(f, ds, []string{nodeName})(ctx)
 			}).WithTimeout(f.Timeouts.PodStart).Should(gomega.BeTrueBecause("DaemonSet pod should be running on node %s but isn't", nodeName))
 			framework.ExpectNoError(e2edaemonset.CheckDaemonStatus(ctx, f, daemonSet.Name))
+		})
+
+		f.It("should report pool status with correct device counts", f.WithFeatureGate(features.DRAResourcePoolStatus), func(ctx context.Context) {
+			client := f.ClientSet.ResourceV1alpha3().ResourcePoolStatusRequests()
+
+			gomega.Eventually(ctx, func(g gomega.Gomega, ctx context.Context) {
+				request, err := client.Create(ctx, &resourcealphaapi.ResourcePoolStatusRequest{
+					ObjectMeta: metav1.ObjectMeta{GenerateName: "e2e-counts-"},
+					Spec:       resourcealphaapi.ResourcePoolStatusRequestSpec{Driver: driver.Name},
+				}, metav1.CreateOptions{})
+				framework.ExpectNoError(err)
+				defer func() { _ = client.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
+
+				// Wait for controller to set status.
+				g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
+					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+					if err != nil {
+						return nil
+					}
+					return obj.Status
+				}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
+
+				obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+				framework.ExpectNoError(err)
+				g.Expect(obj.Status.Pools).To(gomega.HaveLen(1))
+				pool := obj.Status.Pools[0]
+				g.Expect(ptr.Deref(pool.TotalDevices, 0)).To(gomega.BeEquivalentTo(10))
+				g.Expect(ptr.Deref(pool.AllocatedDevices, -1)).To(gomega.BeEquivalentTo(0))
+				g.Expect(ptr.Deref(pool.AvailableDevices, 0)).To(gomega.BeEquivalentTo(10))
+				g.Expect(ptr.Deref(pool.ResourceSliceCount, 0)).To(gomega.BeNumerically(">", 0))
+			}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
+		})
+
+		f.It("should reflect allocated devices after pod is scheduled", f.WithFeatureGate(features.DRAResourcePoolStatus), func(ctx context.Context) {
+			tCtx := f.TContext(ctx)
+			pod, template := b.PodInline()
+			b.Create(tCtx, pod, template)
+			b.TestPod(tCtx, pod)
+
+			client := f.ClientSet.ResourceV1alpha3().ResourcePoolStatusRequests()
+
+			gomega.Eventually(ctx, func(g gomega.Gomega, ctx context.Context) {
+				request, err := client.Create(ctx, &resourcealphaapi.ResourcePoolStatusRequest{
+					ObjectMeta: metav1.ObjectMeta{GenerateName: "e2e-allocated-"},
+					Spec:       resourcealphaapi.ResourcePoolStatusRequestSpec{Driver: driver.Name},
+				}, metav1.CreateOptions{})
+				framework.ExpectNoError(err)
+				defer func() { _ = client.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
+
+				// Wait for controller to set status.
+				g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
+					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+					if err != nil {
+						return nil
+					}
+					return obj.Status
+				}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
+
+				obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+				framework.ExpectNoError(err)
+				g.Expect(obj.Status.Pools).To(gomega.HaveLen(1))
+				pool := obj.Status.Pools[0]
+				g.Expect(ptr.Deref(pool.AllocatedDevices, 0)).To(gomega.BeNumerically(">", 0))
+				g.Expect(ptr.Deref(pool.AvailableDevices, 0)).To(gomega.BeNumerically("<", ptr.Deref(pool.TotalDevices, 0)))
+			}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
 		})
 	})
 
@@ -3336,5 +3426,310 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 				return ""
 			}).WithTimeout(30 * time.Second).Should(gomega.Equal("Recovered after reset, all diagnostics passed"))
 		})
+	})
+
+	framework.Context("control plane", feature.DynamicResourceAllocation, f.WithFeatureGate(features.DRAResourcePoolStatus), func() {
+		nodes := drautils.NewNodes(f, 2, 2)
+		driver := drautils.NewDriver(f, nodes, drautils.DriverResources(1))
+		driver.WithKubelet = false
+
+		f.It("should populate status for all matching pools",
+			func(ctx context.Context) {
+				client := f.ClientSet.ResourceV1alpha3().ResourcePoolStatusRequests()
+
+				gomega.Eventually(ctx, func(g gomega.Gomega, ctx context.Context) {
+					request, err := client.Create(ctx, &resourcealphaapi.ResourcePoolStatusRequest{
+						ObjectMeta: metav1.ObjectMeta{GenerateName: "e2e-basic-"},
+						Spec:       resourcealphaapi.ResourcePoolStatusRequestSpec{Driver: driver.Name},
+					}, metav1.CreateOptions{})
+					framework.ExpectNoError(err)
+					defer func() { _ = client.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
+
+					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
+						obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+						if err != nil {
+							return nil
+						}
+						return obj.Status
+					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
+
+					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+					framework.ExpectNoError(err)
+					g.Expect(obj.Status.Pools).To(gomega.HaveLen(2))
+					g.Expect(*obj.Status.PoolCount).To(gomega.BeEquivalentTo(2))
+					g.Expect(obj.Status.Conditions).To(gomega.ContainElement(
+						gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+							"Type":   gomega.Equal("Complete"),
+							"Status": gomega.Equal(metav1.ConditionTrue),
+						}),
+					))
+				}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
+			})
+
+		f.It("should filter by pool name",
+			func(ctx context.Context) {
+				client := f.ClientSet.ResourceV1alpha3().ResourcePoolStatusRequests()
+
+				gomega.Eventually(ctx, func(g gomega.Gomega, ctx context.Context) {
+					// First, get all pools to pick one name.
+					allPoolsRequest, err := client.Create(ctx, &resourcealphaapi.ResourcePoolStatusRequest{
+						ObjectMeta: metav1.ObjectMeta{GenerateName: "e2e-filter-all-"},
+						Spec:       resourcealphaapi.ResourcePoolStatusRequestSpec{Driver: driver.Name},
+					}, metav1.CreateOptions{})
+					framework.ExpectNoError(err)
+					defer func() { _ = client.Delete(ctx, allPoolsRequest.Name, metav1.DeleteOptions{}) }()
+
+					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
+						obj, err := client.Get(ctx, allPoolsRequest.Name, metav1.GetOptions{})
+						if err != nil {
+							return nil
+						}
+						return obj.Status
+					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
+
+					allObj, err := client.Get(ctx, allPoolsRequest.Name, metav1.GetOptions{})
+					framework.ExpectNoError(err)
+					g.Expect(allObj.Status.Pools).NotTo(gomega.BeEmpty())
+					poolName := allObj.Status.Pools[0].PoolName
+
+					// Now filter by that pool name.
+					filtered, err := client.Create(ctx, &resourcealphaapi.ResourcePoolStatusRequest{
+						ObjectMeta: metav1.ObjectMeta{GenerateName: "e2e-filter-one-"},
+						Spec: resourcealphaapi.ResourcePoolStatusRequestSpec{
+							Driver:   driver.Name,
+							PoolName: &poolName,
+						},
+					}, metav1.CreateOptions{})
+					framework.ExpectNoError(err)
+					defer func() { _ = client.Delete(ctx, filtered.Name, metav1.DeleteOptions{}) }()
+
+					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
+						obj, err := client.Get(ctx, filtered.Name, metav1.GetOptions{})
+						if err != nil {
+							return nil
+						}
+						return obj.Status
+					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
+
+					obj, err := client.Get(ctx, filtered.Name, metav1.GetOptions{})
+					framework.ExpectNoError(err)
+					g.Expect(obj.Status.Pools).To(gomega.HaveLen(1))
+					g.Expect(obj.Status.Pools[0].PoolName).To(gomega.Equal(poolName))
+				}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
+			})
+
+		f.It("should truncate results when limit is reached",
+			func(ctx context.Context) {
+				client := f.ClientSet.ResourceV1alpha3().ResourcePoolStatusRequests()
+				limit := int32(1)
+
+				gomega.Eventually(ctx, func(g gomega.Gomega, ctx context.Context) {
+					request, err := client.Create(ctx, &resourcealphaapi.ResourcePoolStatusRequest{
+						ObjectMeta: metav1.ObjectMeta{GenerateName: "e2e-limit-"},
+						Spec: resourcealphaapi.ResourcePoolStatusRequestSpec{
+							Driver: driver.Name,
+							Limit:  &limit,
+						},
+					}, metav1.CreateOptions{})
+					framework.ExpectNoError(err)
+					defer func() { _ = client.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
+
+					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
+						obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+						if err != nil {
+							return nil
+						}
+						return obj.Status
+					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
+
+					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+					framework.ExpectNoError(err)
+					g.Expect(obj.Status.Pools).To(gomega.HaveLen(1))
+					g.Expect(*obj.Status.PoolCount).To(gomega.BeEquivalentTo(2))
+					g.Expect(len(obj.Status.Pools)).To(gomega.BeNumerically("<", int(*obj.Status.PoolCount)))
+				}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
+			})
+
+		f.It("should return empty pools for unknown driver",
+			func(ctx context.Context) {
+				client := f.ClientSet.ResourceV1alpha3().ResourcePoolStatusRequests()
+
+				request, err := client.Create(ctx, &resourcealphaapi.ResourcePoolStatusRequest{
+					ObjectMeta: metav1.ObjectMeta{GenerateName: "e2e-unknown-"},
+					Spec:       resourcealphaapi.ResourcePoolStatusRequestSpec{Driver: "nonexistent.driver.example.com"},
+				}, metav1.CreateOptions{})
+				framework.ExpectNoError(err)
+				ginkgo.DeferCleanup(func(ctx context.Context) {
+					err := client.Delete(ctx, request.Name, metav1.DeleteOptions{})
+					if !apierrors.IsNotFound(err) {
+						framework.ExpectNoError(err)
+					}
+				})
+
+				gomega.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
+					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+					if err != nil {
+						return nil
+					}
+					return obj.Status
+				}).WithTimeout(30 * time.Second).ShouldNot(gomega.BeNil())
+
+				obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+				framework.ExpectNoError(err)
+				gomega.Expect(obj.Status.Pools).To(gomega.BeEmpty())
+				gomega.Expect(*obj.Status.PoolCount).To(gomega.BeEquivalentTo(0))
+			})
+
+		f.It("should not reprocess after status is set",
+			func(ctx context.Context) {
+				client := f.ClientSet.ResourceV1alpha3().ResourcePoolStatusRequests()
+
+				request, err := client.Create(ctx, &resourcealphaapi.ResourcePoolStatusRequest{
+					ObjectMeta: metav1.ObjectMeta{GenerateName: "e2e-noreprocess-"},
+					Spec:       resourcealphaapi.ResourcePoolStatusRequestSpec{Driver: driver.Name},
+				}, metav1.CreateOptions{})
+				framework.ExpectNoError(err)
+				ginkgo.DeferCleanup(func(ctx context.Context) {
+					err := client.Delete(ctx, request.Name, metav1.DeleteOptions{})
+					if !apierrors.IsNotFound(err) {
+						framework.ExpectNoError(err)
+					}
+				})
+
+				// Wait for completion.
+				gomega.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
+					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+					if err != nil {
+						return nil
+					}
+					return obj.Status
+				}).WithTimeout(30 * time.Second).ShouldNot(gomega.BeNil())
+
+				obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+				framework.ExpectNoError(err)
+				initialResourceVersion := obj.ResourceVersion
+
+				// Wait and verify resourceVersion hasn't changed (no reprocessing).
+				time.Sleep(5 * time.Second)
+				obj, err = client.Get(ctx, request.Name, metav1.GetOptions{})
+				framework.ExpectNoError(err)
+				gomega.Expect(obj.ResourceVersion).To(gomega.Equal(initialResourceVersion),
+					"resourceVersion should not change — ResourcePoolStatusRequest is a one-time snapshot")
+			})
+
+		f.It("should set NodeName when all slices share the same node",
+			func(ctx context.Context) {
+				client := f.ClientSet.ResourceV1alpha3().ResourcePoolStatusRequests()
+
+				gomega.Eventually(ctx, func(g gomega.Gomega, ctx context.Context) {
+					request, err := client.Create(ctx, &resourcealphaapi.ResourcePoolStatusRequest{
+						ObjectMeta: metav1.ObjectMeta{GenerateName: "e2e-nodename-set-"},
+						Spec:       resourcealphaapi.ResourcePoolStatusRequestSpec{Driver: driver.Name},
+					}, metav1.CreateOptions{})
+					framework.ExpectNoError(err)
+					defer func() { _ = client.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
+
+					// Wait for status to be populated and verify NodeName is set for each pool.
+					// The driver creates per-node pools, so all slices in a pool share the same node.
+					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
+						obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+						if err != nil {
+							return nil
+						}
+						return obj.Status
+					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
+
+					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
+					framework.ExpectNoError(err)
+					g.Expect(obj.Status.Pools).NotTo(gomega.BeEmpty())
+					for _, pool := range obj.Status.Pools {
+						g.Expect(pool.NodeName).NotTo(gomega.BeNil())
+					}
+				}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
+			})
+
+		f.It("should clear NodeName when pool has slices on different nodes",
+			func(ctx context.Context) {
+				sliceClient := f.ClientSet.ResourceV1().ResourceSlices()
+				statusClient := f.ClientSet.ResourceV1alpha3().ResourcePoolStatusRequests()
+
+				mixedPoolName := "mixed-node-pool"
+
+				// Create two ResourceSlices with the same pool but different NodeName values.
+				slice1 := &resourceapi.ResourceSlice{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: fmt.Sprintf("%s-mixed-node-0", driver.Name),
+					},
+					Spec: resourceapi.ResourceSliceSpec{
+						Driver:   driver.Name,
+						NodeName: ptr.To(nodes.NodeNames[0]),
+						Pool: resourceapi.ResourcePool{
+							Name:               mixedPoolName,
+							Generation:         1,
+							ResourceSliceCount: 2,
+						},
+						Devices: []resourceapi.Device{{Name: "device-0"}},
+					},
+				}
+				slice2 := &resourceapi.ResourceSlice{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: fmt.Sprintf("%s-mixed-node-1", driver.Name),
+					},
+					Spec: resourceapi.ResourceSliceSpec{
+						Driver:   driver.Name,
+						NodeName: ptr.To(nodes.NodeNames[1]),
+						Pool: resourceapi.ResourcePool{
+							Name:               mixedPoolName,
+							Generation:         1,
+							ResourceSliceCount: 2,
+						},
+						Devices: []resourceapi.Device{{Name: "device-1"}},
+					},
+				}
+
+				_, err := sliceClient.Create(ctx, slice1, metav1.CreateOptions{})
+				framework.ExpectNoError(err)
+				ginkgo.DeferCleanup(func(ctx context.Context) {
+					err := sliceClient.Delete(ctx, slice1.Name, metav1.DeleteOptions{})
+					if !apierrors.IsNotFound(err) {
+						framework.ExpectNoError(err)
+					}
+				})
+
+				_, err = sliceClient.Create(ctx, slice2, metav1.CreateOptions{})
+				framework.ExpectNoError(err)
+				ginkgo.DeferCleanup(func(ctx context.Context) {
+					err := sliceClient.Delete(ctx, slice2.Name, metav1.DeleteOptions{})
+					if !apierrors.IsNotFound(err) {
+						framework.ExpectNoError(err)
+					}
+				})
+
+				// Create a request filtered to the mixed-node pool.
+				gomega.Eventually(ctx, func(g gomega.Gomega, ctx context.Context) {
+					request, err := statusClient.Create(ctx, &resourcealphaapi.ResourcePoolStatusRequest{
+						ObjectMeta: metav1.ObjectMeta{GenerateName: "e2e-nodename-clear-"},
+						Spec: resourcealphaapi.ResourcePoolStatusRequestSpec{
+							Driver:   driver.Name,
+							PoolName: &mixedPoolName,
+						},
+					}, metav1.CreateOptions{})
+					framework.ExpectNoError(err)
+					defer func() { _ = statusClient.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
+
+					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
+						obj, err := statusClient.Get(ctx, request.Name, metav1.GetOptions{})
+						if err != nil {
+							return nil
+						}
+						return obj.Status
+					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
+
+					obj, err := statusClient.Get(ctx, request.Name, metav1.GetOptions{})
+					framework.ExpectNoError(err)
+					g.Expect(obj.Status.Pools).To(gomega.HaveLen(1))
+					g.Expect(obj.Status.Pools[0].NodeName).To(gomega.BeNil())
+				}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
+			})
 	})
 })
