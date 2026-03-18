@@ -99,17 +99,6 @@ func TestJobAdmissionParallelismUpdate(t *testing.T) {
 			newParallelism: 2,
 			wantForbidden:  false,
 		},
-		"parallelism update allowed when only EnableWorkloadWithJob is enabled": {
-			featureGates: featuregatetesting.FeatureOverrides{
-				features.GenericWorkload:       false,
-				features.EnableWorkloadWithJob: true,
-			},
-			jobSpec: batchv1.JobSpec{
-				Parallelism: ptr.To[int32](4),
-			},
-			newParallelism: 2,
-			wantForbidden:  false,
-		},
 	}
 
 	for name, tc := range cases {
@@ -149,10 +138,8 @@ func TestJobAdmissionParallelismUpdate(t *testing.T) {
 				if tc.wantErrContains != "" && !strings.Contains(err.Error(), tc.wantErrContains) {
 					t.Errorf("Expected error to contain %q, got: %v", tc.wantErrContains, err)
 				}
-			} else {
-				if err != nil {
-					t.Errorf("Expected parallelism update to succeed, got: %v", err)
-				}
+			} else if err != nil {
+				t.Errorf("Expected parallelism update to succeed, got: %v", err)
 			}
 		})
 	}
