@@ -850,7 +850,7 @@ func TestResourceConfigForPodWithEnforceMemoryQoS(t *testing.T) {
 
 	for testName, testCase := range testCases {
 
-		actual := ResourceConfigForPod(testCase.pod, testCase.enforceCPULimits, testCase.quotaPeriod, true, kubeletconfig.HardReservationMemoryReservationPolicy)
+		actual := ResourceConfigForPod(testCase.pod, testCase.enforceCPULimits, testCase.quotaPeriod, true, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 		if !reflect.DeepEqual(actual.Unified, testCase.expected.Unified) {
 			t.Errorf("unexpected result, test: %v, unified not as expected", testName)

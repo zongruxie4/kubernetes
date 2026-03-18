@@ -559,7 +559,7 @@ func TestGenerateContainerConfigWithMemoryQoSEnforced(t *testing.T) {
 	tCtx := ktesting.Init(t)
 	_, _, m, err := createTestRuntimeManager(tCtx)
 	assert.NoError(t, err)
-	m.memoryReservationPolicy = kubeletconfiginternal.HardReservationMemoryReservationPolicy
+	m.memoryReservationPolicy = kubeletconfiginternal.TieredReservationMemoryReservationPolicy
 
 	podRequestMemory := resource.MustParse("128Mi")
 	pod1LimitMemory := resource.MustParse("256Mi")

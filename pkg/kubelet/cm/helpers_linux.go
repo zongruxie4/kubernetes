@@ -208,7 +208,7 @@ func ResourceConfigForPod(allocatedPod *v1.Pod, enforceCPULimits bool, cpuPeriod
 	}
 	result.HugePageLimit = hugePageLimits
 
-	if enforceMemoryQoS && memoryReservationPolicy == kubeletconfig.HardReservationMemoryReservationPolicy {
+	if enforceMemoryQoS && memoryReservationPolicy == kubeletconfig.TieredReservationMemoryReservationPolicy {
 		memoryRequest := int64(0)
 		if request, found := reqs[v1.ResourceMemory]; found {
 			memoryRequest = request.Value()

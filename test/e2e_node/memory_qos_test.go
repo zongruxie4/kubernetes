@@ -235,11 +235,11 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 		}
 	}
 
-	f.Describe("memory protection [memoryReservationPolicy=HardReservation]", func() {
+	f.Describe("memory protection [memoryReservationPolicy=TieredReservation]", func() {
 		ginkgo.AfterEach(func(ctx context.Context) { restoreConfig(ctx) })
 
 		ginkgo.It("should set memory.low = requests.memory for Burstable pod containers", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			requestsMem := resource.MustParse("256Mi")
 			limitsMem := resource.MustParse("512Mi")
@@ -277,7 +277,7 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 		})
 
 		ginkgo.It("should set memory.min for Guaranteed pod containers", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			mem := resource.MustParse("256Mi")
 			cpu := resource.MustParse("100m")
@@ -299,7 +299,7 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 		})
 
 		ginkgo.It("should NOT set memory.min for BestEffort pod", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			pod := &v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -329,7 +329,7 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 		})
 
 		ginkgo.It("should set pod-level memory.low = sum(container requests) for multi-container pod", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			req1 := resource.MustParse("128Mi")
 			req2 := resource.MustParse("256Mi")
@@ -377,7 +377,7 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 		})
 
 		ginkgo.It("should propagate memory protection through QoS cgroup hierarchy", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			requestsMem := resource.MustParse("128Mi")
 			limitsMem := resource.MustParse("256Mi")
@@ -587,7 +587,7 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 		ginkgo.AfterEach(func(ctx context.Context) { restoreConfig(ctx) })
 
 		ginkgo.It("should reset memory protection to 0 when MemoryQoS is disabled", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			pod := memqosMakePod("memqos-rollback", f.Namespace.Name,
 				v1.ResourceList{v1.ResourceMemory: resource.MustParse("128Mi")},
@@ -745,8 +745,8 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 			}
 		})
 
-		ginkgo.It("should set memory protection when policy is HardReservation", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+		ginkgo.It("should set memory protection when policy is TieredReservation", func(ctx context.Context) {
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			requestsMem := resource.MustParse("256Mi")
 			limitsMem := resource.MustParse("512Mi")
@@ -761,12 +761,12 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 
 			podMemMin, err := memqosReadCgroupInt64(podCgroupPath, cgroupMemoryLow)
 			framework.ExpectNoError(err)
-			framework.Logf("Policy=HardReservation: pod memory.low=%d, expected=%d", podMemMin, requestsMem.Value())
+			framework.Logf("Policy=TieredReservation: pod memory.low=%d, expected=%d", podMemMin, requestsMem.Value())
 			gomega.Expect(podMemMin).To(gomega.Equal(requestsMem.Value()))
 		})
 
-		ginkgo.It("should clear memory protection at QoS level when switching from HardReservation to None", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+		ginkgo.It("should clear memory protection at QoS level when switching from TieredReservation to None", func(ctx context.Context) {
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			pod := memqosMakePod("memqos-policy-rollback", f.Namespace.Name,
 				v1.ResourceList{v1.ResourceMemory: resource.MustParse("128Mi")},
@@ -911,7 +911,7 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 		ginkgo.AfterEach(func(ctx context.Context) { restoreConfig(ctx) })
 
 		ginkgo.It("should use memory.low for Burstable pod where memory req == limit but CPU differs", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			memSize := resource.MustParse("128Mi")
 			pod := &v1.Pod{
@@ -962,13 +962,13 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 		})
 
 		ginkgo.It("should include burstable requests in kubepods root memory.min", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			requestsMem := resource.MustParse("200Mi")
 			pod := memqosMakePod("memqos-hierarchy-check", f.Namespace.Name,
 				v1.ResourceList{v1.ResourceMemory: requestsMem},
 				v1.ResourceList{v1.ResourceMemory: resource.MustParse("400Mi")})
-			pod = e2epod.NewPodClient(f).CreateSync(ctx, pod)
+			e2epod.NewPodClient(f).CreateSync(ctx, pod)
 
 			var kubepodsCgroupPath string
 			if cgroupDriver == "systemd" {
@@ -985,7 +985,7 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 		})
 
 		ginkgo.It("should remove burstable memory.low contribution when pod is deleted", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			var burstableCgroupPath string
 			if cgroupDriver == "systemd" {
@@ -1022,7 +1022,7 @@ var _ = SIGDescribe("MemoryQoS", framework.WithSerial(), func() {
 		})
 
 		ginkgo.It("should persist container-level memory.low after rollback [known limitation]", func(ctx context.Context) {
-			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.HardReservationMemoryReservationPolicy)
+			configureMemoryQoSWithPolicy(ctx, 0.9, kubeletconfig.TieredReservationMemoryReservationPolicy)
 
 			requestsMem := resource.MustParse("128Mi")
 			pod := memqosMakePod("memqos-container-rollback", f.Namespace.Name,

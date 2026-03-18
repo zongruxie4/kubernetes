@@ -208,8 +208,8 @@ func TestQoSContainerCgroup(t *testing.T) {
 			logger, _ := ktesting.NewTestContext(t)
 			m, err := createTestQOSContainerManager(logger)
 			require.NoError(t, err)
-			// Set memory reservation policy to HardReservation to enable memory.min
-			m.memoryReservationPolicy = kubeletconfig.HardReservationMemoryReservationPolicy
+			// Set memory reservation policy to TieredReservation to enable memory.min
+			m.memoryReservationPolicy = kubeletconfig.TieredReservationMemoryReservationPolicy
 			m.activePods = func() []*v1.Pod { return tc.pods }
 
 			guaranteedUnified := map[string]string{}

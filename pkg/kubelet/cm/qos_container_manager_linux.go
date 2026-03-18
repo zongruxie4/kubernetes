@@ -300,7 +300,7 @@ func (m *qosContainerManagerImpl) setMemoryQoS(logger klog.Logger, configs map[v
 		logger.V(4).Info("MemoryQoS config for qos", "qos", qos, "key", key, "value", value)
 	}
 
-	if m.memoryReservationPolicy != kubeletconfig.HardReservationMemoryReservationPolicy {
+	if m.memoryReservationPolicy != kubeletconfig.TieredReservationMemoryReservationPolicy {
 		setUnified(v1.PodQOSGuaranteed, Cgroup2MemoryMin, 0)
 		setUnified(v1.PodQOSBurstable, Cgroup2MemoryLow, 0)
 		kubeletmetrics.MemoryQoSNodeMemoryMinBytes.Set(0)
@@ -331,7 +331,7 @@ func (m *qosContainerManagerImpl) setMemoryQoS(logger klog.Logger, configs map[v
 }
 
 // reconcilePodMemoryProtection clears stale memory.min and memory.low on pod-level cgroups
-// when MemoryQoS is disabled or memoryReservationPolicy is not HardReservation.
+// when MemoryQoS is disabled or memoryReservationPolicy is not TieredReservation.
 func (m *qosContainerManagerImpl) reconcilePodMemoryProtection(logger klog.Logger) {
 	pods := m.activePods()
 	for _, pod := range pods {
