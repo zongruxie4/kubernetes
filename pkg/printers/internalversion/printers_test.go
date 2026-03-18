@@ -8311,8 +8311,8 @@ func TestPrintResourcePoolStatusRequest(t *testing.T) {
 					Driver: "driver.example.com",
 				},
 			},
-			// Columns: Name, Driver, Total, Available, Allocated, Unavailable, Pools, Status, Completed
-			expected: []metav1.TableRow{{Cells: []interface{}{"test-request", "driver.example.com", "-", "-", "-", "-", int32(0), "Pending", "<none>"}}},
+			// Columns: Name, Driver, Total, Available, Allocated, Unavailable, Errors, Pools, Status, Completed
+			expected: []metav1.TableRow{{Cells: []interface{}{"test-request", "driver.example.com", "-", "-", "-", "-", "-", int32(0), "Pending", "<none>"}}},
 		},
 		{
 			name: "ResourcePoolStatusRequest with Complete status",
@@ -8364,8 +8364,8 @@ func TestPrintResourcePoolStatusRequest(t *testing.T) {
 					},
 				},
 			},
-			// Columns: Name, Driver, Total, Available, Allocated, Unavailable, Pools, Status, Completed
-			expected: []metav1.TableRow{{Cells: []interface{}{"test-request", "driver.example.com", int32(24), int32(12), int32(6), int32(6), int32(3), "Complete", "5m"}}},
+			// Columns: Name, Driver, Total, Available, Allocated, Unavailable, Errors, Pools, Status, Completed
+			expected: []metav1.TableRow{{Cells: []interface{}{"test-request", "driver.example.com", int32(24), int32(12), int32(6), int32(6), int32(0), int32(3), "Complete", "5m"}}},
 		},
 		{
 			name: "ResourcePoolStatusRequest with Complete status and truncated pools",
@@ -8408,9 +8408,9 @@ func TestPrintResourcePoolStatusRequest(t *testing.T) {
 					},
 				},
 			},
-			// Columns: Name, Driver, Total, Available, Allocated, Unavailable, Pools, Status, Completed
+			// Columns: Name, Driver, Total, Available, Allocated, Unavailable, Errors, Pools, Status, Completed
 			// Status shows truncation: "Complete (2/5 pools)" because len(Pools)=2 < PoolCount=5
-			expected: []metav1.TableRow{{Cells: []interface{}{"test-request", "driver.example.com", int32(18), int32(9), int32(5), int32(4), int32(5), "Complete (2/5 pools)", "5m"}}},
+			expected: []metav1.TableRow{{Cells: []interface{}{"test-request", "driver.example.com", int32(18), int32(9), int32(5), int32(4), int32(0), int32(5), "Complete (2/5 pools)", "5m"}}},
 		},
 		{
 			name: "ResourcePoolStatusRequest with Failed status",
@@ -8431,8 +8431,8 @@ func TestPrintResourcePoolStatusRequest(t *testing.T) {
 					},
 				},
 			},
-			// Columns: Name, Driver, Total, Available, Allocated, Unavailable, Pools, Status, Completed
-			expected: []metav1.TableRow{{Cells: []interface{}{"test-request", "driver.example.com", "-", "-", "-", "-", int32(0), "Failed", "<none>"}}},
+			// Columns: Name, Driver, Total, Available, Allocated, Unavailable, Errors, Pools, Status, Completed
+			expected: []metav1.TableRow{{Cells: []interface{}{"test-request", "driver.example.com", "-", "-", "-", "-", "-", int32(0), "Failed", "<none>"}}},
 		},
 		{
 			name: "Complete with validation error pool",
@@ -8472,9 +8472,9 @@ func TestPrintResourcePoolStatusRequest(t *testing.T) {
 					},
 				},
 			},
-			// Columns: Name, Driver, Total, Available, Allocated, Unavailable, Pools, Status, Completed
+			// Columns: Name, Driver, Total, Available, Allocated, Unavailable, Errors, Pools, Status, Completed
 			// Only the healthy pool's device counts are summed; the error pool has nil counts.
-			expected: []metav1.TableRow{{Cells: []interface{}{"test-request", "driver.example.com", int32(10), int32(5), int32(3), int32(2), int32(2), "Complete", "5m"}}},
+			expected: []metav1.TableRow{{Cells: []interface{}{"test-request", "driver.example.com", int32(10), int32(5), int32(3), int32(2), int32(1), int32(2), "Complete", "5m"}}},
 		},
 	}
 

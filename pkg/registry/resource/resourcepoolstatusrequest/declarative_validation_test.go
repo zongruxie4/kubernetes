@@ -239,7 +239,7 @@ func TestDeclarativeValidateStatusUpdate(t *testing.T) {
 			expectedErrs: field.ErrorList{field.Invalid(field.NewPath("status", "poolCount"), nil, "").WithOrigin("minimum")},
 		},
 		"pool validationError too long": {
-			// +k8s:maxLength=256
+			// +k8s:maxBytes=256
 			oldObj: mkValidRPSRForUpdate(),
 			updateObj: mkValidRPSRForUpdate(withStatus(func(s *resource.ResourcePoolStatusRequestStatus) {
 				pool := mkValidPoolStatus()
@@ -247,7 +247,7 @@ func TestDeclarativeValidateStatusUpdate(t *testing.T) {
 				pool.ValidationError = &longErr
 				s.Pools = []resource.PoolStatus{pool}
 			})),
-			expectedErrs: field.ErrorList{field.TooLongMaxLength(field.NewPath("status", "pools").Index(0).Child("validationError"), nil, 256).WithOrigin("maxLength")},
+			expectedErrs: field.ErrorList{field.TooLong(field.NewPath("status", "pools").Index(0).Child("validationError"), "", 256).WithOrigin("maxBytes")},
 		},
 		"poolCount zero": {
 			// +k8s:minimum=0 boundary — zero should be valid

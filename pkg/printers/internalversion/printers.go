@@ -700,10 +700,11 @@ func AddHandlers(h printers.PrintHandler) {
 	resourcePoolStatusRequestColumnDefinitions := []metav1.TableColumnDefinition{
 		{Name: "Name", Type: "string", Format: "name", Description: metav1.ObjectMeta{}.SwaggerDoc()["name"]},
 		{Name: "Driver", Type: "string", Description: "The driver to query pools for."},
-		{Name: "Total", Type: "integer", Description: "Total number of devices across all pools."},
-		{Name: "Available", Type: "integer", Description: "Number of available devices across all pools."},
-		{Name: "Allocated", Type: "integer", Description: "Number of allocated devices across all pools."},
-		{Name: "Unavailable", Type: "integer", Description: "Number of unavailable devices across all pools."},
+		{Name: "Total", Type: "string", Description: "Total number of devices across all pools."},
+		{Name: "Available", Type: "string", Description: "Number of available devices across all pools."},
+		{Name: "Allocated", Type: "string", Description: "Number of allocated devices across all pools."},
+		{Name: "Unavailable", Type: "string", Description: "Number of unavailable devices across all pools."},
+		{Name: "Errors", Type: "string", Description: "Number of pools with validation errors."},
 		{Name: "Pools", Type: "integer", Description: "Total number of matching pools."},
 		{Name: "Status", Type: "string", Description: "Processing status."},
 		{Name: "Completed", Type: "string", Description: "Time since the observation completed."},
@@ -3292,11 +3293,12 @@ func printResourcePoolStatusRequest(obj *resource.ResourcePoolStatusRequest, opt
 
 	status := "Pending"
 	var poolCount int32
-	var totalDevices, availableDevices, allocatedDevices, unavailableDevices interface{}
+	var totalDevices, availableDevices, allocatedDevices, unavailableDevices, validationErrors interface{}
 	totalDevices = "-"
 	availableDevices = "-"
 	allocatedDevices = "-"
 	unavailableDevices = "-"
+	validationErrors = "-"
 
 	var completedTime *metav1.Time
 	if obj.Status != nil {
@@ -3323,7 +3325,11 @@ func printResourcePoolStatusRequest(obj *resource.ResourcePoolStatusRequest, opt
 		// Aggregate device counts if not failed
 		if !isFailed {
 			var sumTotal, sumAvail, sumAlloc, sumUnavail int32
+			var errorCount int32
 			for _, p := range obj.Status.Pools {
+				if p.ValidationError != nil {
+					errorCount++
+				}
 				if p.TotalDevices != nil {
 					sumTotal += *p.TotalDevices
 				}
@@ -3341,13 +3347,14 @@ func printResourcePoolStatusRequest(obj *resource.ResourcePoolStatusRequest, opt
 			availableDevices = sumAvail
 			allocatedDevices = sumAlloc
 			unavailableDevices = sumUnavail
+			validationErrors = errorCount
 		}
 	}
 	completed := "<none>"
 	if completedTime != nil {
 		completed = translateTimestampSince(*completedTime)
 	}
-	row.Cells = append(row.Cells, obj.Name, obj.Spec.Driver, totalDevices, availableDevices, allocatedDevices, unavailableDevices, poolCount, status, completed)
+	row.Cells = append(row.Cells, obj.Name, obj.Spec.Driver, totalDevices, availableDevices, allocatedDevices, unavailableDevices, validationErrors, poolCount, status, completed)
 
 	return []metav1.TableRow{row}, nil
 }

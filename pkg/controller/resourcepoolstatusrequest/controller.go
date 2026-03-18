@@ -389,6 +389,10 @@ func (c *Controller) calculatePoolStatus(ctx context.Context, request *resourcev
 			// Incomplete pool: set validation error, leave device counts and slice count nil
 			errMsg := fmt.Sprintf("pool %s/%s is incomplete: observed %d/%d slices at generation %d",
 				info.driver, info.poolName, info.sliceCount, info.expectedSliceCount, info.generation)
+			// Truncate to 256 bytes to stay within the API field's +k8s:maxBytes=256 limit.
+			if len(errMsg) > 256 {
+				errMsg = errMsg[:256]
+			}
 			pool.ValidationError = &errMsg
 		} else {
 			// Complete pool: populate device counts and slice count

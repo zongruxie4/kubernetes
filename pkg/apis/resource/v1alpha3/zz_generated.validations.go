@@ -337,7 +337,7 @@ func Validate_PoolStatus(ctx context.Context, op operation.Operation, fldPath *f
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.MaxLength(ctx, op, fldPath, obj, oldObj, 256)...)
+			errs = append(errs, validate.MaxBytes(ctx, op, fldPath, obj, oldObj, 256)...)
 			return
 		}(fldPath.Child("validationError"), obj.ValidationError, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *string { return oldObj.ValidationError }), oldObj != nil)...)
 

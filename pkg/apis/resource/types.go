@@ -2063,15 +2063,12 @@ type DeviceTaintRuleList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ResourcePoolStatusRequest triggers a one-time calculation of resource pool status
-// based on the provided filters. The request follows a request/response pattern similar
-// to CertificateSigningRequest - create a request, and the controller populates the status.
-//
-// Once status is set, the request is considered complete and will not
-// be reprocessed. Users should delete and recreate requests to get updated information.
+// based on the provided filters. Once status is set, the request is considered complete and will not be reprocessed.
+// Users should delete and recreate requests to get updated information.
 type ResourcePoolStatusRequest struct {
 	metav1.TypeMeta
 	// Standard object metadata
-	// +optional
+	// +required
 	metav1.ObjectMeta
 
 	// Spec defines the filters for which pools to include in the status.
@@ -2097,8 +2094,7 @@ type ResourcePoolStatusRequestSpec struct {
 	PoolName *string
 
 	// Limit optionally specifies the maximum number of pools to return in the status.
-	// If more pools match the filter criteria, the response will be truncated
-	// and status.truncated will be set to true.
+	// If more pools match the filter criteria, the response will be truncated.
 	//
 	// Default: 100
 	// Maximum: 1000
