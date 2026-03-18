@@ -174,6 +174,7 @@ func TestPatchPodStatus(t *testing.T) {
 		// (true means error is expected one.)
 		validateErr    func(goterr error) bool
 		statusToUpdate v1.PodStatus
+		nilOldStatus   bool
 	}{
 		{
 			name:   "Should update pod conditions successfully",
@@ -300,6 +301,25 @@ func TestPatchPodStatus(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:   "nil oldStatus patches successfully",
+			client: clientsetfake.NewClientset(),
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "pod1",
+				},
+			},
+			statusToUpdate: v1.PodStatus{
+				Conditions: []v1.PodCondition{
+					{
+						Type:   v1.PodScheduled,
+						Status: v1.ConditionFalse,
+					},
+				},
+			},
+			nilOldStatus: true,
+		},
 	}
 
 	for _, tc := range tests {
@@ -314,7 +334,11 @@ func TestPatchPodStatus(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = PatchPodStatus(ctx, client, tc.pod.Name, tc.pod.Namespace, &tc.pod.Status, &tc.statusToUpdate)
+			oldStatus := &tc.pod.Status
+			if tc.nilOldStatus {
+				oldStatus = nil
+			}
+			err = PatchPodStatus(ctx, client, tc.pod.Name, tc.pod.Namespace, oldStatus, &tc.statusToUpdate)
 			if err != nil && tc.validateErr == nil {
 				// shouldn't be error
 				t.Fatal(err)
@@ -349,6 +373,7 @@ func TestPatchPodGroupStatus(t *testing.T) {
 		// (true means error is expected one.)
 		validateErr    func(goterr error) bool
 		statusToUpdate *schedulingv1alpha2.PodGroupStatus
+		nilOldStatus   bool
 	}{
 		{
 			name:   "Should update podgroup conditions successfully",
@@ -526,6 +551,28 @@ func TestPatchPodGroupStatus(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:   "nil oldStatus patches successfully",
+			client: clientsetfake.NewClientset(),
+			podGroup: schedulingv1alpha2.PodGroup{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "pg1",
+				},
+			},
+			statusToUpdate: &schedulingv1alpha2.PodGroupStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               schedulingapi.PodGroupScheduled,
+						Status:             metav1.ConditionFalse,
+						Reason:             schedulingapi.PodGroupReasonUnschedulable,
+						Message:            "not enough capacity for the gang",
+						LastTransitionTime: now,
+					},
+				},
+			},
+			nilOldStatus: true,
+		},
 	}
 
 	for _, tc := range tests {
@@ -540,7 +587,11 @@ func TestPatchPodGroupStatus(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = PatchPodGroupStatus(ctx, client, tc.podGroup.Name, tc.podGroup.Namespace, &tc.podGroup.Status, tc.statusToUpdate)
+			oldStatus := &tc.podGroup.Status
+			if tc.nilOldStatus {
+				oldStatus = nil
+			}
+			err = PatchPodGroupStatus(ctx, client, tc.podGroup.Name, tc.podGroup.Namespace, oldStatus, tc.statusToUpdate)
 			if err != nil && tc.validateErr == nil {
 				t.Fatal(err)
 			}

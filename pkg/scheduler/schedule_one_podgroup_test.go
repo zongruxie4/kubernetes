@@ -1777,7 +1777,7 @@ func TestUpdatePodGroupCondition(t *testing.T) {
 			expectLastTransitionTimeUnchanged: true,
 		},
 		{
-			name: "Scheduled to Scheduled is a no-op",
+			name: "Scheduled to Scheduled preserves LastTransitionTime",
 			existingPodGroup: &schedulingv1alpha2.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{Name: "pg-true-to-true", Namespace: "ns1"},
 				Status: schedulingv1alpha2.PodGroupStatus{
@@ -1798,13 +1798,13 @@ func TestUpdatePodGroupCondition(t *testing.T) {
 				Type:    schedulingapi.PodGroupScheduled,
 				Status:  metav1.ConditionTrue,
 				Reason:  "Scheduled",
-				Message: "All pods scheduled",
+				Message: "New condition message",
 			},
 			expectCondition: &metav1.Condition{
 				Type:    schedulingapi.PodGroupScheduled,
 				Status:  metav1.ConditionTrue,
 				Reason:  "Scheduled",
-				Message: "All pods scheduled",
+				Message: "New condition message",
 			},
 			expectLastTransitionTimeUnchanged: true,
 		},

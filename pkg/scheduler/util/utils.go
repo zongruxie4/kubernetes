@@ -108,6 +108,10 @@ func PatchPodStatus(ctx context.Context, cs kubernetes.Interface, name string, n
 		return nil
 	}
 
+	if oldStatus == nil {
+		oldStatus = &v1.PodStatus{}
+	}
+
 	oldData, err := json.Marshal(v1.Pod{Status: *oldStatus})
 	if err != nil {
 		return err
@@ -141,6 +145,10 @@ func PatchPodGroupStatus(ctx context.Context, cs kubernetes.Interface, name stri
 	newStatus *schedulingv1alpha2.PodGroupStatus) error {
 	if newStatus == nil {
 		return nil
+	}
+
+	if oldStatus == nil {
+		oldStatus = &schedulingv1alpha2.PodGroupStatus{}
 	}
 
 	oldData, err := json.Marshal(schedulingv1alpha2.PodGroup{Status: *oldStatus})
