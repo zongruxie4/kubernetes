@@ -589,23 +589,34 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 				framework.ExpectNoError(err)
 				defer func() { _ = client.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
 
-				// Wait for controller to set status.
-				g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
-					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-					if err != nil {
-						return nil
-					}
-					return obj.Status
-				}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
-
-				obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-				framework.ExpectNoError(err)
-				g.Expect(obj.Status.Pools).To(gomega.HaveLen(1))
-				pool := obj.Status.Pools[0]
-				g.Expect(ptr.Deref(pool.TotalDevices, 0)).To(gomega.BeEquivalentTo(10))
-				g.Expect(ptr.Deref(pool.AllocatedDevices, -1)).To(gomega.BeEquivalentTo(0))
-				g.Expect(ptr.Deref(pool.AvailableDevices, 0)).To(gomega.BeEquivalentTo(10))
-				g.Expect(ptr.Deref(pool.ResourceSliceCount, 0)).To(gomega.BeNumerically(">", 0))
+				// Wait for controller to set status and validate.
+				g.Eventually(ctx, framework.GetObject(client.Get, request.Name, metav1.GetOptions{})).
+					WithTimeout(15 * time.Second).
+					Should(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+						"Status": gstruct.PointTo(gstruct.MatchAllFields(gstruct.Fields{
+							"PoolCount": gomega.HaveValue(gomega.BeEquivalentTo(1)),
+							"Pools": gomega.ConsistOf(
+								gstruct.MatchAllFields(gstruct.Fields{
+									"Driver":             gomega.Equal(driver.Name),
+									"PoolName":           gomega.Equal("network"),
+									"Generation":         gomega.Equal(int64(1)),
+									"ResourceSliceCount": gomega.Equal(ptr.To[int32](1)),
+									"TotalDevices":       gomega.Equal(ptr.To[int32](10)),
+									"AllocatedDevices":   gomega.Equal(ptr.To[int32](0)),
+									"AvailableDevices":   gomega.Equal(ptr.To[int32](10)),
+									"UnavailableDevices": gomega.Equal(ptr.To[int32](0)),
+									"NodeName":           gomega.BeNil(),
+									"ValidationError":    gomega.BeNil(),
+								}),
+							),
+							"Conditions": gomega.ContainElement(
+								gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+									"Type":   gomega.Equal("Complete"),
+									"Status": gomega.Equal(metav1.ConditionTrue),
+								}),
+							),
+						})),
+					})))
 			}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
 		})
 
@@ -625,21 +636,34 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 				framework.ExpectNoError(err)
 				defer func() { _ = client.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
 
-				// Wait for controller to set status.
-				g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
-					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-					if err != nil {
-						return nil
-					}
-					return obj.Status
-				}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
-
-				obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-				framework.ExpectNoError(err)
-				g.Expect(obj.Status.Pools).To(gomega.HaveLen(1))
-				pool := obj.Status.Pools[0]
-				g.Expect(ptr.Deref(pool.AllocatedDevices, 0)).To(gomega.BeNumerically(">", 0))
-				g.Expect(ptr.Deref(pool.AvailableDevices, 0)).To(gomega.BeNumerically("<", ptr.Deref(pool.TotalDevices, 0)))
+				// Wait for controller to set status and validate.
+				g.Eventually(ctx, framework.GetObject(client.Get, request.Name, metav1.GetOptions{})).
+					WithTimeout(15 * time.Second).
+					Should(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+						"Status": gstruct.PointTo(gstruct.MatchAllFields(gstruct.Fields{
+							"PoolCount": gomega.HaveValue(gomega.BeEquivalentTo(1)),
+							"Pools": gomega.ConsistOf(
+								gstruct.MatchAllFields(gstruct.Fields{
+									"Driver":             gomega.Equal(driver.Name),
+									"PoolName":           gomega.Equal("network"),
+									"Generation":         gomega.Equal(int64(1)),
+									"ResourceSliceCount": gomega.Equal(ptr.To[int32](1)),
+									"TotalDevices":       gomega.Equal(ptr.To[int32](10)),
+									"AllocatedDevices":   gomega.HaveValue(gomega.BeNumerically(">", int32(0))),
+									"AvailableDevices":   gomega.Not(gomega.BeNil()),
+									"UnavailableDevices": gomega.Equal(ptr.To[int32](0)),
+									"NodeName":           gomega.BeNil(),
+									"ValidationError":    gomega.BeNil(),
+								}),
+							),
+							"Conditions": gomega.ContainElement(
+								gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+									"Type":   gomega.Equal("Complete"),
+									"Status": gomega.Equal(metav1.ConditionTrue),
+								}),
+							),
+						})),
+					})))
 			}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
 		})
 	})
@@ -3445,24 +3469,20 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 					framework.ExpectNoError(err)
 					defer func() { _ = client.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
 
-					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
-						obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-						if err != nil {
-							return nil
-						}
-						return obj.Status
-					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
-
-					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-					framework.ExpectNoError(err)
-					g.Expect(obj.Status.Pools).To(gomega.HaveLen(2))
-					g.Expect(*obj.Status.PoolCount).To(gomega.BeEquivalentTo(2))
-					g.Expect(obj.Status.Conditions).To(gomega.ContainElement(
-						gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-							"Type":   gomega.Equal("Complete"),
-							"Status": gomega.Equal(metav1.ConditionTrue),
-						}),
-					))
+					g.Eventually(ctx, framework.GetObject(client.Get, request.Name, metav1.GetOptions{})).
+						WithTimeout(15 * time.Second).
+						Should(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+							"Status": gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+								"Pools":     gomega.HaveLen(2),
+								"PoolCount": gomega.HaveValue(gomega.BeEquivalentTo(2)),
+								"Conditions": gomega.ContainElement(
+									gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+										"Type":   gomega.Equal("Complete"),
+										"Status": gomega.Equal(metav1.ConditionTrue),
+									}),
+								),
+							})),
+						})))
 				}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
 			})
 
@@ -3479,17 +3499,16 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 					framework.ExpectNoError(err)
 					defer func() { _ = client.Delete(ctx, allPoolsRequest.Name, metav1.DeleteOptions{}) }()
 
-					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
-						obj, err := client.Get(ctx, allPoolsRequest.Name, metav1.GetOptions{})
-						if err != nil {
-							return nil
-						}
-						return obj.Status
-					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
+					g.Eventually(ctx, framework.GetObject(client.Get, allPoolsRequest.Name, metav1.GetOptions{})).
+						WithTimeout(15 * time.Second).
+						Should(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+							"Status": gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+								"Pools": gomega.Not(gomega.BeEmpty()),
+							})),
+						})))
 
 					allObj, err := client.Get(ctx, allPoolsRequest.Name, metav1.GetOptions{})
 					framework.ExpectNoError(err)
-					g.Expect(allObj.Status.Pools).NotTo(gomega.BeEmpty())
 					poolName := allObj.Status.Pools[0].PoolName
 
 					// Now filter by that pool name.
@@ -3503,18 +3522,18 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 					framework.ExpectNoError(err)
 					defer func() { _ = client.Delete(ctx, filtered.Name, metav1.DeleteOptions{}) }()
 
-					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
-						obj, err := client.Get(ctx, filtered.Name, metav1.GetOptions{})
-						if err != nil {
-							return nil
-						}
-						return obj.Status
-					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
-
-					obj, err := client.Get(ctx, filtered.Name, metav1.GetOptions{})
-					framework.ExpectNoError(err)
-					g.Expect(obj.Status.Pools).To(gomega.HaveLen(1))
-					g.Expect(obj.Status.Pools[0].PoolName).To(gomega.Equal(poolName))
+					g.Eventually(ctx, framework.GetObject(client.Get, filtered.Name, metav1.GetOptions{})).
+						WithTimeout(15 * time.Second).
+						Should(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+							"Status": gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+								"PoolCount": gomega.HaveValue(gomega.BeEquivalentTo(1)),
+								"Pools": gomega.ConsistOf(
+									gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+										"PoolName": gomega.Equal(poolName),
+									}),
+								),
+							})),
+						})))
 				}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
 			})
 
@@ -3534,19 +3553,14 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 					framework.ExpectNoError(err)
 					defer func() { _ = client.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
 
-					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
-						obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-						if err != nil {
-							return nil
-						}
-						return obj.Status
-					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
-
-					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-					framework.ExpectNoError(err)
-					g.Expect(obj.Status.Pools).To(gomega.HaveLen(1))
-					g.Expect(*obj.Status.PoolCount).To(gomega.BeEquivalentTo(2))
-					g.Expect(len(obj.Status.Pools)).To(gomega.BeNumerically("<", int(*obj.Status.PoolCount)))
+					g.Eventually(ctx, framework.GetObject(client.Get, request.Name, metav1.GetOptions{})).
+						WithTimeout(15 * time.Second).
+						Should(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+							"Status": gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+								"Pools":     gomega.HaveLen(1),
+								"PoolCount": gomega.HaveValue(gomega.BeEquivalentTo(2)),
+							})),
+						})))
 				}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
 			})
 
@@ -3566,18 +3580,14 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 					}
 				})
 
-				gomega.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
-					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-					if err != nil {
-						return nil
-					}
-					return obj.Status
-				}).WithTimeout(30 * time.Second).ShouldNot(gomega.BeNil())
-
-				obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-				framework.ExpectNoError(err)
-				gomega.Expect(obj.Status.Pools).To(gomega.BeEmpty())
-				gomega.Expect(*obj.Status.PoolCount).To(gomega.BeEquivalentTo(0))
+				gomega.Eventually(ctx, framework.GetObject(client.Get, request.Name, metav1.GetOptions{})).
+					WithTimeout(30 * time.Second).
+					Should(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+						"Status": gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+							"Pools":     gomega.BeEmpty(),
+							"PoolCount": gomega.HaveValue(gomega.BeEquivalentTo(0)),
+						})),
+					})))
 			})
 
 		f.It("should not reprocess after status is set",
@@ -3597,13 +3607,11 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 				})
 
 				// Wait for completion.
-				gomega.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
-					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-					if err != nil {
-						return nil
-					}
-					return obj.Status
-				}).WithTimeout(30 * time.Second).ShouldNot(gomega.BeNil())
+				gomega.Eventually(ctx, framework.GetObject(client.Get, request.Name, metav1.GetOptions{})).
+					WithTimeout(30 * time.Second).
+					Should(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+						"Status": gomega.Not(gomega.BeNil()),
+					})))
 
 				obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
 				framework.ExpectNoError(err)
@@ -3631,20 +3639,25 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 
 					// Wait for status to be populated and verify NodeName is set for each pool.
 					// The driver creates per-node pools, so all slices in a pool share the same node.
-					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
-						obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-						if err != nil {
-							return nil
-						}
-						return obj.Status
-					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
-
-					obj, err := client.Get(ctx, request.Name, metav1.GetOptions{})
-					framework.ExpectNoError(err)
-					g.Expect(obj.Status.Pools).NotTo(gomega.BeEmpty())
-					for _, pool := range obj.Status.Pools {
-						g.Expect(pool.NodeName).NotTo(gomega.BeNil())
-					}
+					g.Eventually(ctx, framework.GetObject(client.Get, request.Name, metav1.GetOptions{})).
+						WithTimeout(15 * time.Second).
+						Should(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+							"Status": gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+								"PoolCount": gomega.Not(gomega.BeNil()),
+								"Pools": gomega.And(
+									gomega.Not(gomega.BeEmpty()),
+									gomega.HaveEach(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+										"NodeName": gomega.Not(gomega.BeNil()),
+									})),
+								),
+								"Conditions": gomega.ContainElement(
+									gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+										"Type":   gomega.Equal("Complete"),
+										"Status": gomega.Equal(metav1.ConditionTrue),
+									}),
+								),
+							})),
+						})))
 				}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
 			})
 
@@ -3717,18 +3730,24 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 					framework.ExpectNoError(err)
 					defer func() { _ = statusClient.Delete(ctx, request.Name, metav1.DeleteOptions{}) }()
 
-					g.Eventually(ctx, func(ctx context.Context) *resourcealphaapi.ResourcePoolStatusRequestStatus {
-						obj, err := statusClient.Get(ctx, request.Name, metav1.GetOptions{})
-						if err != nil {
-							return nil
-						}
-						return obj.Status
-					}).WithTimeout(15 * time.Second).ShouldNot(gomega.BeNil())
-
-					obj, err := statusClient.Get(ctx, request.Name, metav1.GetOptions{})
-					framework.ExpectNoError(err)
-					g.Expect(obj.Status.Pools).To(gomega.HaveLen(1))
-					g.Expect(obj.Status.Pools[0].NodeName).To(gomega.BeNil())
+					g.Eventually(ctx, framework.GetObject(statusClient.Get, request.Name, metav1.GetOptions{})).
+						WithTimeout(15 * time.Second).
+						Should(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+							"Status": gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+								"PoolCount": gomega.HaveValue(gomega.BeEquivalentTo(1)),
+								"Pools": gomega.ConsistOf(
+									gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+										"NodeName": gomega.BeNil(),
+									}),
+								),
+								"Conditions": gomega.ContainElement(
+									gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+										"Type":   gomega.Equal("Complete"),
+										"Status": gomega.Equal(metav1.ConditionTrue),
+									}),
+								),
+							})),
+						})))
 				}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
 			})
 	})
