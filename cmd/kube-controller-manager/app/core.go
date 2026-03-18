@@ -30,7 +30,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	genericfeatures "k8s.io/apiserver/pkg/features"
 	"k8s.io/apiserver/pkg/quota/v1/generic"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/discovery"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
@@ -42,7 +41,6 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/cmd/kube-controller-manager/names"
 	pkgcontroller "k8s.io/kubernetes/pkg/controller"
-	"k8s.io/kubernetes/pkg/controller/devicetainteviction"
 	endpointcontroller "k8s.io/kubernetes/pkg/controller/endpoint"
 	"k8s.io/kubernetes/pkg/controller/garbagecollector"
 	namespacecontroller "k8s.io/kubernetes/pkg/controller/namespace"
@@ -52,8 +50,6 @@ import (
 	lifecyclecontroller "k8s.io/kubernetes/pkg/controller/nodelifecycle"
 	"k8s.io/kubernetes/pkg/controller/podgc"
 	replicationcontroller "k8s.io/kubernetes/pkg/controller/replication"
-	"k8s.io/kubernetes/pkg/controller/resourceclaim"
-	"k8s.io/kubernetes/pkg/controller/resourcepoolstatusrequest"
 	resourcequotacontroller "k8s.io/kubernetes/pkg/controller/resourcequota"
 	serviceaccountcontroller "k8s.io/kubernetes/pkg/controller/serviceaccount"
 	"k8s.io/kubernetes/pkg/controller/storageversiongc"
@@ -249,41 +245,6 @@ func newTaintEvictionController(ctx context.Context, controllerContext Controlle
 	return newControllerLoop(tec.Run, controllerName), nil
 }
 
-func newDeviceTaintEvictionControllerDescriptor() *ControllerDescriptor {
-	return &ControllerDescriptor{
-		name:        names.DeviceTaintEvictionController,
-		constructor: newDeviceTaintEvictionController,
-		requiredFeatureGates: []featuregate.Feature{
-			// TODO update app.TestFeatureGatedControllersShouldNotDefineAliases when removing these feature gates.
-			features.DynamicResourceAllocation,
-			features.DRADeviceTaints,
-		},
-	}
-}
-
-func newDeviceTaintEvictionController(ctx context.Context, controllerContext ControllerContext, controllerName string) (Controller, error) {
-	client, err := controllerContext.NewClient(names.DeviceTaintEvictionController)
-	if err != nil {
-		return nil, err
-	}
-
-	deviceTaintEvictionController := devicetainteviction.New(
-		client,
-		controllerContext.InformerFactory.Core().V1().Pods(),
-		controllerContext.InformerFactory.Resource().V1().ResourceClaims(),
-		controllerContext.InformerFactory.Resource().V1().ResourceSlices(),
-		controllerContext.InformerFactory.Resource().V1beta2().DeviceTaintRules(),
-		controllerContext.InformerFactory.Resource().V1().DeviceClasses(),
-		controllerName,
-	)
-	return newControllerLoop(func(ctx context.Context) {
-		if err := deviceTaintEvictionController.Run(ctx, int(controllerContext.ComponentConfig.DeviceTaintEvictionController.ConcurrentSyncs)); err != nil {
-			klog.FromContext(ctx).Error(err, "Device taint processing leading to Pod eviction failed and is now paused")
-		}
-		<-ctx.Done()
-	}, controllerName), nil
-}
-
 func newCloudNodeLifecycleControllerDescriptor() *ControllerDescriptor {
 	return &ControllerDescriptor{
 		name:    cpnames.CloudNodeLifecycleController,
@@ -458,72 +419,6 @@ func newEphemeralVolumeController(ctx context.Context, controllerContext Control
 
 	return newControllerLoop(func(ctx context.Context) {
 		ephemeralController.Run(ctx, int(controllerContext.ComponentConfig.EphemeralVolumeController.ConcurrentEphemeralVolumeSyncs))
-	}, controllerName), nil
-}
-
-func newResourceClaimControllerDescriptor() *ControllerDescriptor {
-	return &ControllerDescriptor{
-		name:        names.ResourceClaimController,
-		aliases:     []string{"resource-claim-controller"},
-		constructor: newResourceClaimController,
-		requiredFeatureGates: []featuregate.Feature{
-			features.DynamicResourceAllocation, // TODO update app.TestFeatureGatedControllersShouldNotDefineAliases when removing this feature
-		},
-	}
-}
-
-func newResourceClaimController(ctx context.Context, controllerContext ControllerContext, controllerName string) (Controller, error) {
-	client, err := controllerContext.NewClient("resource-claim-controller")
-	if err != nil {
-		return nil, err
-	}
-
-	ephemeralController, err := resourceclaim.NewController(
-		klog.FromContext(ctx),
-		resourceclaim.Features{
-			AdminAccess:     utilfeature.DefaultFeatureGate.Enabled(features.DRAAdminAccess),
-			PrioritizedList: utilfeature.DefaultFeatureGate.Enabled(features.DRAPrioritizedList),
-		},
-		client,
-		controllerContext.InformerFactory.Core().V1().Pods(),
-		controllerContext.InformerFactory.Resource().V1().ResourceClaims(),
-		controllerContext.InformerFactory.Resource().V1().ResourceClaimTemplates())
-	if err != nil {
-		return nil, fmt.Errorf("failed to init resource claim controller: %w", err)
-	}
-
-	return newControllerLoop(func(ctx context.Context) {
-		ephemeralController.Run(ctx, int(controllerContext.ComponentConfig.ResourceClaimController.ConcurrentSyncs))
-	}, controllerName), nil
-}
-
-func newResourcePoolStatusRequestControllerDescriptor() *ControllerDescriptor {
-	return &ControllerDescriptor{
-		name:        names.ResourcePoolStatusRequestController,
-		constructor: newResourcePoolStatusRequestController,
-		requiredFeatureGates: []featuregate.Feature{
-			features.DRAResourcePoolStatus,
-		},
-	}
-}
-
-func newResourcePoolStatusRequestController(ctx context.Context, controllerContext ControllerContext, controllerName string) (Controller, error) {
-	client, err := controllerContext.NewClient("resourcepoolstatusrequest-controller")
-	if err != nil {
-		return nil, err
-	}
-
-	controller, err := resourcepoolstatusrequest.NewController(
-		ctx,
-		client,
-		controllerContext.InformerFactory,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to init resourcepoolstatusrequest controller: %w", err)
-	}
-
-	return newControllerLoop(func(ctx context.Context) {
-		controller.Run(ctx, 1) // Single worker is sufficient for this controller
 	}, controllerName), nil
 }
 

@@ -332,7 +332,11 @@ func TestCalculatePoolStatus(t *testing.T) {
 			informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 
 			// Create controller
-			controller, err := NewController(ctx, fakeClient, informerFactory)
+			controller, err := NewController(ctx, fakeClient,
+				informerFactory.Resource().V1alpha3().ResourcePoolStatusRequests(),
+				informerFactory.Resource().V1().ResourceSlices(),
+				informerFactory.Resource().V1().ResourceClaims(),
+			)
 			if err != nil {
 				t.Fatalf("Failed to create controller: %v", err)
 			}
@@ -456,7 +460,11 @@ func TestSyncRequest(t *testing.T) {
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 
 	// Create controller
-	controller, err := NewController(ctx, fakeClient, informerFactory)
+	controller, err := NewController(ctx, fakeClient,
+		informerFactory.Resource().V1alpha3().ResourcePoolStatusRequests(),
+		informerFactory.Resource().V1().ResourceSlices(),
+		informerFactory.Resource().V1().ResourceClaims(),
+	)
 	if err != nil {
 		t.Fatalf("Failed to create controller: %v", err)
 	}
@@ -507,7 +515,11 @@ func TestSyncRequestRequeuesIncompletePool(t *testing.T) {
 	fakeClient := fake.NewClientset(request)
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 
-	controller, err := NewController(ctx, fakeClient, informerFactory)
+	controller, err := NewController(ctx, fakeClient,
+		informerFactory.Resource().V1alpha3().ResourcePoolStatusRequests(),
+		informerFactory.Resource().V1().ResourceSlices(),
+		informerFactory.Resource().V1().ResourceClaims(),
+	)
 	if err != nil {
 		t.Fatalf("Failed to create controller: %v", err)
 	}
@@ -525,7 +537,8 @@ func TestSyncRequestRequeuesIncompletePool(t *testing.T) {
 		t.Fatalf("Failed to add slice to informer: %v", err)
 	}
 
-	// First sync should return error to trigger requeue (NumRequeues=0 < maxRetries)
+	// syncRequest should always return an error for incomplete pools,
+	// letting processNextWorkItem handle retry counting and drop logic.
 	err = controller.syncRequest(ctx, "test-request")
 	if err == nil {
 		t.Fatal("Expected syncRequest to return error for incomplete pool requeue, got nil")
@@ -538,31 +551,18 @@ func TestSyncRequestRequeuesIncompletePool(t *testing.T) {
 		}
 	}
 
-	// Simulate exhausted retries by adding the key to the workqueue enough times
+	// Even after retries are exhausted, syncRequest still returns an error;
+	// it is processNextWorkItem that decides to drop the key.
 	for range maxRetries {
 		controller.workqueue.AddRateLimited("test-request")
-		// Get and Done to process each add
 		key, _ := controller.workqueue.Get()
 		controller.workqueue.Done(key)
 	}
 
-	// Now NumRequeues >= maxRetries, syncRequest should succeed and set status
 	fakeClient.ClearActions()
 	err = controller.syncRequest(ctx, "test-request")
-	if err != nil {
-		t.Fatalf("Expected syncRequest to succeed after retries exhausted, got: %v", err)
-	}
-
-	// Verify status was updated with incomplete pools having ValidationError
-	var foundUpdate bool
-	for _, action := range fakeClient.Actions() {
-		if action.GetVerb() == "update" && action.GetSubresource() == "status" {
-			foundUpdate = true
-			break
-		}
-	}
-	if !foundUpdate {
-		t.Error("Expected status update after retries exhausted")
+	if err == nil {
+		t.Fatal("Expected syncRequest to still return error for incomplete pools after retries exhausted")
 	}
 }
 
@@ -593,7 +593,11 @@ func TestSkipProcessedRequest(t *testing.T) {
 	fakeClient := fake.NewClientset(request)
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 
-	controller, err := NewController(ctx, fakeClient, informerFactory)
+	controller, err := NewController(ctx, fakeClient,
+		informerFactory.Resource().V1alpha3().ResourcePoolStatusRequests(),
+		informerFactory.Resource().V1().ResourceSlices(),
+		informerFactory.Resource().V1().ResourceClaims(),
+	)
 	if err != nil {
 		t.Fatalf("Failed to create controller: %v", err)
 	}
@@ -729,7 +733,11 @@ func TestShouldDeleteRequest(t *testing.T) {
 	fakeClient := fake.NewClientset()
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 
-	controller, err := NewController(ctx, fakeClient, informerFactory)
+	controller, err := NewController(ctx, fakeClient,
+		informerFactory.Resource().V1alpha3().ResourcePoolStatusRequests(),
+		informerFactory.Resource().V1().ResourceSlices(),
+		informerFactory.Resource().V1().ResourceClaims(),
+	)
 	if err != nil {
 		t.Fatalf("Failed to create controller: %v", err)
 	}
@@ -880,7 +888,11 @@ func TestCleanupExpiredRequests(t *testing.T) {
 	fakeClient := fake.NewClientset(expiredRequest, activeRequest)
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 
-	controller, err := NewController(ctx, fakeClient, informerFactory)
+	controller, err := NewController(ctx, fakeClient,
+		informerFactory.Resource().V1alpha3().ResourcePoolStatusRequests(),
+		informerFactory.Resource().V1().ResourceSlices(),
+		informerFactory.Resource().V1().ResourceClaims(),
+	)
 	if err != nil {
 		t.Fatalf("Failed to create controller: %v", err)
 	}

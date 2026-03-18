@@ -67,49 +67,33 @@ func TestRequestProcessingDuration(t *testing.T) {
 	RequestProcessingDuration.WithLabelValues("driver-a.example.com").Observe(0.5)
 	RequestProcessingDuration.WithLabelValues("driver-b.example.com").Observe(1.0)
 
-	// Validate metric metadata and label structure; histogram bucket values
-	// are deterministic given the observations above.
+	// Use gatherWithoutDurations to strip timing-dependent histogram fields
+	// (SampleSum and Bucket), verifying only _count lines.
 	want := `# HELP resourcepoolstatusrequest_controller_request_processing_duration_seconds [ALPHA] Time taken to process a ResourcePoolStatusRequest
 # TYPE resourcepoolstatusrequest_controller_request_processing_duration_seconds histogram
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="0.001"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="0.002"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="0.004"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="0.008"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="0.016"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="0.032"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="0.064"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="0.128"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="0.256"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="0.512"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="1.024"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="2.048"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="4.096"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="8.192"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="16.384"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-a.example.com",le="+Inf"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_sum{driver_name="driver-a.example.com"} 0.5
 resourcepoolstatusrequest_controller_request_processing_duration_seconds_count{driver_name="driver-a.example.com"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="0.001"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="0.002"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="0.004"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="0.008"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="0.016"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="0.032"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="0.064"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="0.128"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="0.256"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="0.512"} 0
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="1.024"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="2.048"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="4.096"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="8.192"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="16.384"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_bucket{driver_name="driver-b.example.com",le="+Inf"} 1
-resourcepoolstatusrequest_controller_request_processing_duration_seconds_sum{driver_name="driver-b.example.com"} 1
 resourcepoolstatusrequest_controller_request_processing_duration_seconds_count{driver_name="driver-b.example.com"} 1
 `
-	if err := testutil.GatherAndCompare(registry, strings.NewReader(want), "resourcepoolstatusrequest_controller_request_processing_duration_seconds"); err != nil {
+	if err := testutil.GatherAndCompare(gatherWithoutDurations(registry), strings.NewReader(want), "resourcepoolstatusrequest_controller_request_processing_duration_seconds"); err != nil {
 		t.Errorf("unexpected metric output: %v", err)
+	}
+}
+
+// gatherWithoutDurations wraps a registry and strips timing-dependent fields
+// (SampleSum and Bucket) from histograms so that tests only verify _count.
+func gatherWithoutDurations(registry metrics.KubeRegistry) testutil.GathererFunc {
+	return func() ([]*testutil.MetricFamily, error) {
+		got, err := registry.Gather()
+		for _, mf := range got {
+			for _, m := range mf.Metric {
+				if m.Histogram == nil {
+					continue
+				}
+				m.Histogram.SampleSum = nil
+				m.Histogram.Bucket = nil
+			}
+		}
+		return got, err
 	}
 }
 

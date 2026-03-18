@@ -28,7 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/informers"
+	resourcev1informers "k8s.io/client-go/informers/resource/v1"
+	resourcev1alpha3informers "k8s.io/client-go/informers/resource/v1alpha3"
 	clientset "k8s.io/client-go/kubernetes"
 	resourcev1listers "k8s.io/client-go/listers/resource/v1"
 	resourcev1alpha3listers "k8s.io/client-go/listers/resource/v1alpha3"
@@ -87,13 +88,11 @@ type Controller struct {
 func NewController(
 	ctx context.Context,
 	client clientset.Interface,
-	informerFactory informers.SharedInformerFactory,
+	requestInformer resourcev1alpha3informers.ResourcePoolStatusRequestInformer,
+	sliceInformer resourcev1informers.ResourceSliceInformer,
+	claimInformer resourcev1informers.ResourceClaimInformer,
 ) (*Controller, error) {
 	logger := klog.FromContext(ctx)
-
-	requestInformer := informerFactory.Resource().V1alpha3().ResourcePoolStatusRequests()
-	sliceInformer := informerFactory.Resource().V1().ResourceSlices()
-	claimInformer := informerFactory.Resource().V1().ResourceClaims()
 
 	c := &Controller{
 		client:        client,
@@ -115,10 +114,7 @@ func NewController(
 			c.enqueueRequest(logger, obj)
 		},
 		UpdateFunc: func(old, new interface{}) {
-			newReq := new.(*resourcev1alpha3.ResourcePoolStatusRequest)
-			if newReq.Status == nil {
-				c.enqueueRequest(logger, new)
-			}
+			c.enqueueRequest(logger, new)
 		},
 	})
 	if err != nil {
@@ -235,7 +231,7 @@ func (c *Controller) syncRequest(ctx context.Context, key string) error {
 			break
 		}
 	}
-	if hasIncomplete && c.workqueue.NumRequeues(key) < maxRetries {
+	if hasIncomplete {
 		return fmt.Errorf("incomplete pools detected, requeueing")
 	}
 
