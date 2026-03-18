@@ -3293,7 +3293,7 @@ func printResourcePoolStatusRequest(obj *resource.ResourcePoolStatusRequest, opt
 
 	status := "Pending"
 	var poolCount int32
-	var totalDevices, availableDevices, allocatedDevices, unavailableDevices, validationErrors interface{}
+	var totalDevices, availableDevices, allocatedDevices, unavailableDevices, validationErrors string
 	totalDevices = "-"
 	availableDevices = "-"
 	allocatedDevices = "-"
@@ -3343,11 +3343,11 @@ func printResourcePoolStatusRequest(obj *resource.ResourcePoolStatusRequest, opt
 					sumUnavail += *p.UnavailableDevices
 				}
 			}
-			totalDevices = sumTotal
-			availableDevices = sumAvail
-			allocatedDevices = sumAlloc
-			unavailableDevices = sumUnavail
-			validationErrors = errorCount
+			totalDevices = strconv.Itoa(int(sumTotal))
+			availableDevices = strconv.Itoa(int(sumAvail))
+			allocatedDevices = strconv.Itoa(int(sumAlloc))
+			unavailableDevices = strconv.Itoa(int(sumUnavail))
+			validationErrors = strconv.Itoa(int(errorCount))
 		}
 	}
 	completed := "<none>"
