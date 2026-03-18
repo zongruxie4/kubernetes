@@ -640,6 +640,7 @@ func NewMainKubelet(ctx context.Context,
 		enableControllerAttachDetach: kubeCfg.EnableControllerAttachDetach,
 		makeIPTablesUtilChains:       kubeCfg.MakeIPTablesUtilChains,
 		nodeStatusMaxImages:          nodeStatusMaxImages,
+		pluginManagerStopCh:          wait.NeverStop,
 		tracer:                       tracer,
 		nodeStartupLatencyTracker:    kubeDeps.NodeStartupLatencyTracker,
 		podStartupLatencyTracker:     kubeDeps.PodStartupLatencyTracker,
@@ -1544,6 +1545,10 @@ type Kubelet struct {
 	// plugins need to be registered/unregistered based on this node and makes it so.
 	pluginManager pluginmanager.PluginManager
 
+	// pluginManagerStopCh controls plugin manager shutdown. Production kubelets
+	// use wait.NeverStop, while tests may inject a closable channel.
+	pluginManagerStopCh <-chan struct{}
+
 	// This flag sets a maximum number of images to report in the node status.
 	nodeStatusMaxImages int32
 
@@ -1820,7 +1825,11 @@ func (kl *Kubelet) initializeRuntimeDependentModules(ctx context.Context) {
 
 	// Start the plugin manager
 	logger.V(4).Info("Starting plugin manager")
-	go kl.pluginManager.Run(ctx, kl.sourcesReady, wait.NeverStop)
+	pluginManagerStopCh := kl.pluginManagerStopCh
+	if pluginManagerStopCh == nil {
+		pluginManagerStopCh = wait.NeverStop
+	}
+	go kl.pluginManager.Run(ctx, kl.sourcesReady, pluginManagerStopCh)
 
 	err = kl.shutdownManager.Start(ctx)
 	if err != nil {
