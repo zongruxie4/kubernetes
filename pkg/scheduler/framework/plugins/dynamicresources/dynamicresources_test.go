@@ -2857,8 +2857,26 @@ func testPlugin(tCtx ktesting.TContext) {
 			enableDRANodeAllocatableResources: true,
 			nodes:                             []*v1.Node{workerNodeWithCapacity},
 			pod:                               podWithClaimReferenceInContainer,
-			claims:                            []*resourceapi.ResourceClaim{pendingClaim},
-			classes:                           []*resourceapi.DeviceClass{deviceClass},
+			patchTestCase: func(tc *testPluginCase) {
+				// In a real scheduling cycle, the Assume phase pre-populates the Pod's
+				// NodeAllocatableResourceClaimStatuses in the cache before PreBind runs.
+				// Because this plugin unit test skips the Assume phase, we must manually
+				// inject the expected status into the mock Pod to satisfy the equality check
+				// in patchNodeAllocatableResourceClaimStatus.
+				tc.pod = tc.pod.DeepCopy()
+				tc.pod.Status.NodeAllocatableResourceClaimStatuses = []v1.NodeAllocatableResourceClaimStatus{
+					{
+						ResourceClaimName: claimName,
+						Containers:        []string{tc.pod.Spec.Containers[0].Name},
+						Resources: map[v1.ResourceName]apiresource.Quantity{
+							v1.ResourceCPU:    apiresource.MustParse("1"),
+							v1.ResourceMemory: apiresource.MustParse("1Gi"),
+						},
+					},
+				}
+			},
+			claims:  []*resourceapi.ResourceClaim{pendingClaim},
+			classes: []*resourceapi.DeviceClass{deviceClass},
 			objs: func() []apiruntime.Object {
 				slice := st.MakeResourceSlice(nodeName, driver).Device("instance-1").Obj()
 				slice.Spec.Devices[0].NodeAllocatableResourceMappings = map[v1.ResourceName]resourceapi.NodeAllocatableResourceMapping{
@@ -2913,9 +2931,22 @@ func testPlugin(tCtx ktesting.TContext) {
 			enableDRAConsumableCapacity:       true,
 			nodes:                             []*v1.Node{workerNodeWithCapacity},
 			pod:                               podWithClaimReferenceInContainer,
-			claims:                            []*resourceapi.ResourceClaim{st.FromResourceClaim(nodeAllocatableClaimWithCapacity).OwnerReference(podName, podUID, podKind).Obj()},
-			classes:                           []*resourceapi.DeviceClass{deviceClass},
-			objs:                              []apiruntime.Object{workerNodeSliceWithNodeAllocatableResource(), podWithClaimReferenceInContainer},
+			patchTestCase: func(tc *testPluginCase) {
+				// Simulate the Assume phase by pre-populating the status
+				tc.pod = tc.pod.DeepCopy()
+				tc.pod.Status.NodeAllocatableResourceClaimStatuses = []v1.NodeAllocatableResourceClaimStatus{
+					{
+						ResourceClaimName: claimName,
+						Containers:        []string{tc.pod.Spec.Containers[0].Name},
+						Resources: map[v1.ResourceName]apiresource.Quantity{
+							v1.ResourceCPU: apiresource.MustParse("1"),
+						},
+					},
+				}
+			},
+			claims:  []*resourceapi.ResourceClaim{st.FromResourceClaim(nodeAllocatableClaimWithCapacity).OwnerReference(podName, podUID, podKind).Obj()},
+			classes: []*resourceapi.DeviceClass{deviceClass},
+			objs:    []apiruntime.Object{workerNodeSliceWithNodeAllocatableResource(), podWithClaimReferenceInContainer},
 			want: want{
 				filter: perNodeResult{
 					workerNodeWithCapacity.Name: {status: nil},
@@ -2970,8 +3001,22 @@ func testPlugin(tCtx ktesting.TContext) {
 			enableDRAConsumableCapacity:       true,
 			nodes:                             []*v1.Node{workerNodeWithCapacity},
 			pod:                               podWithClaimReferenceInContainer,
-			claims:                            []*resourceapi.ResourceClaim{st.FromResourceClaim(nodeAllocatableClaimWithCapacity).OwnerReference(podName, podUID, podKind).Obj()},
-			classes:                           []*resourceapi.DeviceClass{deviceClass},
+			patchTestCase: func(tc *testPluginCase) {
+				// Simulate the Assume phase by pre-populating the status
+				tc.pod = tc.pod.DeepCopy()
+				tc.pod.Status.NodeAllocatableResourceClaimStatuses = []v1.NodeAllocatableResourceClaimStatus{
+					{
+						ResourceClaimName: claimName,
+						Containers:        []string{tc.pod.Spec.Containers[0].Name},
+						Resources: map[v1.ResourceName]apiresource.Quantity{
+							v1.ResourceCPU:    apiresource.MustParse("1"),
+							v1.ResourceMemory: apiresource.MustParse("1Gi"),
+						},
+					},
+				}
+			},
+			claims:  []*resourceapi.ResourceClaim{st.FromResourceClaim(nodeAllocatableClaimWithCapacity).OwnerReference(podName, podUID, podKind).Obj()},
+			classes: []*resourceapi.DeviceClass{deviceClass},
 			objs: func() []apiruntime.Object {
 				slice := workerNodeSliceWithNodeAllocatableResource()
 				slice.Spec.Devices[0].NodeAllocatableResourceMappings[v1.ResourceMemory] = resourceapi.NodeAllocatableResourceMapping{

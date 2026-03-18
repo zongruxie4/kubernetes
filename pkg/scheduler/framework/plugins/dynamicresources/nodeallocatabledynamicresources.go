@@ -24,6 +24,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	resourceapi "k8s.io/api/resource/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -416,6 +417,10 @@ func (pl *DynamicResources) patchNodeAllocatableResourceClaimStatus(ctx context.
 	// schedutil.PatchPodStatus skips patching if the old and new status are identical.
 	// To ensure the status is persisted to the API server we clear it in the baseStatus, forcing a patch.
 	baseStatus := pod.Status.DeepCopy()
+	if !apiequality.Semantic.DeepEqual(baseStatus.NodeAllocatableResourceClaimStatuses, nodeAllocatableClaimStatus) {
+		logger.V(5).Info("NodeAllocatableResourceClaimStatuses difference: assumed pod status does not match calculated status", "pod", klog.KObj(pod))
+		return statusError(logger, errors.New("assumed pod status does not match calculated status to be patched"))
+	}
 	baseStatus.NodeAllocatableResourceClaimStatuses = nil
 
 	targetStatus := pod.Status.DeepCopy()

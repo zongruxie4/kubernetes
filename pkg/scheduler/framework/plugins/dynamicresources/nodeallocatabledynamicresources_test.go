@@ -624,7 +624,7 @@ func TestPatchNodeAllocatableResourceClaimStatus(t *testing.T) {
 
 	tests := []struct {
 		name                               string
-		initialPodStatus                   v1.PodStatus
+		assumedPodStatus                   v1.PodStatus
 		finalPodNodeAllocatableClaimStatus []v1.NodeAllocatableResourceClaimStatus
 		wantPatch                          bool
 		setPatchError                      error
@@ -636,23 +636,8 @@ func TestPatchNodeAllocatableResourceClaimStatus(t *testing.T) {
 			wantStatus: nil,
 		},
 		{
-			name:             "initial status empty, new status added",
-			initialPodStatus: v1.PodStatus{},
-			finalPodNodeAllocatableClaimStatus: []v1.NodeAllocatableResourceClaimStatus{
-				{
-					ResourceClaimName: "claim1",
-					Containers:        []string{"c1"},
-					Resources: map[v1.ResourceName]resource.Quantity{
-						v1.ResourceCPU: resource.MustParse("1"),
-					},
-				},
-			},
-			wantPatch:  true,
-			wantStatus: nil,
-		},
-		{
-			name: "initial status same as new status",
-			initialPodStatus: v1.PodStatus{
+			name: "assumed pod status same as new status",
+			assumedPodStatus: v1.PodStatus{
 				NodeAllocatableResourceClaimStatuses: []v1.NodeAllocatableResourceClaimStatus{
 					{
 						ResourceClaimName: "claim1",
@@ -676,8 +661,8 @@ func TestPatchNodeAllocatableResourceClaimStatus(t *testing.T) {
 			wantStatus: nil,
 		},
 		{
-			name: "initial status different from new status",
-			initialPodStatus: v1.PodStatus{
+			name: "assumed pod status different from new status",
+			assumedPodStatus: v1.PodStatus{
 				NodeAllocatableResourceClaimStatuses: []v1.NodeAllocatableResourceClaimStatus{
 					{
 						ResourceClaimName: "claim1",
@@ -697,12 +682,22 @@ func TestPatchNodeAllocatableResourceClaimStatus(t *testing.T) {
 					},
 				},
 			},
-			wantPatch:  true,
-			wantStatus: nil,
+			wantPatch:  false,
+			wantStatus: statusError(klog.TODO(), errors.New("assumed pod status does not match calculated status to be patched")),
 		},
 		{
-			name:             "pod status patch error",
-			initialPodStatus: v1.PodStatus{},
+			name: "pod status patch error",
+			assumedPodStatus: v1.PodStatus{
+				NodeAllocatableResourceClaimStatuses: []v1.NodeAllocatableResourceClaimStatus{
+					{
+						ResourceClaimName: "claim1",
+						Containers:        []string{"c1"},
+						Resources: map[v1.ResourceName]resource.Quantity{
+							v1.ResourceCPU: resource.MustParse("1"),
+						},
+					},
+				},
+			},
 			finalPodNodeAllocatableClaimStatus: []v1.NodeAllocatableResourceClaimStatus{
 				{
 					ResourceClaimName: "claim1",
@@ -723,7 +718,7 @@ func TestPatchNodeAllocatableResourceClaimStatus(t *testing.T) {
 			ctx := context.Background()
 
 			podToUpdate := pod.DeepCopy()
-			podToUpdate.Status = *tt.initialPodStatus.DeepCopy()
+			podToUpdate.Status = *tt.assumedPodStatus.DeepCopy()
 
 			fakeClient := fake.NewSimpleClientset(podToUpdate)
 			pl := &DynamicResources{
