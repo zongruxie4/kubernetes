@@ -9,7 +9,7 @@ godebug default=go1.26
 require (
 	github.com/emicklei/go-restful/v3 v3.13.0
 	github.com/google/go-cmp v0.7.0
-	github.com/spf13/cobra v1.10.0
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.9
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.40.0
