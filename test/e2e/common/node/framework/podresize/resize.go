@@ -375,8 +375,14 @@ func WaitForPodResizeActuation(ctx context.Context, f *framework.Framework, podC
 					return "resize is infeasible"
 				}, nil
 			}
-			// TODO: Replace this check with a combination of checking the status.observedGeneration
-			// and the resize status when available.
+
+			if pod.Status.ObservedGeneration < pod.Generation {
+				return func() string {
+					return fmt.Sprintf("waiting for observedGeneration (%d) to catch up to generation (%d)",
+						pod.Status.ObservedGeneration, pod.Generation)
+				}, nil
+			}
+
 			if resourceErrs := VerifyPodStatusResources(pod, expectedContainers); resourceErrs != nil {
 				return func() string {
 					return fmt.Sprintf("container status resources don't match expected: %v", formatErrors(resourceErrs))
@@ -390,6 +396,7 @@ func WaitForPodResizeActuation(ctx context.Context, f *framework.Framework, podC
 					}, nil
 				}
 			}
+
 			// Wait for the pod to be ready.
 			if !podutils.IsPodReady(pod) {
 				return func() string { return "pod is not ready" }, nil
