@@ -27,7 +27,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/kubernetes/pkg/features"
@@ -72,7 +71,9 @@ func doGuaranteedPodLevelResizeTests(f *framework.Framework) {
 			expectedContainers := makeGuaranteedContainers(1, cpuPolicy, memPolicy, true, true, desiredCtrCPU, desiredCtrMem)
 			for i, c := range expectedContainers {
 				// If the pod has init containers, but we are not resizing them, keep the original resources.
-				if c.InitCtr && !resizeInitCtrs {
+				podLevelOnly := (desiredCtrCPU == "" && desiredPodCPU != originalCPU) || (desiredCtrMem == "" && desiredPodMem != originalMem)
+
+				if c.InitCtr && !resizeInitCtrs && !podLevelOnly {
 					c.Resources = originalContainers[i].Resources
 					expectedContainers[i] = c
 					continue

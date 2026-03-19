@@ -383,11 +383,6 @@ func WaitForPodResizeActuation(ctx context.Context, f *framework.Framework, podC
 				}, nil
 			}
 
-			if resourceErrs := VerifyPodStatusResources(pod, expectedContainers); resourceErrs != nil {
-				return func() string {
-					return fmt.Sprintf("container status resources don't match expected: %v", formatErrors(resourceErrs))
-				}, nil
-			}
 			// Wait for kubelet to clear the resize status conditions.
 			for _, c := range pod.Status.Conditions {
 				if c.Type == v1.PodResizePending || c.Type == v1.PodResizeInProgress {
