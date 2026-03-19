@@ -925,6 +925,7 @@ func (m *kubeGenericRuntimeManager) doPodResizeAction(ctx context.Context, pod *
 			}
 		case v1.ResourceMemory:
 			if !setLimitValue {
+				// Memory requests aren't written to cgroups.
 				return nil
 			}
 			resizedResources.Memory = podResources.Memory
@@ -949,7 +950,6 @@ func (m *kubeGenericRuntimeManager) doPodResizeAction(ctx context.Context, pod *
 
 		// Update our tracking of the current state.
 		currentPodResources = mergedPodResources
-
 		return nil
 	}
 
