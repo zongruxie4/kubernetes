@@ -227,30 +227,28 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 				},
 			)
 		})
-		f.It("resource.k8s.io/v1alpha3 ResourcePoolStatusRequest",
-			f.WithFeatureGate(features.DRAResourcePoolStatus),
-			func(ctx context.Context) {
-				e2econformance.TestResource(ctx, f,
-					&e2econformance.ResourceTestcase[*resourcealphaapi.ResourcePoolStatusRequest]{
-						GVR:        resourcealphaapi.SchemeGroupVersion.WithResource("resourcepoolstatusrequests"),
-						Namespaced: ptr.To(false),
-						InitialSpec: &resourcealphaapi.ResourcePoolStatusRequest{
-							Spec: resourcealphaapi.ResourcePoolStatusRequestSpec{
-								Driver: "dra.example.com",
-							},
+		f.It("resource.k8s.io/v1alpha3 ResourcePoolStatusRequest", f.WithFeatureGate(features.DRAResourcePoolStatus), func(ctx context.Context) {
+			e2econformance.TestResource(ctx, f,
+				&e2econformance.ResourceTestcase[*resourcealphaapi.ResourcePoolStatusRequest]{
+					GVR:        resourcealphaapi.SchemeGroupVersion.WithResource("resourcepoolstatusrequests"),
+					Namespaced: ptr.To(false),
+					InitialSpec: &resourcealphaapi.ResourcePoolStatusRequest{
+						Spec: resourcealphaapi.ResourcePoolStatusRequestSpec{
+							Driver: "dra.example.com",
 						},
-						UpdateSpec: func(obj *resourcealphaapi.ResourcePoolStatusRequest) *resourcealphaapi.ResourcePoolStatusRequest {
-							// The spec is immutable, so add a label instead.
-							if obj.Labels == nil {
-								obj.Labels = make(map[string]string)
-							}
-							obj.Labels["test.dra.example.com"] = "test"
-							return obj
-						},
-						StrategicMergePatchSpec: `{"metadata": {"labels": {"test.dra.example.com": "test"}}}`,
 					},
-				)
-			})
+					UpdateSpec: func(obj *resourcealphaapi.ResourcePoolStatusRequest) *resourcealphaapi.ResourcePoolStatusRequest {
+						// The spec is immutable, so add a label instead.
+						if obj.Labels == nil {
+							obj.Labels = make(map[string]string)
+						}
+						obj.Labels["test.dra.example.com"] = "test"
+						return obj
+					},
+					StrategicMergePatchSpec: `{"metadata": {"labels": {"test.dra.example.com": "test"}}}`,
+				},
+			)
+		})
 	})
 
 	f.Context("kubelet", feature.DynamicResourceAllocation, func() {
@@ -577,8 +575,16 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 			}).WithTimeout(f.Timeouts.PodStart).Should(gomega.BeTrueBecause("DaemonSet pod should be running on node %s but isn't", nodeName))
 			framework.ExpectNoError(e2edaemonset.CheckDaemonStatus(ctx, f, daemonSet.Name))
 		})
+	})
 
-		f.It("should report pool status with correct device counts", f.WithFeatureGate(features.DRAResourcePoolStatus), func(ctx context.Context) {
+	// ResourcePoolStatusRequest tests with network resources — no kubelet needed.
+	framework.Context("control plane", f.WithFeatureGate(features.DRAResourcePoolStatus), func() {
+		nodes := drautils.NewNodes(f, 1, 1)
+		driver := drautils.NewDriver(f, nodes, drautils.NetworkResources(10, false))
+		driver.WithKubelet = false
+		b := drautils.NewBuilder(f, driver)
+
+		f.It("should report pool status with correct device counts", func(ctx context.Context) {
 			client := f.ClientSet.ResourceV1alpha3().ResourcePoolStatusRequests()
 
 			gomega.Eventually(ctx, func(g gomega.Gomega, ctx context.Context) {
@@ -620,7 +626,7 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 			}).WithTimeout(60 * time.Second).WithPolling(2 * time.Second).Should(gomega.Succeed())
 		})
 
-		f.It("should reflect allocated devices after pod is scheduled", f.WithFeatureGate(features.DRAResourcePoolStatus), func(ctx context.Context) {
+		f.It("should reflect allocated devices after pod is scheduled", func(ctx context.Context) {
 			tCtx := f.TContext(ctx)
 			pod, template := b.PodInline()
 			b.Create(tCtx, pod, template)
@@ -3452,7 +3458,7 @@ var _ = framework.SIGDescribe("node")(framework.WithLabel("DRA"), func() {
 		})
 	})
 
-	framework.Context("control plane", feature.DynamicResourceAllocation, f.WithFeatureGate(features.DRAResourcePoolStatus), func() {
+	framework.Context("control plane", f.WithFeatureGate(features.DRAResourcePoolStatus), func() {
 		nodes := drautils.NewNodes(f, 2, 2)
 		driver := drautils.NewDriver(f, nodes, drautils.DriverResources(1))
 		driver.WithKubelet = false
