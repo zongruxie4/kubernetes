@@ -429,6 +429,11 @@ const (
 	// Applies only in nodes with InPlacePodVerticalScaling and Memory Manager features enabled.
 	InPlacePodVerticalScalingExclusiveMemory featuregate.Feature = "InPlacePodVerticalScalingExclusiveMemory"
 
+	// owner: @natasha41575
+	//
+	// Allow in-place pod resize of running non-sidecar init containers.
+	InPlacePodVerticalScalingInitContainers featuregate.Feature = "InPlacePodVerticalScalingInitContainers"
+
 	// owner: @mimowo
 	// kep: https://kep.k8s.io/3850
 	//
@@ -1474,6 +1479,10 @@ var defaultVersionedKubernetesFeatureGates = map[featuregate.Feature]featuregate
 		{Version: version.MustParse("1.34"), Default: false, PreRelease: featuregate.Alpha},
 	},
 
+	InPlacePodVerticalScalingInitContainers: {
+		{Version: version.MustParse("1.36"), Default: true, PreRelease: featuregate.Beta},
+	},
+
 	JobBackoffLimitPerIndex: {
 		{Version: version.MustParse("1.28"), Default: false, PreRelease: featuregate.Alpha},
 		{Version: version.MustParse("1.29"), Default: true, PreRelease: featuregate.Beta},
@@ -2419,6 +2428,8 @@ var defaultKubernetesFeatureGateDependencies = map[featuregate.Feature][]feature
 	InPlacePodVerticalScalingExclusiveCPUs: {InPlacePodVerticalScaling},
 
 	InPlacePodVerticalScalingExclusiveMemory: {InPlacePodVerticalScaling},
+
+	InPlacePodVerticalScalingInitContainers: {InPlacePodVerticalScaling, NodeDeclaredFeatures},
 
 	JobBackoffLimitPerIndex: {},
 
