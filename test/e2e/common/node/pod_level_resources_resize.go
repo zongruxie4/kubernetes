@@ -79,10 +79,11 @@ func doGuaranteedPodLevelResizeTests(f *framework.Framework) {
 				}
 				// For containers where the resize policy is "restart", we expect a restart.
 				expectRestart := int32(0)
-				if cpuPolicy == v1.RestartContainer && desiredCtrCPU != originalCtrCPU {
+
+				if cpuPolicy == v1.RestartContainer && (desiredCtrCPU != originalCtrCPU || (desiredCtrCPU == "" && desiredPodCPU != originalCPU)) {
 					expectRestart = 1
 				}
-				if memPolicy == v1.RestartContainer && desiredCtrMem != originalCtrMem {
+				if memPolicy == v1.RestartContainer && (desiredCtrMem != originalCtrMem || (desiredCtrMem == "" && desiredPodMem != originalMem)) {
 					expectRestart = 1
 				}
 				c.RestartCount = expectRestart
