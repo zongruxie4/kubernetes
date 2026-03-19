@@ -723,17 +723,27 @@ func (rc *ResourceConsumer) sendConsumeCPUPerPodRequest(ctx context.Context, mil
 			// Both service and pod proxy support the name:port format. Without an explicit
 			// port the API server defaults to port 80, but resource-consumer listens on
 			// targetPort (8080), so the port must be specified.
-			_, podErr := rc.clientSet.CoreV1().RESTClient().Post().
-				Resource("pods").
-				Namespace(rc.nsName).
-				Name(fmt.Sprintf("%s:%d", name, targetPort)).
-				SubResource("proxy").
-				Suffix("ConsumeCPU").
-				Param("millicores", strconv.Itoa(perPodMillicores)).
-				Param("durationSec", strconv.Itoa(rc.consumptionTimeInSeconds)).
-				DoRaw(ctx)
-			if podErr != nil {
-				framework.Logf("ConsumeCPUPerPod: error sending to pod %s: %v", name, podErr)
+			err := framework.Gomega().Eventually(ctx, func(ctx context.Context) error {
+				_, podErr := rc.clientSet.CoreV1().RESTClient().Post().
+					Resource("pods").
+					Namespace(rc.nsName).
+					Name(fmt.Sprintf("%s:%d", name, targetPort)).
+					SubResource("proxy").
+					Suffix("ConsumeCPU").
+					Param("millicores", strconv.Itoa(perPodMillicores)).
+					Param("durationSec", strconv.Itoa(rc.consumptionTimeInSeconds)).
+					DoRaw(ctx)
+				if podErr != nil {
+					framework.Logf("ConsumeCPUPerPod: error sending to pod %s: %v", name, podErr)
+					return podErr
+				}
+				return nil
+			}).WithTimeout(serviceInitializationTimeout).WithPolling(serviceInitializationInterval).Should(gomega.Succeed())
+			if ctx.Err() != nil {
+				return
+			}
+			if err != nil {
+				framework.Logf("ConsumeCPUPerPod: giving up on pod %s: %v", name, err)
 			}
 		}(podName)
 	}
