@@ -197,7 +197,7 @@ func TestValidateResourceSlice(t *testing.T) {
 		},
 		"good-taints": {
 			slice: func() *resourceapi.ResourceSlice {
-				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters)
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)
 				for i := range slice.Spec.Devices {
 					slice.Spec.Devices[i].Taints = []resourceapi.DeviceTaint{{Key: "example.com/taint", Effect: resourceapi.DeviceTaintEffectNoExecute}}
 				}
@@ -205,9 +205,9 @@ func TestValidateResourceSlice(t *testing.T) {
 			}(),
 		},
 		"too-large-taints": {
-			wantFailures: field.ErrorList{field.TooMany(field.NewPath("spec", "devices"), resourceapi.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters+1, resourceapi.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters)},
+			wantFailures: field.ErrorList{field.TooMany(field.NewPath("spec", "devices"), resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)},
 			slice: func() *resourceapi.ResourceSlice {
-				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters+1)
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1)
 				for i := range slice.Spec.Devices {
 					slice.Spec.Devices[i].Taints = []resourceapi.DeviceTaint{{Key: "example.com/taint", Effect: resourceapi.DeviceTaintEffectNoExecute}}
 				}
@@ -541,6 +541,74 @@ func TestValidateResourceSlice(t *testing.T) {
 				slice.Spec.Devices[7].Attributes = map[resourceapi.QualifiedName]resourceapi.DeviceAttribute{
 					resourceapi.QualifiedName(goodName): {VersionValues: []string{}},
 				}
+				return slice
+			}(),
+		},
+		"max-devices-with-list-of-int-attributes": {
+			slice: func() *resourceapi.ResourceSlice {
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)
+				for i := range slice.Spec.Devices {
+					slice.Spec.Devices[i].Attributes["ints"] = resourceapi.DeviceAttribute{IntValues: []int64{1, 2, 3}}
+				}
+				return slice
+			}(),
+		},
+		"too-many-devices-with-list-of-int-attributes": {
+			wantFailures: field.ErrorList{field.TooMany(field.NewPath("spec", "devices"), resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)},
+			slice: func() *resourceapi.ResourceSlice {
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1)
+				slice.Spec.Devices[0].Attributes["ints"] = resourceapi.DeviceAttribute{IntValues: []int64{1, 2, 3}}
+				return slice
+			}(),
+		},
+		"max-devices-with-list-of-bool-attributes": {
+			slice: func() *resourceapi.ResourceSlice {
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)
+				for i := range slice.Spec.Devices {
+					slice.Spec.Devices[i].Attributes["bools"] = resourceapi.DeviceAttribute{BoolValues: []bool{true, false, true}}
+				}
+				return slice
+			}(),
+		},
+		"too-many-devices-with-list-of-bool-attributes": {
+			wantFailures: field.ErrorList{field.TooMany(field.NewPath("spec", "devices"), resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)},
+			slice: func() *resourceapi.ResourceSlice {
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1)
+				slice.Spec.Devices[0].Attributes["bools"] = resourceapi.DeviceAttribute{BoolValues: []bool{true, false, true}}
+				return slice
+			}(),
+		},
+		"max-devices-with-list-of-string-attributes": {
+			slice: func() *resourceapi.ResourceSlice {
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)
+				for i := range slice.Spec.Devices {
+					slice.Spec.Devices[i].Attributes["strings"] = resourceapi.DeviceAttribute{StringValues: []string{"a", "b", "c"}}
+				}
+				return slice
+			}(),
+		},
+		"too-many-devices-with-list-of-string-attributes": {
+			wantFailures: field.ErrorList{field.TooMany(field.NewPath("spec", "devices"), resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)},
+			slice: func() *resourceapi.ResourceSlice {
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1)
+				slice.Spec.Devices[0].Attributes["strings"] = resourceapi.DeviceAttribute{StringValues: []string{"a", "b", "c"}}
+				return slice
+			}(),
+		},
+		"max-devices-with-list-of-version-attributes": {
+			slice: func() *resourceapi.ResourceSlice {
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)
+				for i := range slice.Spec.Devices {
+					slice.Spec.Devices[i].Attributes["versions"] = resourceapi.DeviceAttribute{VersionValues: []string{"1.0.0", "2.0.0", "3.0.0"}}
+				}
+				return slice
+			}(),
+		},
+		"too-many-devices-with-list-of-version-attributes": {
+			wantFailures: field.ErrorList{field.TooMany(field.NewPath("spec", "devices"), resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)},
+			slice: func() *resourceapi.ResourceSlice {
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1)
+				slice.Spec.Devices[0].Attributes["versions"] = resourceapi.DeviceAttribute{VersionValues: []string{"1.0.0", "2.0.0", "3.0.0"}}
 				return slice
 			}(),
 		},
@@ -1170,7 +1238,7 @@ func TestValidateResourceSlice(t *testing.T) {
 		},
 		"max-number-of-devices-with-consumes-counters": {
 			slice: func() *resourceapi.ResourceSlice {
-				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters)
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)
 				for i := range slice.Spec.Devices {
 					slice.Spec.Devices[i].ConsumesCounters = []resourceapi.DeviceCounterConsumption{
 						{
@@ -1183,9 +1251,9 @@ func TestValidateResourceSlice(t *testing.T) {
 			}(),
 		},
 		"too-many-devices-with-consumes-counters": {
-			wantFailures: field.ErrorList{field.TooMany(field.NewPath("spec", "devices"), resourceapi.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters+1, resourceapi.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters)},
+			wantFailures: field.ErrorList{field.TooMany(field.NewPath("spec", "devices"), resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)},
 			slice: func() *resourceapi.ResourceSlice {
-				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters+1)
+				slice := testResourceSlice(goodName, goodName, goodName, resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures+1)
 				slice.Spec.Devices[0].ConsumesCounters = []resourceapi.DeviceCounterConsumption{
 					{
 						CounterSet: "counterset-0",

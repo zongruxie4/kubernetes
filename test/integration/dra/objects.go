@@ -43,7 +43,7 @@ func NewMaxResourceSlices() map[string]*resourceapi.ResourceSlice {
 }
 
 func newResourceSliceWithTaintsAndConsumesCounters() *resourceapi.ResourceSlice {
-	slice := newBasicResourceSlice(resourceapi.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters)
+	slice := newBasicResourceSlice(resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)
 	for i := range slice.Spec.Devices {
 		for range resourceapi.DeviceTaintsMaxLength {
 			slice.Spec.Devices[i].Taints = append(slice.Spec.Devices[i].Taints,
@@ -124,7 +124,7 @@ func newSharedCountersResourceSlice() *resourceapi.ResourceSlice {
 }
 
 func newResourceSliceWithListValues() *resourceapi.ResourceSlice {
-	slice := newBasicResourceSlice(64 /* resourceapi.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters OrListValues */)
+	slice := newBasicResourceSlice(resourceapi.ResourceSliceMaxDevicesWithAdvancedFeatures)
 	addListValues(slice)
 	return slice
 }

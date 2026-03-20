@@ -711,8 +711,8 @@ func validateResourceSliceSpec(spec, oldSpec *resource.ResourceSliceSpec, fldPat
 	}
 
 	maxDevices := resource.ResourceSliceMaxDevices
-	if haveDeviceTaints(spec) || haveConsumesCounters(spec) {
-		maxDevices = resource.ResourceSliceMaxDevicesWithTaintsOrConsumesCounters
+	if haveDeviceTaints(spec) || haveConsumesCounters(spec) || haveListAttributes(spec) {
+		maxDevices = resource.ResourceSliceMaxDevicesWithAdvancedFeatures
 	}
 	allErrs = append(allErrs, validateSet(spec.Devices, maxDevices,
 		func(device resource.Device, fldPath *field.Path) field.ErrorList {
@@ -730,6 +730,24 @@ func validateResourceSliceSpec(spec, oldSpec *resource.ResourceSliceSpec, fldPat
 		}, fldPath.Child("sharedCounters"), sizeCovered, uniquenessCovered)...)
 
 	return allErrs
+}
+
+func haveListAttributes(spec *resource.ResourceSliceSpec) bool {
+	if spec == nil {
+		return false
+	}
+
+	for _, device := range spec.Devices {
+		for _, attribute := range device.Attributes {
+			if attribute.BoolValues != nil ||
+				attribute.IntValues != nil ||
+				attribute.StringValues != nil ||
+				attribute.VersionValues != nil {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func haveDeviceTaints(spec *resource.ResourceSliceSpec) bool {
