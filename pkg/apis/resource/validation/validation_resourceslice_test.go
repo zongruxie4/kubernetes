@@ -750,7 +750,7 @@ func TestValidateResourceSlice(t *testing.T) {
 
 				// error: extra bool(scalar) attribute beyond ResourceSliceMaxAttributeValues
 				slice.Spec.Devices[2].Attributes = maxStringAttributeValuesInList(resourceapi.ResourceSliceMaxAttributeValuesPerDevice)
-				slice.Spec.Devices[2].Attributes[resourceapi.QualifiedName("extra_attr")] = resourceapi.DeviceAttribute{BoolValue: new(bool)}
+				slice.Spec.Devices[2].Attributes[resourceapi.QualifiedName("extra_attr")] = resourceapi.DeviceAttribute{BoolValue: new(true)}
 				slice.Spec.Devices[2].Capacity = nil
 
 				// error: extra string(scalar) attribute beyond ResourceSliceMaxAttributeValues
