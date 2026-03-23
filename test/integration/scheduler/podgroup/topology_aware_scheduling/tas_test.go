@@ -751,16 +751,24 @@ func TestTopologyAwareSchedulingWithBasicPolicy(t *testing.T) {
 					createPodGroup: makeBasicPodGroup("pg1", "rack"),
 				},
 				{
-					name: "Create all pods belonging to the podgroup, more than fitting in a single rack",
+					// Fixing test flakiness:
+					// To make the test behave deterministically, first create 2 pods that will fit in a rack,
+					// and only add another pod once these are scheduled.
+					name: "Create first pods belonging to the podgroup, fitting in a single rack",
 					createPods: []*v1.Pod{
 						makePod("p1", "pg1"),
 						makePod("p2", "pg1"),
-						makePod("p3", "pg1"),
 					},
 				},
 				{
 					name:                 "Verify that 2 pods got scheduled",
 					waitForPodsScheduled: []string{"p1", "p2"},
+				},
+				{
+					name: "Create another pod in the same podgroup, not fitting in the assigned rack",
+					createPods: []*v1.Pod{
+						makePod("p3", "pg1"),
+					},
 				},
 				{
 					name:                     "Verify that the last pod becomes unschedulable due to insufficient resources in the rack",
@@ -859,7 +867,7 @@ func TestTopologyAwareSchedulingWithBasicPolicy(t *testing.T) {
 					},
 				},
 				{
-					name:                 "Verify the entire gang is now scheduled",
+					name:                 "Verify the entire podgroup is now scheduled",
 					waitForPodsScheduled: []string{"p1", "p2", "p3"},
 				},
 				// Each node has 2 CPUs, each of gang pods requests 1 CPU.
@@ -908,16 +916,28 @@ func TestTopologyAwareSchedulingWithBasicPolicy(t *testing.T) {
 					createPodGroup: makeBasicPodGroup("pg1", "rack"),
 				},
 				{
-					name: "Create all pods belonging to the podgroup",
+					// Fixing test flakiness:
+					// To make the test behave deterministically, first create 1 pod, based on which scores will be
+					// calculated, and only add more pods once the first is scheduled.
+					name: "Create the first pod belonging to the podgroup",
 					createPods: []*v1.Pod{
 						makePod("p1", "pg1"),
+					},
+				},
+				{
+					name:                 "Verify the pod is scheduled",
+					waitForPodsScheduled: []string{"p1"},
+				},
+				{
+					name: "Create other pods belonging to the podgroup",
+					createPods: []*v1.Pod{
 						makePod("p2", "pg1"),
 						makePod("p3", "pg1"),
 					},
 				},
 				{
 					name:                 "Verify the entire podgroup is now scheduled",
-					waitForPodsScheduled: []string{"p1", "p2", "p3"},
+					waitForPodsScheduled: []string{"p2", "p3"},
 				},
 				// Each node has 2 CPUs, each of podgroup pods requests 1 CPU.
 				// Scores are first calculated when scheduling the first pod, without the knowledge how many pods would be in the podgroup.
@@ -959,9 +979,21 @@ func TestTopologyAwareSchedulingWithBasicPolicy(t *testing.T) {
 					createPodGroup: makeBasicPodGroup("pg1", "rack"),
 				},
 				{
-					name: "Create all pods belonging to the podgroup",
+					// Fixing test flakiness:
+					// To make the test behave deterministically, first create 1 pod, based on which scores will be
+					// calculated, and only add more pods once the first is scheduled.
+					name: "Create the first pod belonging to the podgroup",
 					createPods: []*v1.Pod{
 						makePod("p1", "pg1"),
+					},
+				},
+				{
+					name:                 "Verify the pod is scheduled",
+					waitForPodsScheduled: []string{"p1"},
+				},
+				{
+					name: "Create other pods belonging to the podgroup",
+					createPods: []*v1.Pod{
 						makePod("p2", "pg1"),
 						makePod("p3", "pg1"),
 					},
@@ -973,8 +1005,8 @@ func TestTopologyAwareSchedulingWithBasicPolicy(t *testing.T) {
 				// - rack1: 3/8 = 0.375
 				// - rack2: 1/2 = 0.5
 				{
-					name:                 "Verify that the first two pods are now scheduled",
-					waitForPodsScheduled: []string{"p1", "p2"},
+					name:                 "Verify the one of the additional pods is scheduled",
+					waitForPodsScheduled: []string{"p2"},
 				},
 				{
 					name: "Verify pod scheduled on rack2",
@@ -1165,11 +1197,44 @@ func TestTopologyAwareSchedulingWithBasicPolicy(t *testing.T) {
 					createPodGroup: makeBasicPodGroup("pg1", "rack"),
 				},
 				{
-					name: "Create all pods belonging to podgroup pg1",
+					// Fixing test flakiness:
+					// To make the test behave deterministically, first create 1 pod, based on which scores will be
+					// calculated, and only add more pods once the first is scheduled.
+					name: "Create the first pod belonging to the podgroup",
 					createPods: []*v1.Pod{
 						makePod("p1", "pg1"),
+					},
+				},
+				{
+					name:                 "Verify the pod is scheduled",
+					waitForPodsScheduled: []string{"p1"},
+				},
+				{
+					name: "Create other pods belonging to the podgroup",
+					createPods: []*v1.Pod{
 						makePod("p2", "pg1"),
 						makePod("p3", "pg1"),
+					},
+				},
+				{
+					name:                 "Verify the first of additional pods in pg1 is now scheduled",
+					waitForPodsScheduled: []string{"p2"},
+				},
+				{
+					name:                     "Verify the last pod becomes unschedulable due to insufficient resources",
+					waitForPodsUnschedulable: []string{"p3"},
+				},
+				// Each node has 2 CPUs, each of gang pods requests 1 CPU.
+				// Scores are first calculated when scheduling the first pod, without the knowledge how many pods would be in the podgroup.
+				// PodGroupPodsCount will score the same for each rack (because both racks can fit the first pod).
+				// Allocation fractions in racks (for the default "most allocated" strategy the highest allocation is picked):
+				// - rack1: 1/4 = 0.25
+				// - rack2: 1/2 = 0.5
+				{
+					name: "Verify all pods in pg1 scheduled on rack2 (which scored higher allocation)",
+					verifyAssignments: &verifyAssignments{
+						pods:  []string{"p1", "p2"},
+						nodes: sets.New("node3-rack2"),
 					},
 				},
 				{
@@ -1183,27 +1248,6 @@ func TestTopologyAwareSchedulingWithBasicPolicy(t *testing.T) {
 						makePod("p5", "pg2"),
 						makePod("p6", "pg2"),
 					},
-				},
-				// Each node has 2 CPUs, each of gang pods requests 1 CPU.
-				// Scores are first calculated when scheduling the first pod, without the knowledge how many pods would be in the podgroup.
-				// PodGroupPodsCount will score the same for each rack (because both racks can fit the first pod).
-				// Allocation fractions in racks (for the default "most allocated" strategy the highest allocation is picked):
-				// - rack1: 1/4 = 0.25
-				// - rack2: 1/2 = 0.5
-				{
-					name:                 "Verify part of podgroup p1 is now scheduled",
-					waitForPodsScheduled: []string{"p1", "p2"},
-				},
-				{
-					name: "Verify all pods in pg1 scheduled on rack2 (which scored higher allocation)",
-					verifyAssignments: &verifyAssignments{
-						pods:  []string{"p1", "p2"},
-						nodes: sets.New("node3-rack2"),
-					},
-				},
-				{
-					name:                     "Verify the last pod becomes unschedulable due to insufficient resources",
-					waitForPodsUnschedulable: []string{"p3"},
 				},
 				{
 					name:                 "Verify the entire podgroup pg2 is now scheduled",
@@ -1235,19 +1279,31 @@ func TestTopologyAwareSchedulingWithBasicPolicy(t *testing.T) {
 					},
 				},
 				{
+					name:                 "Verify that the blocker pod got scheduled",
+					waitForPodsScheduled: []string{"existing1"},
+				},
+				{
 					name:           "Create the PodGroup object that should be scheduled on one rack",
 					createPodGroup: makeBasicPodGroup("pg1", "rack"),
 				},
 				{
-					name: "Create all pods belonging to the podgroup, more than fitting in rack1",
+					// Fixing test flakiness:
+					// To make the test behave deterministically, first create 1 pod, based on which scores will be
+					// calculated, and only add more pods once the first is scheduled.
+					name: "Create the first pod belonging to the podgroup",
 					createPods: []*v1.Pod{
 						makePod("p1", "pg1"),
-						makePod("p2", "pg1"),
 					},
 				},
 				{
-					name:                 "Verify that 1 pod got scheduled",
+					name:                 "Verify the pod is scheduled",
 					waitForPodsScheduled: []string{"p1"},
+				},
+				{
+					name: "Create other pods belonging to the podgroup, exceeding the capacity of rack1",
+					createPods: []*v1.Pod{
+						makePod("p2", "pg1"),
+					},
 				},
 				{
 					name: "Verify that p1 got scheduled on rack1, which scored higher in mostAllocated strategy",
@@ -1257,7 +1313,7 @@ func TestTopologyAwareSchedulingWithBasicPolicy(t *testing.T) {
 					},
 				},
 				{
-					name:                     "Verify that the last pod becomes unschedulable due to insufficient resources in the rack",
+					name:                     "Verify that the other pod becomes unschedulable due to insufficient resources in the rack",
 					waitForPodsUnschedulable: []string{"p2"},
 				},
 				{
