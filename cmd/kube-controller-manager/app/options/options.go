@@ -66,9 +66,8 @@ const (
 
 // KubeControllerManagerOptions is the main context object for the kube-controller manager.
 type KubeControllerManagerOptions struct {
-	Generic           *cmoptions.GenericControllerManagerConfigurationOptions
-	KubeCloudShared   *cpoptions.KubeCloudSharedOptions
-	ServiceController *cpoptions.ServiceControllerOptions
+	Generic         *cmoptions.GenericControllerManagerConfigurationOptions
+	KubeCloudShared *cpoptions.KubeCloudSharedOptions
 
 	AttachDetachController                    *AttachDetachControllerOptions
 	CSRSigningController                      *CSRSigningControllerOptions
@@ -135,9 +134,6 @@ func NewKubeControllerManagerOptions() (*KubeControllerManagerOptions, error) {
 	s := KubeControllerManagerOptions{
 		Generic:         cmoptions.NewGenericControllerManagerConfigurationOptions(&componentConfig.Generic),
 		KubeCloudShared: cpoptions.NewKubeCloudSharedOptions(&componentConfig.KubeCloudShared),
-		ServiceController: &cpoptions.ServiceControllerOptions{
-			ServiceControllerConfiguration: &componentConfig.ServiceController,
-		},
 		AttachDetachController: &AttachDetachControllerOptions{
 			&componentConfig.AttachDetachController,
 		},
@@ -268,8 +264,6 @@ func (s *KubeControllerManagerOptions) Flags(allControllers []string, disabledBy
 	fss := cliflag.NamedFlagSets{}
 	s.Generic.AddFlags(&fss, allControllers, disabledByDefaultControllers, controllerAliases)
 	s.KubeCloudShared.AddFlags(fss.FlagSet("generic"))
-	s.ServiceController.AddFlags(fss.FlagSet("service-lb-controller"))
-
 	s.SecureServing.AddFlags(fss.FlagSet("secure serving"))
 	s.Authentication.AddFlags(fss.FlagSet("authentication"))
 	s.Authorization.AddFlags(fss.FlagSet("authorization"))
@@ -407,9 +401,6 @@ func (s *KubeControllerManagerOptions) ApplyTo(c *kubecontrollerconfig.Config, a
 	if err := s.SAController.ApplyTo(&c.ComponentConfig.SAController); err != nil {
 		return err
 	}
-	if err := s.ServiceController.ApplyTo(&c.ComponentConfig.ServiceController); err != nil {
-		return err
-	}
 	if err := s.TTLAfterFinishedController.ApplyTo(&c.ComponentConfig.TTLAfterFinishedController); err != nil {
 		return err
 	}
@@ -468,7 +459,6 @@ func (s *KubeControllerManagerOptions) Validate(allControllers []string, disable
 	errs = append(errs, s.ReplicationController.Validate()...)
 	errs = append(errs, s.ResourceQuotaController.Validate()...)
 	errs = append(errs, s.SAController.Validate()...)
-	errs = append(errs, s.ServiceController.Validate()...)
 	errs = append(errs, s.TTLAfterFinishedController.Validate()...)
 	errs = append(errs, s.SecureServing.Validate()...)
 	errs = append(errs, s.Authentication.Validate()...)
