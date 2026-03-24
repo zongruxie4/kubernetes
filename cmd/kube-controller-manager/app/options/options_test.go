@@ -598,9 +598,7 @@ func TestApplyTo(t *testing.T) {
 					CloudConfigFile: "/cloud-config",
 				},
 			},
-			ServiceController: serviceconfig.ServiceControllerConfiguration{
-				ConcurrentServiceSyncs: 1,
-			},
+			ServiceController: serviceconfig.ServiceControllerConfiguration{},
 			AttachDetachController: attachdetachconfig.AttachDetachControllerConfiguration{
 				ReconcilerSyncLoopPeriod:          metav1.Duration{Duration: 30 * time.Second},
 				DisableAttachDetachReconcilerSync: true,

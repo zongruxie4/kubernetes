@@ -48,10 +48,10 @@ type Controller interface {
 type ControllerConstructor func(ctx context.Context, controllerContext ControllerContext, controllerName string) (Controller, error)
 
 type ControllerDescriptor struct {
-	name                      string
-	constructor               ControllerConstructor
-	requiredFeatureGates      []featuregate.Feature
-	aliases                   []string
+	name                    string
+	constructor             ControllerConstructor
+	requiredFeatureGates    []featuregate.Feature
+	aliases                 []string
 	isDisabledByDefault     bool
 	requiresSpecialHandling bool
 }
