@@ -5278,6 +5278,19 @@ func TestIsPodResizeInProgress(t *testing.T) {
 		}},
 		expectHasResize:              true,
 		inplacePodLevelResizeEnabled: true,
+	}, {
+		name: "plr mismatch during initial creation (containers not started)",
+		podLevelResources: &testPLR{
+			allocated: testResources{cpuReq: 200},
+			actuated:  &testResources{cpuReq: 100},
+		},
+		containers: []testContainer{{
+			allocated: testResources{cpuReq: 100},
+			actuated:  &testResources{cpuReq: 100},
+			isRunning: false,
+		}},
+		expectHasResize:              false,
+		inplacePodLevelResizeEnabled: true,
 	}}
 
 	mkRequirements := func(r testResources) v1.ResourceRequirements {
