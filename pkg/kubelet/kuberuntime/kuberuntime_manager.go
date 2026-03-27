@@ -2222,22 +2222,11 @@ func (m *kubeGenericRuntimeManager) isPodLevelResourcesResizeInProgress(allocate
 		return false
 	}
 
-	// If no containers are running, there's nothing to be resized.
-	isAnyContainerRunning := !podutil.VisitContainers(&allocatedPod.Spec, podutil.InitContainers|podutil.Containers,
-		func(allocatedContainer *v1.Container, containerType podutil.ContainerType) (shouldContinue bool) {
-			if !isResizableContainer(allocatedContainer, containerType) {
-				return true
-			}
-			containerStatus := podStatus.FindContainerStatusByName(allocatedContainer.Name)
-			return containerStatus == nil || containerStatus.State != kubecontainer.ContainerStateRunning
-		},
-	)
-
-	if !isAnyContainerRunning {
+	actuatedPodResources, found := m.actuatedState.GetPodLevelResources(allocatedPod.UID)
+	if !found || actuatedPodResources == nil {
 		return false
 	}
 
-	actuatedPodResources, _ := m.actuatedState.GetPodLevelResources(allocatedPod.UID)
 	allocatedPodResources := allocatedPod.Spec.Resources
 
 	return !cpuMemoryResourcesEqual(actuatedPodResources, allocatedPodResources)
