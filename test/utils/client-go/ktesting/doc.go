@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package tcontext adds supports for testing with client-go
+// Package ktesting in client-go adds supports for testing with client-go
 // to ktesting:
 // - Storing and retrieving client instances and REST configuration.
 // - TODO: Namespace creation.
 //
 // Those can of course also be passed as separate parameters.
-// When using tcontext, a single TContext parameter is enough.
+// When using TContext, a single parameter is enough.
 //
-// TODO: move to k8s.io/client-go/tcontext
-package tcontext
+// TODO: move to k8s.io/client-go/ktesting
+package ktesting

@@ -259,6 +259,8 @@ func (tCtx TContext) AssertConsistently(arg any) gomega.AsyncAssertion {
 	return tCtx.newAsyncAssertion(gomega.NewWithT(assertTestingT{tCtx}).Consistently, arg)
 }
 
+// newAsyncAssertion must be kept identical to the corresponding newAsyncAssertion in
+// the client-go ktesting, minus the support for TContext from that package.
 func (tCtx TContext) newAsyncAssertion(eventuallyOrConsistently func(actualOrCtx any, args ...any) gomega.AsyncAssertion, arg any) gomega.AsyncAssertion {
 	tCtx.Helper()
 	// switch arg := arg.(type) {
