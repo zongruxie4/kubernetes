@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -36,19 +35,19 @@ func TestGenerationManagement(t *testing.T) {
 
 	// DO NOT ADD NEW ENTRIES HERE.
 	// This tracks resources that have status but do not manage generation.
-	generationExempt := sets.New[schema.GroupResource](
-		schema.GroupResource{Group: "apiregistration.k8s.io", Resource: "apiservices"},
-		schema.GroupResource{Group: "autoscaling", Resource: "horizontalpodautoscalers"},
-		schema.GroupResource{Group: "certificates.k8s.io", Resource: "certificatesigningrequests"},
-		schema.GroupResource{Group: "networking.k8s.io", Resource: "servicecidrs"},
-		schema.GroupResource{Group: "resource.k8s.io", Resource: "resourceclaims"},
-		schema.GroupResource{Group: "storage.k8s.io", Resource: "volumeattachments"},
-		schema.GroupResource{Group: "", Resource: "persistentvolumeclaims"},
-		schema.GroupResource{Group: "", Resource: "namespaces"},
-		schema.GroupResource{Group: "", Resource: "nodes"},
-		schema.GroupResource{Group: "", Resource: "persistentvolumes"},
-		schema.GroupResource{Group: "", Resource: "resourcequotas"},
-		schema.GroupResource{Group: "", Resource: "services"},
+	generationExempt := sets.New(
+		"apiservices.apiregistration.k8s.io",
+		"certificatesigningrequests.certificates.k8s.io",
+		"horizontalpodautoscalers.autoscaling",
+		"namespaces",
+		"nodes",
+		"persistentvolumeclaims",
+		"persistentvolumes",
+		"resourceclaims.resource.k8s.io",
+		"resourcequotas",
+		"servicecidrs.networking.k8s.io",
+		"services",
+		"volumeattachments.storage.k8s.io",
 	)
 
 	TestAllDefinitions(t, "generation-namespace", func(t *testing.T, api Definition) {
@@ -80,7 +79,7 @@ func TestGenerationManagement(t *testing.T) {
 		}
 
 		// Verify that generation initializes to 1.
-		if generationExempt.Has(api.Mapping.Resource.GroupResource()) {
+		if matchesException(api.Mapping.Resource, generationExempt) {
 			if baseline.GetGeneration() != 0 {
 				t.Errorf("Expected generation exempt resource always have generation 0, but got %v", baseline.GetGeneration())
 			}
@@ -112,17 +111,13 @@ func TestGenerationManagement(t *testing.T) {
 		if err != nil {
 			t.Logf("Patch to main endpoint failed: %v", err)
 		} else if result.GetGeneration() <= afterStatus.GetGeneration() {
-			if generationExempt.Has(api.Mapping.Resource.GroupResource()) {
+			if matchesException(api.Mapping.Resource, generationExempt) {
 				if result.GetGeneration() != 0 {
 					t.Errorf("Expected generation exempt resource always have generation 0, but got %v", result.GetGeneration())
 				}
 			} else {
 				t.Errorf("Expected generation to monotonically increase after spec update (was %v, got %v)", afterStatus.GetGeneration(), result.GetGeneration())
 			}
-		}
-
-		if err := rsc.Delete(context.TODO(), name, *metav1.NewDeleteOptions(0)); err != nil {
-			t.Logf("Failed to delete %v: %v", name, err)
 		}
 	})
 }

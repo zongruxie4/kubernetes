@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -40,26 +41,26 @@ func TestFieldsWipingConsistency(t *testing.T) {
 	// All new APIs should use ResetObjectMetaForStatus.
 	statusDoesNotWipeMetadata := sets.New(
 		// https://github.com/kubernetes/kubernetes/issues/137681
-		"apiextensions.k8s.io/customresourcedefinitions",
+		"customresourcedefinitions.apiextensions.k8s.io",
 
 		// APIs that do not use ResetObjectMetaForStatus:
-		"apps/daemonsets",
-		"apps/replicasets",
-		"apps/statefulsets",
-		"batch/cronjobs",
-		"batch/jobs",
-		"autoscaling/horizontalpodautoscalers",
-		"networking.k8s.io/ingresses",
+		"certificatesigningrequests.certificates.k8s.io",
+		"cronjobs.batch",
+		"daemonsets.apps",
+		"horizontalpodautoscalers.autoscaling",
+		"ingresses.networking.k8s.io",
+		"jobs.batch",
+		"namespaces",
 		"nodes",
-		"persistentvolumes",
 		"persistentvolumeclaims",
+		"persistentvolumes",
+		"poddisruptionbudgets.policy",
 		"pods",
+		"replicasets.apps",
 		"replicationcontrollers",
 		"resourcequotas",
 		"services",
-		"policy/poddisruptionbudgets",
-		"namespaces",
-		"certificates.k8s.io/certificatesigningrequests",
+		"statefulsets.apps",
 	)
 
 	TestAllDefinitions(t, "reset-fields-test", func(t *testing.T, api Definition) {
@@ -171,16 +172,11 @@ func TestFieldsWipingConsistency(t *testing.T) {
 			t.Errorf("Status endpoint: SSA ResetMetadata (%v) and PrepareForUpdate wipeMetadata (%v) behaviors do not match.", ssaStatusResetsMetadata, statusWipesMetadata)
 		}
 
-		gr := api.Mapping.Resource.Resource
-		if api.Mapping.Resource.Group != "" {
-			gr = api.Mapping.Resource.Group + "/" + gr
-		}
-
 		// Enforce field wiping behaviors, with allowlists for pre-existing exceptions.
-		assertWiped(t, gr, "create must wipe status", createWipesStatus, createDoesNotWipeStatus)
-		assertWiped(t, gr, "update must wipe status", mainWipesStatus, sets.New[string]())      // No exemptions exist for this, please do not add any in the future.
-		assertWiped(t, gr, "status update must wipe spec", statusWipesSpec, sets.New[string]()) // No exemptions exist for this, please do not add any in the future.
-		assertWiped(t, gr, "status update must wipe metadata", statusWipesMetadata, statusDoesNotWipeMetadata)
+		assertWiped(t, api.Mapping.Resource, "create must wipe status", createWipesStatus, createDoesNotWipeStatus)
+		assertWiped(t, api.Mapping.Resource, "update must wipe status", mainWipesStatus, sets.New[string]())      // No exemptions exist for this, please do not add any in the future.
+		assertWiped(t, api.Mapping.Resource, "status update must wipe spec", statusWipesSpec, sets.New[string]()) // No exemptions exist for this, please do not add any in the future.
+		assertWiped(t, api.Mapping.Resource, "status update must wipe metadata", statusWipesMetadata, statusDoesNotWipeMetadata)
 
 		if err := rsc.Delete(context.TODO(), name, *metav1.NewDeleteOptions(0)); err != nil {
 			t.Logf("Failed to delete %v: %v", name, err)
@@ -223,15 +219,16 @@ func managedFieldsOwnTopLevelField(t *testing.T, fieldsV1 *metav1.FieldsV1, fiel
 }
 
 // assertWiped checks that a field wiping behavior holds, with an allowlist for known exceptions.
-func assertWiped(t *testing.T, gr string, msg string, wiped bool, allowed sets.Set[string]) {
+func assertWiped(t *testing.T, gvr schema.GroupVersionResource, msg string, wiped bool, allowed sets.Set[string]) {
 	t.Helper()
-	if allowed.Has(gr) {
+	name := ResourceString(gvr)
+	if matchesException(gvr, allowed) {
 		if wiped {
-			t.Errorf("%s: %s unexpectedly wiped. Remove it from the exception list.", gr, msg)
+			t.Errorf("%s: %s unexpectedly wiped. Remove it from the exception list.", name, msg)
 		}
 	} else {
 		if !wiped {
-			t.Errorf("%s: %s", gr, msg)
+			t.Errorf("%s: %s", name, msg)
 		}
 	}
 }

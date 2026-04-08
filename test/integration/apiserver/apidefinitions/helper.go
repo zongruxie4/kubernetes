@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -72,6 +73,9 @@ func (d *Definition) ResourceClient() dynamic.ResourceInterface {
 	return d.DynamicClient.Resource(d.Mapping.Resource).Namespace(namespace)
 }
 
+// TestAllDefinitions starts an apiserver and runs testFunc against every
+// discoverable resource. It registers a fixed set of CRDs so that a sample
+// set of custom resources discoverable and tested.
 func TestAllDefinitions(t *testing.T, testNamespace string, testFunc DefinitionTestFunc) {
 	server, err := apiservertesting.StartTestServer(t, apiservertesting.NewDefaultTestServerOptions(), []string{"--disable-admission-plugins", "ServiceAccount,TaintNodesByCondition"}, framework.SharedEtcd())
 	if err != nil {
@@ -167,6 +171,28 @@ func CreateMapping(groupVersion string, resource metav1.APIResource) (*meta.REST
 		GroupVersionKind: gvk,
 		Scope:            scope,
 	}, nil
+}
+
+// ResourceString returns the kubectl-style "resource.version.group" representation
+// of a GroupVersionResource (e.g. "deployments.v1.apps", "pods.v1").
+func ResourceString(gvr schema.GroupVersionResource) string {
+	if gvr.Group == "" {
+		return gvr.Resource + "." + gvr.Version
+	}
+	return gvr.Resource + "." + gvr.Version + "." + gvr.Group
+}
+
+// matchesException returns true if gvr matches any entry in exceptions.
+// Each entry must be a kubectl-style resource string in either
+// "resource.group" form (e.g. "pods", "deployments.apps",
+// "customresourcedefinitions.apiextensions.k8s.io"), which matches all
+// versions of that resource, or "resource.version.group" form (e.g.
+// "pods.v1", "deployments.v1.apps"), which matches a single version.
+func matchesException(gvr schema.GroupVersionResource, exceptions sets.Set[string]) bool {
+	if exceptions.Has(gvr.GroupResource().String()) {
+		return true
+	}
+	return exceptions.Has(ResourceString(gvr))
 }
 
 // TestObj is a generic test helper that creates an Unstructured object from a creation stub
