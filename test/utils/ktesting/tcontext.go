@@ -26,7 +26,6 @@ import (
 	"testing/synctest"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/onsi/gomega"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -333,15 +332,12 @@ func run(tCtx TContext, name string, syncTest bool, cb func(tCtx TContext)) bool
 //	   tCtx := ktesting.WithContext(tCtx, ctx)
 //	   ...
 //
-// This is important because the Context in the callback could have
-// a different deadline than in the parent TContext.
+// Cancellation and deadline are determined by the new context.
+// Values are looked up first in the new context, then the old one.
+// In other words, values set previous via WithValue are still
+// available.
 func (tCtx TContext) WithContext(ctx context.Context) TContext {
-	logger := tCtx.Logger()
-	tCtx.Context = ctx
-	if _, err := logr.FromContext(ctx); err != nil {
-		// Keep using the logger from the parent context.
-		tCtx = tCtx.WithLogger(logger)
-	}
+	tCtx.Context = &chainContext{Context: ctx, previousCtx: tCtx.Context}
 	return tCtx
 }
 
@@ -349,6 +345,18 @@ func (tCtx TContext) WithContext(ctx context.Context) TContext {
 func (tCtx TContext) WithValue(key, val any) TContext {
 	ctx := context.WithValue(tCtx, key, val)
 	return tCtx.WithContext(ctx)
+}
+
+type chainContext struct {
+	context.Context
+	previousCtx context.Context
+}
+
+func (ctx *chainContext) Value(key any) any {
+	if val := ctx.Context.Value(key); val != nil {
+		return val
+	}
+	return ctx.previousCtx.Value(key)
 }
 
 // TContext implements [context.Context], [testing.TB] and some additional

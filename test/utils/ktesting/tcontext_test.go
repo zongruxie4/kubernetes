@@ -17,6 +17,7 @@ limitations under the License.
 package ktesting_test
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"testing/synctest"
@@ -207,4 +208,17 @@ func TestWithNamespace(t *testing.T) {
 	namespace := "foo"
 	tCtxWithNamespace := tCtx.WithNamespace(namespace)
 	tCtx.Expect(tCtxWithNamespace.Namespace()).To(gomega.Equal(namespace))
+}
+
+func TestWithContext(t *testing.T) {
+	tCtx := ktesting.Init(t)
+	tCtx.Cancel("done")
+	tCtx = tCtx.WithValue("foo", "bar")
+	deadline := time.Now().Add(-time.Minute)
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
+	defer cancel()
+	newCtx := tCtx.WithContext(ctx)
+	tCtx.Expect(context.Cause(tCtx)).To(gomega.MatchError(gomega.ContainSubstring("done")))
+	tCtx.Expect(newCtx.Err()).To(gomega.MatchError(context.DeadlineExceeded))
+	tCtx.Expect(newCtx.Value("foo")).To(gomega.Equal("bar"))
 }
