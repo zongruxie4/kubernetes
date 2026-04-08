@@ -132,8 +132,15 @@ func pruneTESTS(suites *junitxml.JUnitTestSuites) {
 		name := suite.Name
 		regex := regexp.MustCompile(`^(.*?)/([^/]+)/?$`)
 		match := regex.FindStringSubmatch(name)
-		updatedTestcase.Classname = match[1]
-		updatedTestcase.Name = match[2]
+		baseName := match[1]
+		leafName := match[2]
+
+		// testgrid uses suite.Name.
+		// Spyglass/Prow use testcase.Classname.
+		// Therefore we need to update both.
+		suite.Name = baseName
+		updatedTestcase.Classname = baseName
+		updatedTestcase.Name = leafName
 		updatedTestcase.Time = suite.Time
 		updatedSystemOut := ""
 		updatedSystemErr := ""

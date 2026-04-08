@@ -133,13 +133,13 @@ func TestPruneTESTS(t *testing.T) {
 
 	outputXML := `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-	<testsuite tests="6" failures="0" time="5.50000" name="k8s.io/kubernetes/cluster/gce/cos" timestamp="">
+	<testsuite tests="6" failures="0" time="5.50000" name="k8s.io/kubernetes/cluster/gce" timestamp="">
 		<properties>
 			<property name="go.version" value="go1.18 linux/amd64"></property>
 		</properties>
 		<testcase classname="k8s.io/kubernetes/cluster/gce" name="cos" time="5.50000"></testcase>
 	</testsuite>
-	<testsuite tests="2" failures="1" time="30.050000" name="k8s.io/kubernetes/test/integration/apimachinery" timestamp="">
+	<testsuite tests="2" failures="1" time="30.050000" name="k8s.io/kubernetes/test/integration" timestamp="">
 		<properties>
 			<property name="go.version" value="go1.18 linux/amd64"></property>
 		</properties>
@@ -147,7 +147,7 @@ func TestPruneTESTS(t *testing.T) {
 			<failure message="Failed" type="">FailureContent</failure>
 		</testcase>
 	</testsuite>
-	<testsuite tests="3" failures="2" time="30.050000" name="k8s.io/kubernetes/test/integration/apimachinery2" timestamp="">
+	<testsuite tests="3" failures="2" time="30.050000" name="k8s.io/kubernetes/test/integration" timestamp="">
 		<properties>
 			<property name="go.version" value="go1.18 linux/amd64"></property>
 		</properties>
@@ -155,7 +155,7 @@ func TestPruneTESTS(t *testing.T) {
 			<failure message="FailedA&#xA;&#xA;FailedB" type="">FailureContentA&#xA;&#xA;FailureContentB</failure>
 		</testcase>
 	</testsuite>
-	<testsuite tests="3" failures="3" time="40.050000" name="k8s.io/kubernetes/test/integration/apimachinery3" timestamp="">
+	<testsuite tests="3" failures="3" time="40.050000" name="k8s.io/kubernetes/test/integration" timestamp="">
 		<properties>
 			<property name="go.version" value="go1.18 linux/amd64"></property>
 		</properties>
