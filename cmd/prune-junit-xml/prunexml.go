@@ -39,7 +39,7 @@ func main() {
 	pruneTests := flag.Bool("prune-tests", true,
 		"prune's xml files to display only top level tests and failed sub-tests")
 	addOwners := flag.Bool("add-owners", true,
-		"when pruning tests, also look for OWNERs files of the packages and prefix the names with [SIG-...] if found")
+		"when pruning tests, also look for OWNERs files of the packages and prefix the names with [sig-...] if found")
 	flag.Parse()
 
 	pkgs := newPackageOwners(*addOwners)

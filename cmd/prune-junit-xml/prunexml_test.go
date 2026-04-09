@@ -136,12 +136,10 @@ func TestPruneTESTS(t *testing.T) {
 </testsuites>`
 
 	// This test uses the real OWNERS files from k/k because those exist.
-	// The downside it that OWNERS change (not unlikely in the case of cluster/gce)
+	// The downside it that OWNERS changes (not unlikely in the case of cluster/gce)
 	// imply changing this test data.
 	//
-	// test/integration/apimachinery lacks an OWNERS file. TODO: add one.
-	//
-	// Fake packages have no source and thus now OWNERS.
+	// Fake packages have no source and thus no OWNERS.
 	outputXML := `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
 	<testsuite tests="6" failures="0" time="5.50000" name="[sig-cloud-provider] k8s.io/kubernetes/cluster/gce" timestamp="">
@@ -150,11 +148,11 @@ func TestPruneTESTS(t *testing.T) {
 		</properties>
 		<testcase classname="[sig-cloud-provider] k8s.io/kubernetes/cluster/gce" name="gci" time="5.50000"></testcase>
 	</testsuite>
-	<testsuite tests="2" failures="1" time="30.050000" name="[sig-testing] k8s.io/kubernetes/test/integration" timestamp="">
+	<testsuite tests="2" failures="1" time="30.050000" name="[sig-api-machinery] k8s.io/kubernetes/test/integration" timestamp="">
 		<properties>
 			<property name="go.version" value="go1.18 linux/amd64"></property>
 		</properties>
-		<testcase classname="[sig-testing] k8s.io/kubernetes/test/integration" name="apimachinery" time="30.050000">
+		<testcase classname="[sig-api-machinery] k8s.io/kubernetes/test/integration" name="apimachinery" time="30.050000">
 			<failure message="Failed" type="">FailureContent</failure>
 		</testcase>
 	</testsuite>
