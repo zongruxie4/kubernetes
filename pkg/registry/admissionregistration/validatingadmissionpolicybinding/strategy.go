@@ -42,7 +42,9 @@ type validatingAdmissionPolicyBindingStrategy struct {
 	resourceResolver resolver.ResourceResolver
 }
 
-var Strategy = validatingAdmissionPolicyBindingStrategy{}
+var Strategy = validatingAdmissionPolicyBindingStrategy{
+	DeclarativeValidation: rest.DeclarativeValidation{Scheme: legacyscheme.Scheme},
+}
 
 type PolicyGetter interface {
 	// GetValidatingAdmissionPolicy returns a GetValidatingAdmissionPolicy
