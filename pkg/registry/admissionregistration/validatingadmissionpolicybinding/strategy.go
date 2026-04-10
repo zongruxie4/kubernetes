@@ -53,11 +53,11 @@ type PolicyGetter interface {
 // NewStrategy is the default logic that applies when creating and updating ValidatingAdmissionPolicyBinding objects.
 func NewStrategy(authorizer authorizer.Authorizer, policyGetter PolicyGetter, resourceResolver resolver.ResourceResolver) *validatingAdmissionPolicyBindingStrategy {
 	return &validatingAdmissionPolicyBindingStrategy{
-		DeclarativeValidation:   rest.DeclarativeValidation{Scheme: legacyscheme.Scheme},
-		NameGenerator:    names.SimpleNameGenerator,
-		authorizer:       authorizer,
-		policyGetter:     policyGetter,
-		resourceResolver: resourceResolver,
+		DeclarativeValidation: rest.DeclarativeValidation{Scheme: legacyscheme.Scheme},
+		NameGenerator:         names.SimpleNameGenerator,
+		authorizer:            authorizer,
+		policyGetter:          policyGetter,
+		resourceResolver:      resourceResolver,
 	}
 }
 

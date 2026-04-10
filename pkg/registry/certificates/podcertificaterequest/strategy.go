@@ -52,7 +52,7 @@ var _ rest.RESTDeleteStrategy = (*Strategy)(nil)
 func NewStrategy() *Strategy {
 	return &Strategy{
 		DeclarativeValidation: rest.DeclarativeValidation{Scheme: legacyscheme.Scheme},
-		NameGenerator:  names.SimpleNameGenerator,
+		NameGenerator:         names.SimpleNameGenerator,
 	}
 }
 

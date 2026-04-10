@@ -44,10 +44,10 @@ type mutatingAdmissionPolicyStrategy struct {
 // NewStrategy is the default logic that applies when creating and updating MutatingAdmissionPolicy objects.
 func NewStrategy(authorizer authorizer.Authorizer, resourceResolver resolver.ResourceResolver) *mutatingAdmissionPolicyStrategy {
 	return &mutatingAdmissionPolicyStrategy{
-		DeclarativeValidation:   rest.DeclarativeValidation{Scheme: legacyscheme.Scheme},
-		NameGenerator:    names.SimpleNameGenerator,
-		authorizer:       authorizer,
-		resourceResolver: resourceResolver,
+		DeclarativeValidation: rest.DeclarativeValidation{Scheme: legacyscheme.Scheme},
+		NameGenerator:         names.SimpleNameGenerator,
+		authorizer:            authorizer,
+		resourceResolver:      resourceResolver,
 	}
 }
 
