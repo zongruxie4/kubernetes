@@ -73,7 +73,7 @@ func Validate_LimitResponse(ctx context.Context, op operation.Operation, fldPath
 				}
 				return errs
 			}},
-	})...)
+	}).MarkAlpha()...)
 
 	// field flowcontrolv1beta1.LimitResponse.Type
 	errs = append(errs,
@@ -191,7 +191,7 @@ func Validate_PriorityLevelConfigurationSpec(ctx context.Context, op operation.O
 				}
 				return errs
 			}},
-	})...)
+	}).MarkAlpha()...)
 	errs = append(errs, validate.Discriminated(ctx, op, fldPath, obj, oldObj, "limited", func(obj *flowcontrolv1beta1.PriorityLevelConfigurationSpec) *flowcontrolv1beta1.LimitedPriorityLevelConfiguration {
 		return obj.Limited
 	}, func(obj *flowcontrolv1beta1.PriorityLevelConfigurationSpec) flowcontrolv1beta1.PriorityLevelEnablement {
@@ -214,7 +214,7 @@ func Validate_PriorityLevelConfigurationSpec(ctx context.Context, op operation.O
 				}
 				return errs
 			}},
-	})...)
+	}).MarkAlpha()...)
 
 	// field flowcontrolv1beta1.PriorityLevelConfigurationSpec.Type
 	errs = append(errs,
