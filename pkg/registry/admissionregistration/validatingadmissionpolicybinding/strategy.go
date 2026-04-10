@@ -18,7 +18,6 @@ package validatingadmissionpolicybinding
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/api/operation"
 	"k8s.io/apiserver/pkg/registry/rest"
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -36,7 +35,7 @@ import (
 
 // validatingAdmissionPolicyBindingStrategy implements verification logic for ValidatingAdmissionPolicyBinding.
 type validatingAdmissionPolicyBindingStrategy struct {
-	runtime.ObjectTyper
+	rest.DeclarativeValidation
 	names.NameGenerator
 	authorizer       authorizer.Authorizer
 	policyGetter     PolicyGetter
@@ -54,7 +53,7 @@ type PolicyGetter interface {
 // NewStrategy is the default logic that applies when creating and updating ValidatingAdmissionPolicyBinding objects.
 func NewStrategy(authorizer authorizer.Authorizer, policyGetter PolicyGetter, resourceResolver resolver.ResourceResolver) *validatingAdmissionPolicyBindingStrategy {
 	return &validatingAdmissionPolicyBindingStrategy{
-		ObjectTyper:      legacyscheme.Scheme,
+		DeclarativeValidation:   rest.DeclarativeValidation{Scheme: legacyscheme.Scheme},
 		NameGenerator:    names.SimpleNameGenerator,
 		authorizer:       authorizer,
 		policyGetter:     policyGetter,
@@ -99,7 +98,7 @@ func (v *validatingAdmissionPolicyBindingStrategy) Validate(ctx context.Context,
 			errs = append(errs, field.Forbidden(field.NewPath("spec", "paramRef"), err.Error()))
 		}
 	}
-	return rest.ValidateDeclarativelyWithMigrationChecks(ctx, legacyscheme.Scheme, obj, nil, errs, operation.Create)
+	return errs
 }
 
 // WarningsOnCreate returns warnings for the creation of the given object.
@@ -131,7 +130,7 @@ func (v *validatingAdmissionPolicyBindingStrategy) ValidateUpdate(ctx context.Co
 			errs = append(errs, field.Forbidden(field.NewPath("spec", "paramRef"), err.Error()))
 		}
 	}
-	return rest.ValidateDeclarativelyWithMigrationChecks(ctx, legacyscheme.Scheme, obj, old, errs, operation.Update)
+	return errs
 }
 
 // WarningsOnUpdate returns warnings for the given update.
