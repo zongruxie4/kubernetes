@@ -610,7 +610,6 @@ func (dc *DeploymentController) syncDeployment(ctx context.Context, key string) 
 	}
 
 	// Deep-copy otherwise we are mutating our cache.
-	// TODO: Deep-copy only when needed.
 	d := deployment.DeepCopy()
 
 	everything := metav1.LabelSelector{}
