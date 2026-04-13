@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/test/utils/ktesting"
@@ -139,10 +138,8 @@ func TestCancelCtx(t *testing.T) {
 		}
 	})
 	tCtx.CleanupCtx(func(tCtx ktesting.TContext) {
-		if tCtx.Err() != nil {
-			t.Errorf("context should not be canceled but is: %v", tCtx.Err())
-		}
-		assert.Equal(t, baseCtx.Logger(), tCtx.Logger(), "Logger()")
+		tCtx.Assert(tCtx.Err()).To(gomega.Succeed(), "context should not be canceled but is")
+		tCtx.Assert(tCtx.Logger()).To(gomega.Equal(baseCtx.Logger()), "Logger()")
 	})
 
 	// Cancel, then let testing.T invoke test cleanup.

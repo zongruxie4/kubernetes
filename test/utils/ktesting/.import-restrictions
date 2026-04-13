@@ -4,9 +4,6 @@ rules:
   # TODO (?): move into ktesting?
   - selectorRegexp: k8s.io/kubernetes/test/utils/format
     allowedPrefixes: [ "" ]
-  # TODO: remove usage of testify in favor of gomega
-  - selectorRegexp: ^github.com/stretchr/testify/
-    allowedPrefixes: [ "" ]
   # Any package without a dot in the first part of the name is a standard package.
   - selectorRegexp: ^[a-z]*($|/)
     allowedPrefixes: [ "" ]
