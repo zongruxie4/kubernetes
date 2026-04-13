@@ -30,7 +30,7 @@ import (
 
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/ktesting"
-	"k8s.io/kubernetes/test/utils/format"
+	"k8s.io/kubernetes/test/utils/ktesting/format"
 	"k8s.io/kubernetes/test/utils/ktesting/initoption"
 	"k8s.io/kubernetes/test/utils/ktesting/internal"
 )
