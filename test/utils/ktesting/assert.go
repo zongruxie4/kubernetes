@@ -326,8 +326,8 @@ func (tCtx TContext) newAsyncAssertion(eventuallyOrConsistently func(actualOrCtx
 			// by finalize(), then results is still nil.
 			// We need to fill in null values.
 			if len(results) == 0 && t.NumOut() > 0 {
-				for i := range t.NumOut() {
-					results = append(results, reflect.New(t.Out(i)).Elem())
+				for t := range t.Outs() {
+					results = append(results, reflect.New(t).Elem())
 				}
 			}
 			if addErrResult {
