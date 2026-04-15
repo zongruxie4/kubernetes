@@ -4400,8 +4400,6 @@ func TestScalingWithRules(t *testing.T) {
 		// test expected result
 		expectedReplicas  int32
 		expectedCondition string
-
-		testThis bool
 	}
 
 	tests := []TestCase{
@@ -4459,17 +4457,6 @@ func TestScalingWithRules(t *testing.T) {
 			expectedCondition:            "ScaleUpLimit",
 			scaleUpRules:                 generateScalingRules(0, 0, 1, 60, 0),
 			name:                         "scaleUpLimit is the limit because scaleUpLimit < maxReplicas with user policies",
-		},
-		{
-			currentReplicas:              1000,
-			prenormalizedDesiredReplicas: 3,
-			specMinReplicas:              3,
-			specMaxReplicas:              2000,
-			scaleDownRules:               generateScalingRules(20, 60, 0, 0, 0),
-			expectedReplicas:             980,
-			expectedCondition:            "ScaleDownLimit",
-			name:                         "scaleDownLimit is the limit because scaleDownLimit > minReplicas with user defined policies",
-			testThis:                     true,
 		},
 		// ScaleUp without PeriodSeconds usage
 		{
@@ -4843,10 +4830,6 @@ func TestScalingWithRules(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-
-			if tc.testThis {
-				return
-			}
 			hc := HorizontalController{
 				scaleUpEvents: map[string][]timestampedScaleEvent{
 					tc.key: tc.scaleUpEvents,
