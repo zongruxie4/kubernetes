@@ -4609,16 +4609,6 @@ func TestScalingWithRules(t *testing.T) {
 			expectedCondition:            "ScaleDownLimit",
 		},
 		{
-			name:                         "scaleDown with spec MinReplicas=nil limitation with large pod policy",
-			specMinReplicas:              1,
-			specMaxReplicas:              1000,
-			scaleDownRules:               generateScalingRules(100, 60, 0, 0, 300),
-			currentReplicas:              10,
-			prenormalizedDesiredReplicas: 0,
-			expectedReplicas:             1,
-			expectedCondition:            "TooFewReplicas",
-		},
-		{
 			name:                         "scaleDown with spec MinReplicas limitation with large pod policy",
 			specMinReplicas:              1,
 			specMaxReplicas:              1000,
