@@ -15,29 +15,29 @@ To update the list, run
 Add the changed file to your PR, then send for review.
 
 If you want to test the stability framework, you can add metrics to the file in
-`test/instrumentation/testdata/pkg/kubelet/metrics/metrics.go` and run test
+`hack/tools/instrumentation/testdata/pkg/kubelet/metrics/metrics.go` and run test
 verification via:
 
 ```console
-./test/instrumentation/test-verify.sh
+./hack/tools/instrumentation/test-verify.sh
 ```
 
 To update the golden test list, you can run:
 
 ```console
-./test/instrumentation/test-update.sh
+./hack/tools/instrumentation/test-update.sh
 ```
 
 To update the list of documented metrics, please run:
 
 ```console
-./test/instrumentation/update-documentation-metrics.sh
+./hack/tools/instrumentation/update-documentation-metrics.sh
 ```
 
 To update the documented list of metrics for k8s/website, please run:
 
 ```console
-./test/instrumentation/update-documentation.sh
+./hack/tools/instrumentation/update-documentation.sh
 ```
 
 Then you need to copy the output to the appropriate website directory. Please
@@ -50,7 +50,15 @@ export WEBSITE_ROOT=<path to website root>
 And then from the root of the k8s/k8s repository, please run this command:
 
 ```shell
-cp ./test/instrumentation/documentation/documentation.md $WEBSITE_ROOT/content/en/docs/reference/instrumentation/metrics.md
+cp ./hack/tools/instrumentation/documentation/documentation.md $WEBSITE_ROOT/content/en/docs/reference/instrumentation/metrics.md
+```
+
+## Metrics Naming Verification
+
+To verify that all metrics comply with Prometheus naming conventions, run:
+
+```console
+./hack/verify-metrics-naming.sh
 ```
 
 ## Component Endpoint Mapping ([endpoint-mappings.yaml](endpoint-mappings.yaml))

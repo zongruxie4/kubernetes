@@ -16,13 +16,13 @@
 
 # This script runs to ensure that we do not violate metric stability
 # policies.
-# Usage: `test/instrumentation/test-verify.sh`.
+# Usage: `hack/tools/instrumentation/test-verify.sh`.
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
-KUBE_ROOT=$(dirname "${BASH_SOURCE[0]}")/../..
-source "${KUBE_ROOT}/test/instrumentation/stability-utils.sh"
+KUBE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+source "${KUBE_ROOT}/hack/tools/instrumentation/stability-utils.sh"
 
 kube::validate::test::stablemetrics

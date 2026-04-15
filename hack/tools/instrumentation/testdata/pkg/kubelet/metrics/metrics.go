@@ -23,7 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/component-base/metrics"
 	"k8s.io/component-base/metrics/legacyregistry"
-	kubeletmetrics "k8s.io/kubernetes/pkg/kubelet/metrics"
 )
 
 // This const block defines the metric names for the kubelet metrics.
@@ -572,7 +571,7 @@ var (
 	)
 
 	_ = metrics.NewDesc(
-		metrics.BuildFQName("", kubeletmetrics.KubeletSubsystem, kubeletmetrics.VolumeStatsCapacityBytesKey),
+		metrics.BuildFQName("", KubeletSubsystem, "volume_stats_capacity_bytes"),
 		"Capacity in bytes of the volume",
 		[]string{"namespace", "persistentvolumeclaim"}, nil,
 		metrics.BETA, "",

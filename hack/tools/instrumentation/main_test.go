@@ -24,7 +24,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"k8s.io/component-base/metrics"
-	"k8s.io/kubernetes/test/instrumentation/internal/metric"
+	"k8s.io/kubernetes/hack/tools/instrumentation/internal/metric"
 )
 
 const fakeFilename = "testdata/metric.go"

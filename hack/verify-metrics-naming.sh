@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2021 The Kubernetes Authors.
+# Copyright The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,16 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script runs to ensure that we do not violate metric stability
-# policies.
-# Usage: `hack/verify-generated-stable-metrics.sh`.
+# This script runs to ensure that we do not violate metric naming conventions.
+# Usage: `hack/verify-metrics-naming.sh`.
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
 KUBE_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
-source "${KUBE_ROOT}/hack/tools/instrumentation/stability-utils.sh"
+source "${KUBE_ROOT}/hack/lib/init.sh"
 
-kube::validate::stablemetrics
+kube::golang::setup_env
+export GOBIN="${KUBE_OUTPUT_BIN}"
 
+echo "Building instrumentation tool..."
+GOTOOLCHAIN="$(kube::golang::hack_tools_gotoolchain)" go -C "${KUBE_ROOT}/hack/tools/instrumentation" install .
+
+echo "Verifying metric naming conventions..."
+"${GOBIN}/instrumentation" -allstabilityclasses -lint pkg staging
+
+echo "Success: All metrics passed linter (excluding exceptions)."

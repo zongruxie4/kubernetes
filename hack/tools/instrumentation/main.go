@@ -33,7 +33,9 @@ import (
 
 	yaml "go.yaml.in/yaml/v2"
 
-	"k8s.io/kubernetes/test/instrumentation/internal/metric"
+	"github.com/prometheus/client_golang/prometheus/testutil/promlint"
+	"k8s.io/component-base/metrics/testutil"
+	"k8s.io/kubernetes/hack/tools/instrumentation/internal/metric"
 )
 
 const (
@@ -47,6 +49,7 @@ var (
 	GOOS                  string = findGOOS()
 	ALL_STABILITY_CLASSES bool
 	EndpointMappings      string
+	LINT                  bool
 )
 
 func findGOOS() string {
@@ -65,6 +68,7 @@ func main() {
 
 	flag.BoolVar(&ALL_STABILITY_CLASSES, "allstabilityclasses", false, "use this flag to enable all stability classes")
 	flag.StringVar(&EndpointMappings, "endpoint-mappings", "", "path to endpoint mappings configuration file")
+	flag.BoolVar(&LINT, "lint", false, "run linter on extracted metrics")
 	flag.Parse()
 	if len(flag.Args()) < 1 {
 		fmt.Fprintf(os.Stderr, "USAGE: %s <DIR or FILE or '-'> [...]\n", os.Args[0])
@@ -129,6 +133,36 @@ func main() {
 		stableMetrics[i] = m
 	}
 	sort.Sort(metric.ByFQName(stableMetrics))
+
+	if LINT {
+		var allProblems []promlint.Problem
+		for _, m := range stableMetrics {
+			fqName := m.BuildFQName()
+			metricType := strings.ToLower(m.Type)
+			if metricType == "timingratiohistogram" {
+				metricType = "histogram"
+			}
+			text := fmt.Sprintf("# HELP %s %s\n# TYPE %s %s\n%s 0\n", fqName, m.Help, fqName, metricType, fqName)
+			linter := promlint.New(strings.NewReader(text))
+			problems, err := linter.Lint()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error linting %s: %v\n", fqName, err)
+				continue
+			}
+			allProblems = append(allProblems, problems...)
+		}
+
+		if err := testutil.GetLintError(allProblems); err != nil {
+			fmt.Fprintf(os.Stderr, "Metric lint errors found:\n%v\n", err)
+			os.Exit(1)
+		}
+		if err := testutil.CheckUnusedExceptions(allProblems); err != nil {
+			fmt.Fprintf(os.Stderr, "Unused exceptions found:\n%v\nPlease remove them from the exception list in staging/src/k8s.io/component-base/metrics/testutil/promlint.go.\n", err)
+			os.Exit(1)
+		}
+		fmt.Fprintln(os.Stderr, "All metrics passed linter (excluding exceptions and no unused exceptions).")
+	}
+
 	data, err := yaml.Marshal(stableMetrics)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -146,6 +180,9 @@ func searchPathForStableMetrics(path string, endpointConfig *endpointMappingConf
 			return filepath.SkipDir
 		}
 		if !strings.HasSuffix(path, ".go") {
+			return nil
+		}
+		if strings.HasSuffix(path, "_test.go") {
 			return nil
 		}
 		ms, es := searchFileForStableMetrics(path, nil, endpointConfig)
