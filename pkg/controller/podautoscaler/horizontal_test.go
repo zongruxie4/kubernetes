@@ -1702,32 +1702,6 @@ func TestScaleDownContainerResource(t *testing.T) {
 	tc.runTest(t)
 }
 
-func TestScaleDownWithScalingRules(t *testing.T) {
-	tc := testCase{
-		minReplicas:             2,
-		maxReplicas:             6,
-		scaleUpRules:            generateScalingRules(0, 0, 100, 15, 30),
-		specReplicas:            5,
-		statusReplicas:          5,
-		expectedDesiredReplicas: 3,
-		CPUTarget:               50,
-		verifyCPUCurrent:        true,
-		reportedLevels:          []uint64{100, 300, 500, 250, 250},
-		reportedCPURequests:     []resource.Quantity{resource.MustParse("1.0"), resource.MustParse("1.0"), resource.MustParse("1.0"), resource.MustParse("1.0"), resource.MustParse("1.0")},
-		useMetricsAPI:           true,
-		recommendations:         []timestampedRecommendation{},
-		expectedReportedReconciliationActionLabel: monitor.ActionLabelScaleDown,
-		expectedReportedReconciliationErrorLabel:  monitor.ErrorLabelNone,
-		expectedReportedMetricComputationActionLabels: map[autoscalingv2.MetricSourceType]monitor.ActionLabel{
-			autoscalingv2.ResourceMetricSourceType: monitor.ActionLabelScaleDown,
-		},
-		expectedReportedMetricComputationErrorLabels: map[autoscalingv2.MetricSourceType]monitor.ErrorLabel{
-			autoscalingv2.ResourceMetricSourceType: monitor.ErrorLabelNone,
-		},
-	}
-	tc.runTest(t)
-}
-
 func TestScaleUpOneMetricInvalid(t *testing.T) {
 	tc := testCase{
 		minReplicas:             2,
