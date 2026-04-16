@@ -87,30 +87,30 @@
       SchedulerQueueingHints: true
       SchedulerAsyncAPICalls: false
     labels: [performance]
+    threshold: 810
     params:
       initNodes: 5000
       initPods: 5000
       measurePods: 50000
-    threshold: 810
   - name: 5000Nodes_50000Pods_AsyncAPICallsEnabled
     featureGates:
       SchedulerQueueingHints: true
       SchedulerAsyncAPICalls: true
     labels: [performance]
+    threshold: 810
     params:
       initNodes: 5000
       initPods: 5000
       measurePods: 50000
-    threshold: 810
   - name: 5000Nodes_50000Pods_NodeDeclaredFeaturesDisabled
     labels: [performance]
+    threshold: 810
     featureGates:
       NodeDeclaredFeatures: false
     params:
       initNodes: 5000
       initPods: 5000
       measurePods: 50000
-    threshold: 810
 # This test case simulates the scheduling of daemonset.
 # https://github.com/kubernetes/kubernetes/issues/124709
 - name: SchedulingDaemonset
@@ -418,31 +418,31 @@
     featureGates:
       SchedulerQueueingHints: false
     labels: [performance]
+    threshold: 600
     params:
       initNodes: 5000
       initPods: 20000
       measurePods: 10000
-    threshold: 600
   - name: 5kNodes/20kInit/10kPods_QueueingHintsEnabled
     featureGates:
       SchedulerQueueingHints: true
       SchedulerAsyncAPICalls: false
     labels: [performance]
+    threshold: 600
     params:
       initNodes: 5000
       initPods: 20000
       measurePods: 10000
-    threshold: 600
   - name: 5kNodes/20kInit/10kPods_AsyncAPICallsEnabled
     featureGates:
       SchedulerQueueingHints: true
       SchedulerAsyncAPICalls: true
     labels: [performance]
+    threshold: 600
     params:
       initNodes: 5000
       initPods: 20000
       measurePods: 10000
-    threshold: 600
 
 - name: SchedulingWithMixedChurn
   workloadTemplate:
@@ -625,20 +625,20 @@
     featureGates:
       SchedulerQueueingHints: false
     labels: [performance]
+    threshold: 830
     params:
       initNodes: 5000
       deletingPods: 5000
       measurePods: 5000
-    threshold: 830
   - name: 5000Node_5000DeletingPods_QueueingHintsEnabled
     featureGates:
       SchedulerQueueingHints: true
     labels: [performance]
+    threshold: 830
     params:
       initNodes: 5000
       deletingPods: 5000
       measurePods: 5000
-    threshold: 830
 
 ## SchedulingWithExtendedResource uses pods with extended resources requests.
 - name: SchedulingWithExtendedResource
@@ -694,17 +694,17 @@
     featureGates:
       DRAExtendedResource: false
     labels: [performance]
+    threshold: 180
     params:
       nodesWithExtendedResource: 5000
       nodesWithoutExtendedResource: 0
       measurePods: 5000
-    threshold: 180
   - name: 5000pods_5000nodes_DRAExtendedResourceEnabled
     featureGates:
       DRAExtendedResource: true
     labels: [performance]
+    threshold: 180
     params:
       nodesWithExtendedResource: 5000
       nodesWithoutExtendedResource: 0
       measurePods: 5000
-    threshold: 180

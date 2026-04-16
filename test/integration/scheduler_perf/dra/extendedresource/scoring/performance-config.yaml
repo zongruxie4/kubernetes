@@ -68,6 +68,7 @@
     featureGates:
       DRAExtendedResource: true
     labels: [integration-test, performance]
+    threshold: 120
     params:
       classes: 10
       nodesWithDRA: 200
@@ -75,11 +76,11 @@
       initPods: 0
       measurePods: 2000
       maxClaimsPerNode: 20
-    threshold: 120
   - name: 5000pods_500nodes
     featureGates:
       DRAExtendedResource: true
     labels: [integration-test, performance]
+    threshold: 70
     params:
       classes: 20
       nodesWithDRA: 500
@@ -87,4 +88,3 @@
       initPods: 0
       measurePods: 5000
       maxClaimsPerNode: 20
-    threshold: 70

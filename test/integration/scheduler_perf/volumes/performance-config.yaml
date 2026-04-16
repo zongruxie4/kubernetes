@@ -110,11 +110,11 @@
       measurePods: 1000
   - name: 5000Nodes
     labels: [performance]
+    threshold: 160
     params:
       initNodes: 5000
       initPods: 5000
       measurePods: 1000
-    threshold: 160
   - name: 5000Nodes_2000Pods
     featureGates:
       SchedulerQueueingHints: false
@@ -180,11 +180,11 @@
       measurePods: 1000
   - name: 5000Nodes
     labels: [performance]
+    threshold: 130
     params:
       initNodes: 5000
       initPods: 5000
       measurePods: 1000
-    threshold: 130
   - name: 5000Nodes_5000Pods
     featureGates:
       SchedulerQueueingHints: false
@@ -248,11 +248,11 @@
       measurePods: 1000
   - name: 5000Nodes
     labels: [performance]
+    threshold: 140
     params:
       initNodes: 5000
       initPods: 5000
       measurePods: 1000
-    threshold: 140
   - name: 5000Nodes_5000Pods
     featureGates:
       SchedulerQueueingHints: false
