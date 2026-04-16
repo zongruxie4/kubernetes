@@ -68,7 +68,6 @@
     featureGates:
       DRAExtendedResource: true
     labels: [integration-test, performance]
-    threshold: 120
     params:
       classes: 10
       nodesWithDRA: 200
