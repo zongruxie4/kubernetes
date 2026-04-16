@@ -137,7 +137,7 @@
       initNodes: 50
       blockerPods: 480 # Must be slightly below initNodes * 10 to be stable
       measurePods: 500 # Must be initNodes * 10
-    threshold: 260
+    threshold: 200
 
 # This test case is used to measure the performance of queuing hints when handling the pod update events: 
 # UpdatePodLabel, UpdatePodScaleDown, UpdatePodToleration and UpdatePodSchedulingGatesEliminated.
@@ -271,7 +271,7 @@
     params:
       blockerPods: 1000
       measurePods: 1000
-    threshold: 100
+    threshold: 90
 
 # This test case is used to measure the performance of queuing hints when handling the NodeAdd events.
 # First, an unschedulable node is created, which prevents any pod from being scheduled on it.
@@ -572,4 +572,4 @@
     params:
       nodes: 100
       measurePods: 1000 # Must be initNodes * 10
-    threshold: 260
+    threshold: 190

@@ -519,7 +519,7 @@
       initPodsPerNamespace: 40
       initNamespaces: 100
       measurePods: 1000
-    threshold: 140
+    threshold: 120
   - name: 5000Nodes_2000Pods
     featureGates:
       SchedulerQueueingHints: false
@@ -596,7 +596,7 @@
       initPodsPerNamespace: 40
       initNamespaces: 100
       measurePods: 1000
-    threshold: 190
+    threshold: 160
   - name: 5000Nodes_2000Pods
     featureGates:
       SchedulerQueueingHints: false

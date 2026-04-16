@@ -49,6 +49,7 @@
         initPods: 5000
         measurePods: 5000
         numNodeDeclaredFeatures: 20
+      threshold: 890
     - name: 5000Nodes40DeclaredFeatures
       labels: [performance]
       featureGates:
@@ -58,6 +59,7 @@
         initPods: 5000
         measurePods: 5000
         numNodeDeclaredFeatures: 40
+      threshold: 890
     - name: 5000Nodes100DeclaredFeatures
       labels: [performance]
       featureGates:
@@ -67,3 +69,4 @@
         initPods: 5000
         measurePods: 5000
         numNodeDeclaredFeatures: 100
+      threshold: 890
