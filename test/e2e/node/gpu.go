@@ -222,9 +222,9 @@ else
 	# skipped on non-x86_64.
 	DEBIAN_FRONTEND=noninteractive apt-get install -y -o Acquire::Retries=5 git
 	git clone --depth 1 --branch v12.5 https://github.com/NVIDIA/cuda-samples.git /tmp/cuda-samples
-	cd /tmp/cuda-samples/Samples/1_Utilities/deviceQuery  && make && ./deviceQuery
-	cd /tmp/cuda-samples/Samples/0_Introduction/vectorAdd && make && ./vectorAdd
-	cd /tmp/cuda-samples/Samples/1_Utilities/bandwidthTest && make && ./bandwidthTest
+	(cd /tmp/cuda-samples/Samples/1_Utilities/deviceQuery  && make && ./deviceQuery)
+	(cd /tmp/cuda-samples/Samples/0_Introduction/vectorAdd && make && ./vectorAdd)
+	(cd /tmp/cuda-samples/Samples/1_Utilities/bandwidthTest && make && ./bandwidthTest)
 fi
 `,
 					},
