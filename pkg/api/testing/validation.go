@@ -291,11 +291,7 @@ func VerifyValidationEquivalence(t *testing.T, ctx context.Context, obj runtime.
 	verifyValidationEquivalence(t, expectedErrs, func(c context.Context) field.ErrorList {
 		errs := strategy.Validate(c, obj)
 		if dv, ok := strategy.(rest.DeclarativeValidationStrategy); ok {
-			var config rest.DeclarativeValidationConfig
-			if vc, ok := strategy.(rest.DeclarativeValidationConfigurer); ok {
-				config = vc.DeclarativeValidationConfig(c, obj, nil)
-			}
-			errs = dv.ValidateDeclaratively(c, obj, nil, errs, operation.Create, config)
+			errs = dv.ValidateDeclaratively(c, obj, nil, errs, operation.Create, dv.DeclarativeValidationConfig(c, obj, nil))
 		}
 		return errs
 	}, ctx, opts)
@@ -330,11 +326,7 @@ func VerifyUpdateValidationEquivalence(t *testing.T, ctx context.Context, obj, o
 	verifyValidationEquivalence(t, expectedErrs, func(c context.Context) field.ErrorList {
 		errs := strategy.ValidateUpdate(c, obj, old)
 		if dv, ok := strategy.(rest.DeclarativeValidationStrategy); ok {
-			var config rest.DeclarativeValidationConfig
-			if vc, ok := strategy.(rest.DeclarativeValidationConfigurer); ok {
-				config = vc.DeclarativeValidationConfig(c, obj, old)
-			}
-			errs = dv.ValidateDeclaratively(c, obj, old, errs, operation.Update, config)
+			errs = dv.ValidateDeclaratively(c, obj, old, errs, operation.Update, dv.DeclarativeValidationConfig(c, obj, old))
 		}
 		return errs
 	}, ctx, opts)
