@@ -75,17 +75,6 @@ func (*podGroupStrategy) Validate(ctx context.Context, obj runtime.Object) field
 	return validation.ValidatePodGroup(podGroup)
 }
 
-// DeclarativeValidationConfig implements rest.DeclarativeValidationConfigurer to supply declarative
-// validation options to the generic BeforeCreate/BeforeUpdate code path.
-//
-// TODO: Behavior drift introduced when wiring declarative validation
-// universally: the status substrategy embeds *podGroupStrategy and now
-// inherits this method, so status updates pick up the full feature-gated
-// options list and rest.WithDeclarativeEnforcement(). Previously the
-// pre-migration inline call on the status subresource only passed
-// WithDeclarativeEnforcement() (no options list). The change is additive but
-// should be reviewed; if the status subresource should not see these
-// options, override ValidationConfig on podGroupStatusStrategy.
 func (*podGroupStrategy) DeclarativeValidationConfig(ctx context.Context, obj, oldObj runtime.Object) rest.DeclarativeValidationConfig {
 	opts := []string{}
 	if utilfeature.DefaultFeatureGate.Enabled(features.TopologyAwareWorkloadScheduling) {
@@ -97,7 +86,7 @@ func (*podGroupStrategy) DeclarativeValidationConfig(ctx context.Context, obj, o
 	if utilfeature.DefaultFeatureGate.Enabled(features.WorkloadAwarePreemption) {
 		opts = append(opts, string(features.WorkloadAwarePreemption))
 	}
-	return rest.DeclarativeValidationConfig{DeclarativeEnforcement: true, Options: opts}
+	return rest.DeclarativeValidationConfig{Options: opts}
 }
 
 func (*podGroupStrategy) WarningsOnCreate(ctx context.Context, obj runtime.Object) []string {

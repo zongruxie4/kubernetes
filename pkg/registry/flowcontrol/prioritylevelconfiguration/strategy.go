@@ -121,7 +121,6 @@ func (priorityLevelConfigurationStrategy) AllowCreateOnUpdate() bool {
 // ValidateUpdate is the default update validation for an end user.
 func (priorityLevelConfigurationStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) field.ErrorList {
 	newPL := obj.(*flowcontrol.PriorityLevelConfiguration)
-	_ = old.(*flowcontrol.PriorityLevelConfiguration)
 
 	// 1.28 server is not aware of the roundtrip annotation, and will
 	// default any 0 value persisted (for the NominalConcurrencyShares
