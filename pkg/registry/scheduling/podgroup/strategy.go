@@ -86,7 +86,7 @@ func (*podGroupStrategy) DeclarativeValidationConfig(ctx context.Context, obj, o
 	if utilfeature.DefaultFeatureGate.Enabled(features.WorkloadAwarePreemption) {
 		opts = append(opts, string(features.WorkloadAwarePreemption))
 	}
-	return rest.DeclarativeValidationConfig{Options: opts}
+	return rest.DeclarativeValidationConfig{Options: opts, DeclarativeEnforcement: true}
 }
 
 func (*podGroupStrategy) WarningsOnCreate(ctx context.Context, obj runtime.Object) []string {
