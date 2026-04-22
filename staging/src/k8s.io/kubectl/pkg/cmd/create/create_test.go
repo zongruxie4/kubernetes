@@ -158,7 +158,7 @@ func TestEditOptionsInitializedByComplete(t *testing.T) {
 
 	ioStreams, _, _, _ := genericiooptions.NewTestIOStreams()
 	cmd := NewCmdCreate(tf, ioStreams)
-	cmd.Flags().Set("filename", "../../../testdata/redis-master-controller.yaml")
+	cmd.Flags().Set("filename", "../../../testdata/redis-master-controller.yaml") // nolint:errcheck
 
 	t.Run("editOptions is nil when EditBeforeCreate is false", func(t *testing.T) {
 		o := NewCreateOptions(ioStreams)
