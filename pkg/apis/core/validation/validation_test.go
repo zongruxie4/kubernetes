@@ -24895,7 +24895,6 @@ func TestCrossNamespaceSource(t *testing.T) {
 
 	for _, tc := range testCases {
 		featuregatetesting.SetFeatureGatesDuringTest(t, utilfeature.DefaultFeatureGate, featuregatetesting.FeatureOverrides{
-			features.AnyVolumeDataSource:            true,
 			features.CrossNamespaceVolumeDataSource: true,
 		})
 		opts := PersistentVolumeClaimSpecValidationOptions{}
