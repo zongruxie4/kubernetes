@@ -47,11 +47,7 @@ var _ = SIGDescribe(feature.HPA, "Horizontal pod autoscaling (external metrics)"
 	ginkgo.BeforeEach(func(ctx context.Context) {
 		ginkgo.By("Setting up the external metrics server")
 		metricsController = e2eautoscaling.RunExternalMetricsServer(ctx, f.ClientSet, f.Namespace.Name, "external-metrics-server", nil)
-	})
-	ginkgo.AfterEach(func(ctx context.Context) {
-		if metricsController != nil {
-			e2eautoscaling.CleanupExternalMetricsServer(ctx, f.ClientSet, f.Namespace.Name, "external-metrics-server")
-		}
+		ginkgo.DeferCleanup(e2eautoscaling.CleanupExternalMetricsServer, f.ClientSet, f.Namespace.Name, "external-metrics-server")
 	})
 
 	ginkgo.It("should scale up and down based on external metric value", func(ctx context.Context) {
@@ -76,6 +72,7 @@ var _ = SIGDescribe(feature.HPA, "Horizontal pod autoscaling (external metrics)"
 		}
 		// since queue_messages_ready default is 100 this will cause the HPA to scale out till max replicas
 		hpa := e2eautoscaling.CreateExternalHorizontalPodAutoscalerWithBehavior(ctx, rc, metricName, nil, v2.ValueMetricType, 50, int32(initPods), 3, behavior)
+		ginkgo.DeferCleanup(e2eautoscaling.DeleteHorizontalPodAutoscaler, rc, hpa.Name)
 
 		ginkgo.By("Waiting for HPA to scale up to max replicas")
 		rc.WaitForReplicas(ctx, int(hpa.Spec.MaxReplicas), maxResourceConsumerDelay+waitBuffer)
@@ -86,7 +83,6 @@ var _ = SIGDescribe(feature.HPA, "Horizontal pod autoscaling (external metrics)"
 
 		ginkgo.By("Waiting for HPA to scale down to min replicas")
 		rc.WaitForReplicas(ctx, int(*hpa.Spec.MinReplicas), maxResourceConsumerDelay+waitBuffer)
-		ginkgo.DeferCleanup(e2eautoscaling.DeleteHorizontalPodAutoscaler, rc, hpa.Name)
 	})
 })
 
@@ -106,11 +102,7 @@ var _ = SIGDescribe(feature.HPA, framework.WithFeatureGate(features.HPAScaleToZe
 		ginkgo.BeforeEach(func(ctx context.Context) {
 			ginkgo.By("Setting up the external metrics server")
 			metricsController = e2eautoscaling.RunExternalMetricsServer(ctx, f.ClientSet, f.Namespace.Name, "external-metrics-server", nil)
-		})
-		ginkgo.AfterEach(func(ctx context.Context) {
-			if metricsController != nil {
-				e2eautoscaling.CleanupExternalMetricsServer(ctx, f.ClientSet, f.Namespace.Name, "external-metrics-server")
-			}
+			ginkgo.DeferCleanup(e2eautoscaling.CleanupExternalMetricsServer, f.ClientSet, f.Namespace.Name, "external-metrics-server")
 		})
 
 		ginkgo.It("should scale down to zero and back up based on external metric value", func(ctx context.Context) {
