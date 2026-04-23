@@ -55,6 +55,7 @@ type CreateOptions struct {
 	DryRunStrategy cmdutil.DryRunStrategy
 
 	ValidationDirective string
+	CreateAnnotation    bool
 
 	fieldManager string
 
@@ -63,8 +64,9 @@ type CreateOptions struct {
 	EditBeforeCreate bool
 	Raw              string
 
-	Recorder genericclioptions.Recorder
-	PrintObj func(obj kruntime.Object) error
+	Recorder    genericclioptions.Recorder
+	PrintObj    func(obj kruntime.Object) error
+	editOptions *editor.EditOptions
 
 	genericiooptions.IOStreams
 }
@@ -111,7 +113,7 @@ func NewCmdCreate(f cmdutil.Factory, ioStreams genericiooptions.IOStreams) *cobr
 		Run: func(cmd *cobra.Command, args []string) {
 			cmdutil.CheckErr(o.Complete(f, cmd, args))
 			cmdutil.CheckErr(o.Validate())
-			cmdutil.CheckErr(o.RunCreate(f, cmd))
+			cmdutil.CheckErr(o.RunCreate(f))
 		},
 	}
 
@@ -209,6 +211,24 @@ func (o *CreateOptions) Complete(f cmdutil.Factory, cmd *cobra.Command, args []s
 		return err
 	}
 
+	o.CreateAnnotation = cmdutil.GetFlagBool(cmd, cmdutil.ApplyAnnotationsFlag)
+
+	if o.EditBeforeCreate {
+		editOptions := editor.NewEditOptions(editor.EditBeforeCreateMode, o.IOStreams)
+		editOptions.FilenameOptions = o.FilenameOptions
+		editOptions.ValidateOptions = cmdutil.ValidateOptions{
+			ValidationDirective: o.ValidationDirective,
+		}
+		editOptions.PrintFlags = o.PrintFlags
+		editOptions.ApplyAnnotation = o.CreateAnnotation
+		editOptions.RecordFlags = o.RecordFlags
+		editOptions.FieldManager = "kubectl-create"
+		if err := editOptions.Complete(f, []string{}, cmd); err != nil {
+			return err
+		}
+		o.editOptions = editOptions
+	}
+
 	printer, err := o.PrintFlags.ToPrinter()
 	if err != nil {
 		return err
@@ -222,7 +242,14 @@ func (o *CreateOptions) Complete(f cmdutil.Factory, cmd *cobra.Command, args []s
 }
 
 // RunCreate performs the creation
-func (o *CreateOptions) RunCreate(f cmdutil.Factory, cmd *cobra.Command) error {
+func (o *CreateOptions) RunCreate(f cmdutil.Factory) error {
+	if o.EditBeforeCreate {
+		if o.editOptions == nil {
+			return fmt.Errorf("EditBeforeCreate requires edit options to be initialized via Complete()")
+		}
+		return o.editOptions.Run()
+	}
+
 	// raw only makes sense for a single file resource multiple objects aren't likely to do what you want.
 	// the validator enforces this, so
 	if len(o.Raw) > 0 {
@@ -231,10 +258,6 @@ func (o *CreateOptions) RunCreate(f cmdutil.Factory, cmd *cobra.Command) error {
 			return err
 		}
 		return rawhttp.RawPost(restClient, o.IOStreams, o.Raw, o.FilenameOptions.Filenames[0])
-	}
-
-	if o.EditBeforeCreate {
-		return RunEditOnCreate(f, o.PrintFlags, o.RecordFlags, o.IOStreams, cmd, &o.FilenameOptions, o.fieldManager)
 	}
 
 	schema, err := f.Validator(o.ValidationDirective)
@@ -266,7 +289,7 @@ func (o *CreateOptions) RunCreate(f cmdutil.Factory, cmd *cobra.Command) error {
 		if err != nil {
 			return err
 		}
-		if err := util.CreateOrUpdateAnnotation(cmdutil.GetFlagBool(cmd, cmdutil.ApplyAnnotationsFlag), info.Object, scheme.DefaultJSONEncoder()); err != nil {
+		if err := util.CreateOrUpdateAnnotation(o.CreateAnnotation, info.Object, scheme.DefaultJSONEncoder()); err != nil {
 			return cmdutil.AddSourceToErr("creating", info.Source, err)
 		}
 
@@ -298,29 +321,6 @@ func (o *CreateOptions) RunCreate(f cmdutil.Factory, cmd *cobra.Command) error {
 		return fmt.Errorf("no objects passed to create")
 	}
 	return nil
-}
-
-// RunEditOnCreate performs edit on creation
-func RunEditOnCreate(f cmdutil.Factory, printFlags *genericclioptions.PrintFlags, recordFlags *genericclioptions.RecordFlags, ioStreams genericiooptions.IOStreams, cmd *cobra.Command, options *resource.FilenameOptions, fieldManager string) error {
-	editOptions := editor.NewEditOptions(editor.EditBeforeCreateMode, ioStreams)
-	editOptions.FilenameOptions = *options
-	validationDirective, err := cmdutil.GetValidationDirective(cmd)
-	if err != nil {
-		return err
-	}
-	editOptions.ValidateOptions = cmdutil.ValidateOptions{
-		ValidationDirective: string(validationDirective),
-	}
-	editOptions.PrintFlags = printFlags
-	editOptions.ApplyAnnotation = cmdutil.GetFlagBool(cmd, cmdutil.ApplyAnnotationsFlag)
-	editOptions.RecordFlags = recordFlags
-	editOptions.FieldManager = "kubectl-create"
-
-	err = editOptions.Complete(f, []string{}, cmd)
-	if err != nil {
-		return err
-	}
-	return editOptions.Run()
 }
 
 // NameFromCommandArgs is a utility function for commands that assume the first argument is a resource name
