@@ -24,7 +24,6 @@ import (
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -354,7 +353,7 @@ func TestReentrantRollback(t *testing.T) {
 
 	d := newDeployment("foo", 1, nil, nil, nil, map[string]string{"foo": "bar"})
 	d.Annotations = map[string]string{util.RevisionAnnotation: "2"}
-	setRollbackTo(d, &extensions.RollbackConfig{Revision: 0})
+	setRollbackTo(d, new(int64))
 	f.dLister = append(f.dLister, d)
 
 	rs1 := newReplicaSet(d, "deploymentrs-old", 0)

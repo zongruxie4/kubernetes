@@ -595,7 +595,6 @@ func (dc *DeploymentController) syncDeployment(ctx context.Context, key string) 
 	}
 
 	// Deep-copy otherwise we are mutating our cache.
-	// TODO: Deep-copy only when needed.
 	d := deployment.DeepCopy()
 
 	everything := metav1.LabelSelector{}
@@ -611,15 +610,6 @@ func (dc *DeploymentController) syncDeployment(ctx context.Context, key string) 
 	// List ReplicaSets owned by this Deployment, while reconciling ControllerRef
 	// through adoption/orphaning.
 	rsList, err := dc.getReplicaSetsForDeployment(ctx, d)
-	if err != nil {
-		return err
-	}
-	// List all Pods owned by this Deployment, grouped by their ReplicaSet.
-	// Current uses of the podMap are:
-	//
-	// * check if a Pod is labeled correctly with the pod-template-hash label.
-	// * check that no old Pods are running in the middle of Recreate Deployments.
-	podMap, err := dc.getPodMapForDeployment(d, rsList)
 	if err != nil {
 		return err
 	}
@@ -656,6 +646,12 @@ func (dc *DeploymentController) syncDeployment(ctx context.Context, key string) 
 
 	switch d.Spec.Strategy.Type {
 	case apps.RecreateDeploymentStrategyType:
+		// List all Pods owned by this Deployment, grouped by their ReplicaSet, to
+		// check that no old Pods are running in the middle of a Recreate rollout.
+		podMap, err := dc.getPodMapForDeployment(d, rsList)
+		if err != nil {
+			return err
+		}
 		return dc.rolloutRecreate(ctx, d, rsList, podMap)
 	case apps.RollingUpdateDeploymentStrategyType:
 		return dc.rolloutRolling(ctx, d, rsList)
