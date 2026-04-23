@@ -17,29 +17,20 @@ limitations under the License.
 package create
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"net/url"
 	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"k8s.io/klog/v2"
 
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kruntime "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/genericiooptions"
-	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/cli-runtime/pkg/resource"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/klog/v2"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	"k8s.io/kubectl/pkg/cmd/util/editor"
-	"k8s.io/kubectl/pkg/generate"
 	"k8s.io/kubectl/pkg/rawhttp"
 	"k8s.io/kubectl/pkg/scheme"
 	"k8s.io/kubectl/pkg/util"
@@ -334,137 +325,4 @@ func NameFromCommandArgs(cmd *cobra.Command, args []string) (string, error) {
 		return "", cmdutil.UsageErrorf(cmd, "exactly one NAME is required, got %d", argsLen)
 	}
 	return args[0], nil
-}
-
-// CreateSubcommandOptions is an options struct to support create subcommands
-type CreateSubcommandOptions struct {
-	// PrintFlags holds options necessary for obtaining a printer
-	PrintFlags *genericclioptions.PrintFlags
-	// Name of resource being created
-	Name string
-	// StructuredGenerator is the resource generator for the object being created
-	StructuredGenerator generate.StructuredGenerator
-	DryRunStrategy      cmdutil.DryRunStrategy
-	CreateAnnotation    bool
-	FieldManager        string
-	ValidationDirective string
-
-	Namespace        string
-	EnforceNamespace bool
-
-	Mapper        meta.RESTMapper
-	DynamicClient dynamic.Interface
-
-	PrintObj printers.ResourcePrinterFunc
-
-	genericiooptions.IOStreams
-}
-
-// NewCreateSubcommandOptions returns initialized CreateSubcommandOptions
-func NewCreateSubcommandOptions(ioStreams genericiooptions.IOStreams) *CreateSubcommandOptions {
-	return &CreateSubcommandOptions{
-		PrintFlags: genericclioptions.NewPrintFlags("created").WithTypeSetter(scheme.Scheme),
-		IOStreams:  ioStreams,
-	}
-}
-
-// Complete completes all the required options
-func (o *CreateSubcommandOptions) Complete(f cmdutil.Factory, cmd *cobra.Command, args []string, generator generate.StructuredGenerator) error {
-	name, err := NameFromCommandArgs(cmd, args)
-	if err != nil {
-		return err
-	}
-
-	o.Name = name
-	o.StructuredGenerator = generator
-	o.DryRunStrategy, err = cmdutil.GetDryRunStrategy(cmd)
-	if err != nil {
-		return err
-	}
-	o.CreateAnnotation = cmdutil.GetFlagBool(cmd, cmdutil.ApplyAnnotationsFlag)
-
-	cmdutil.PrintFlagsWithDryRunStrategy(o.PrintFlags, o.DryRunStrategy)
-	printer, err := o.PrintFlags.ToPrinter()
-	if err != nil {
-		return err
-	}
-
-	o.ValidationDirective, err = cmdutil.GetValidationDirective(cmd)
-	if err != nil {
-		return err
-	}
-
-	o.PrintObj = func(obj kruntime.Object, out io.Writer) error {
-		return printer.PrintObj(obj, out)
-	}
-
-	o.Namespace, o.EnforceNamespace, err = f.ToRawKubeConfigLoader().Namespace()
-	if err != nil {
-		return err
-	}
-
-	o.DynamicClient, err = f.DynamicClient()
-	if err != nil {
-		return err
-	}
-
-	o.Mapper, err = f.ToRESTMapper()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Run executes a create subcommand using the specified options
-func (o *CreateSubcommandOptions) Run() error {
-	obj, err := o.StructuredGenerator.StructuredGenerate()
-	if err != nil {
-		return err
-	}
-	if err := util.CreateOrUpdateAnnotation(o.CreateAnnotation, obj, scheme.DefaultJSONEncoder()); err != nil {
-		return err
-	}
-	if o.DryRunStrategy != cmdutil.DryRunClient {
-		// create subcommands have compiled knowledge of things they create, so type them directly
-		gvks, _, err := scheme.Scheme.ObjectKinds(obj)
-		if err != nil {
-			return err
-		}
-		gvk := gvks[0]
-		mapping, err := o.Mapper.RESTMapping(schema.GroupKind{Group: gvk.Group, Kind: gvk.Kind}, gvk.Version)
-		if err != nil {
-			return err
-		}
-
-		asUnstructured := &unstructured.Unstructured{}
-		if err := scheme.Scheme.Convert(obj, asUnstructured, nil); err != nil {
-			return err
-		}
-		if mapping.Scope.Name() == meta.RESTScopeNameRoot {
-			o.Namespace = ""
-		}
-		createOptions := metav1.CreateOptions{}
-		if o.FieldManager != "" {
-			createOptions.FieldManager = o.FieldManager
-		}
-		createOptions.FieldValidation = o.ValidationDirective
-
-		if o.DryRunStrategy == cmdutil.DryRunServer {
-			createOptions.DryRun = []string{metav1.DryRunAll}
-		}
-		actualObject, err := o.DynamicClient.Resource(mapping.Resource).Namespace(o.Namespace).Create(context.TODO(), asUnstructured, createOptions)
-		if err != nil {
-			return err
-		}
-
-		// ensure we pass a versioned object to the printer
-		obj = actualObject
-	} else {
-		if meta, err := meta.Accessor(obj); err == nil && o.EnforceNamespace {
-			meta.SetNamespace(o.Namespace)
-		}
-	}
-
-	return o.PrintObj(obj, o.Out)
 }
