@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"k8s.io/component-base/metrics"
-	"k8s.io/kubernetes/test/instrumentation/internal/metric"
+	"k8s.io/kubernetes/hack/tools/instrumentation/internal/metric"
 )
 
 func decodeMetricCalls(fs []*ast.CallExpr, metricsImportName string, variables map[string]ast.Expr) ([]metric.Metric, []error) {

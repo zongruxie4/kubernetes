@@ -24,7 +24,7 @@ import (
 	flag "github.com/spf13/pflag"
 	yaml "go.yaml.in/yaml/v2"
 
-	"k8s.io/kubernetes/test/instrumentation/internal/metric"
+	"k8s.io/kubernetes/hack/tools/instrumentation/internal/metric"
 )
 
 func main() {

@@ -29,7 +29,7 @@ import (
 
 	yaml "go.yaml.in/yaml/v2"
 
-	"k8s.io/kubernetes/test/instrumentation/internal/metric"
+	"k8s.io/kubernetes/hack/tools/instrumentation/internal/metric"
 )
 
 var (
@@ -134,7 +134,7 @@ func main() {
 	flag.StringVar(&minor, "minor", "", "k8s minor version")
 	flag.Parse()
 	println(major, minor)
-	dat, err := os.ReadFile("test/instrumentation/documentation/documentation-list.yaml")
+	dat, err := os.ReadFile("hack/tools/instrumentation/documentation/documentation-list.yaml")
 	if err == nil {
 		var parsedMetrics []metric.Metric
 		err = yaml.Unmarshal(dat, &parsedMetrics)
