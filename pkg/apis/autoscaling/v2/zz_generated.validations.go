@@ -119,12 +119,18 @@ func Validate_HorizontalPodAutoscalerSpec(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.IfOption(ctx, op, fldPath, obj, oldObj, "HPAScaleToZero", true, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *int32) field.ErrorList {
-				return validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)
-			}).MarkAlpha()...)
-			errs = append(errs, validate.IfOption(ctx, op, fldPath, obj, oldObj, "HPAScaleToZero", false, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *int32) field.ErrorList {
-				return validate.Minimum(ctx, op, fldPath, obj, oldObj, 1)
-			}).MarkAlpha()...)
+			if e := validate.IfOption(ctx, op, fldPath, obj, oldObj, "HPAScaleToZero", true,
+				func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *int32) field.ErrorList {
+					return validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)
+				}).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
+			if e := validate.IfOption(ctx, op, fldPath, obj, oldObj, "HPAScaleToZero", false,
+				func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *int32) field.ErrorList {
+					return validate.Minimum(ctx, op, fldPath, obj, oldObj, 1)
+				}).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -154,7 +160,9 @@ func Validate_HorizontalPodAutoscalerSpec(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 1).MarkAlpha()...)
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 1).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,

@@ -134,7 +134,9 @@ func Validate_AllocatedDeviceStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.UUID(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.UUID(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -188,7 +190,9 @@ func Validate_AllocationConfigSource(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *resourcev1beta1.AllocationConfigSource) (errs field.ErrorList) {
 
-	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForAllocationConfigSource, nil).MarkAlpha()...)
+	if e := validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForAllocationConfigSource, nil).MarkAlpha(); len(e) != 0 {
+		errs = append(errs, e...)
+	}
 
 	return errs
 }
@@ -252,7 +256,9 @@ func Validate_BasicDevice(
 				return // do not proceed
 			}
 			// iterate the map and call the value type's validation function
-			errs = append(errs, validate.EachMapVal(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual, Validate_DeviceAttribute)...)
+			if e := validate.EachMapVal(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual, Validate_DeviceAttribute); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -288,13 +294,19 @@ func Validate_BasicDevice(
 				return // do not proceed
 			}
 			// lists with map semantics require unique keys
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.DeviceCounterConsumption, b resourcev1beta1.DeviceCounterConsumption) bool {
-				return a.CounterSet == b.CounterSet
-			}).MarkAlpha()...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.DeviceCounterConsumption, b resourcev1beta1.DeviceCounterConsumption) bool {
+					return a.CounterSet == b.CounterSet
+				}).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.DeviceCounterConsumption, b resourcev1beta1.DeviceCounterConsumption) bool {
-				return a.CounterSet == b.CounterSet
-			}, validate.SemanticDeepEqual, Validate_DeviceCounterConsumption)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.DeviceCounterConsumption, b resourcev1beta1.DeviceCounterConsumption) bool {
+					return a.CounterSet == b.CounterSet
+				}, validate.SemanticDeepEqual, Validate_DeviceCounterConsumption); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -328,7 +340,9 @@ func Validate_BasicDevice(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceTaint)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceTaint); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -435,7 +449,9 @@ func Validate_CounterSet(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.ShortName(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.ShortName(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -465,7 +481,9 @@ func Validate_CounterSet(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.EachMapKey(ctx, op, fldPath, obj, oldObj, validate.ShortName).MarkAlpha()...)
+			if e := validate.EachMapKey(ctx, op, fldPath, obj, oldObj, validate.ShortName).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -580,7 +598,9 @@ func Validate_DeviceAllocationConfiguration(
 				return // do not proceed
 			}
 			// lists with set semantics require unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual).MarkAlpha()...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -623,7 +643,9 @@ func Validate_DeviceAllocationMode(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *resourcev1beta1.DeviceAllocationMode) (errs field.ErrorList) {
 
-	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceAllocationMode, nil).MarkAlpha()...)
+	if e := validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceAllocationMode, nil).MarkAlpha(); len(e) != 0 {
+		errs = append(errs, e...)
+	}
 
 	return errs
 }
@@ -658,7 +680,9 @@ func Validate_DeviceAllocationResult(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceRequestAllocationResult)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceRequestAllocationResult); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -692,7 +716,9 @@ func Validate_DeviceAllocationResult(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceAllocationConfiguration)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceAllocationConfiguration); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -713,47 +739,57 @@ func Validate_DeviceAttribute(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *resourcev1beta1.DeviceAttribute) (errs field.ErrorList) {
 
-	errs = append(errs, validate.Union(ctx, op, fldPath, obj, oldObj, unionMembershipFor_k8s_io_api_resource_v1beta1_DeviceAttribute_, func(obj *resourcev1beta1.DeviceAttribute) bool {
-		if obj == nil {
-			return false
-		}
-		return obj.IntValue != nil
-	}, func(obj *resourcev1beta1.DeviceAttribute) bool {
-		if obj == nil {
-			return false
-		}
-		return obj.BoolValue != nil
-	}, func(obj *resourcev1beta1.DeviceAttribute) bool {
-		if obj == nil {
-			return false
-		}
-		return obj.StringValue != nil
-	}, func(obj *resourcev1beta1.DeviceAttribute) bool {
-		if obj == nil {
-			return false
-		}
-		return obj.VersionValue != nil
-	}, func(obj *resourcev1beta1.DeviceAttribute) bool {
-		if obj == nil {
-			return false
-		}
-		return len(obj.IntValues) != 0
-	}, func(obj *resourcev1beta1.DeviceAttribute) bool {
-		if obj == nil {
-			return false
-		}
-		return len(obj.BoolValues) != 0
-	}, func(obj *resourcev1beta1.DeviceAttribute) bool {
-		if obj == nil {
-			return false
-		}
-		return len(obj.StringValues) != 0
-	}, func(obj *resourcev1beta1.DeviceAttribute) bool {
-		if obj == nil {
-			return false
-		}
-		return len(obj.VersionValues) != 0
-	}).MarkAlpha()...)
+	if e := validate.Union(ctx, op, fldPath, obj, oldObj, unionMembershipFor_k8s_io_api_resource_v1beta1_DeviceAttribute_,
+		func(obj *resourcev1beta1.DeviceAttribute) bool {
+			if obj == nil {
+				return false
+			}
+			return obj.IntValue != nil
+		},
+		func(obj *resourcev1beta1.DeviceAttribute) bool {
+			if obj == nil {
+				return false
+			}
+			return obj.BoolValue != nil
+		},
+		func(obj *resourcev1beta1.DeviceAttribute) bool {
+			if obj == nil {
+				return false
+			}
+			return obj.StringValue != nil
+		},
+		func(obj *resourcev1beta1.DeviceAttribute) bool {
+			if obj == nil {
+				return false
+			}
+			return obj.VersionValue != nil
+		},
+		func(obj *resourcev1beta1.DeviceAttribute) bool {
+			if obj == nil {
+				return false
+			}
+			return len(obj.IntValues) != 0
+		},
+		func(obj *resourcev1beta1.DeviceAttribute) bool {
+			if obj == nil {
+				return false
+			}
+			return len(obj.BoolValues) != 0
+		},
+		func(obj *resourcev1beta1.DeviceAttribute) bool {
+			if obj == nil {
+				return false
+			}
+			return len(obj.StringValues) != 0
+		},
+		func(obj *resourcev1beta1.DeviceAttribute) bool {
+			if obj == nil {
+				return false
+			}
+			return len(obj.VersionValues) != 0
+		}).MarkAlpha(); len(e) != 0 {
+		errs = append(errs, e...)
+	}
 
 	{ // field resourcev1beta1.DeviceAttribute.IntValue
 		fn := func(
@@ -1012,9 +1048,15 @@ func Validate_DeviceClaim(
 				return // do not proceed
 			}
 			// lists with map semantics require unique keys
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.DeviceRequest, b resourcev1beta1.DeviceRequest) bool { return a.Name == b.Name }).MarkAlpha()...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.DeviceRequest, b resourcev1beta1.DeviceRequest) bool { return a.Name == b.Name }).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.DeviceRequest, b resourcev1beta1.DeviceRequest) bool { return a.Name == b.Name }, validate.SemanticDeepEqual, Validate_DeviceRequest)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.DeviceRequest, b resourcev1beta1.DeviceRequest) bool { return a.Name == b.Name }, validate.SemanticDeepEqual, Validate_DeviceRequest); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1048,7 +1090,9 @@ func Validate_DeviceClaim(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceConstraint)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceConstraint); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1082,7 +1126,9 @@ func Validate_DeviceClaim(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceClaimConfiguration)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceClaimConfiguration); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1125,7 +1171,9 @@ func Validate_DeviceClaimConfiguration(
 				return // do not proceed
 			}
 			// lists with set semantics require unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual).MarkAlpha()...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1180,15 +1228,19 @@ func Validate_DeviceClass(
 				}
 			}
 			// call field-attached validations
-			func() { // cohort name
+			func() { // cohort = "name"
 				earlyReturn := false
-				if e := validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *v1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.OptionalValue).MarkAlpha(); len(e) != 0 {
+				if e := validate.Subfield(ctx, op, fldPath, obj, oldObj, "name",
+					func(o *v1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.OptionalValue).MarkAlpha(); len(e) != 0 {
 					earlyReturn = true
 				}
 				if earlyReturn {
 					return // do not proceed
 				}
-				errs = append(errs, validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *v1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.LongName).MarkAlpha()...)
+				if e := validate.Subfield(ctx, op, fldPath, obj, oldObj, "name",
+					func(o *v1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.LongName).MarkAlpha(); len(e) != 0 {
+					errs = append(errs, e...)
+				}
 			}()
 			return
 		}
@@ -1317,7 +1369,9 @@ func Validate_DeviceClassSpec(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceClassConfiguration)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceClassConfiguration); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1346,7 +1400,9 @@ func Validate_DeviceClassSpec(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.ExtendedResourceName(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.ExtendedResourceName(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1428,7 +1484,9 @@ func Validate_DeviceConstraint(
 				return // do not proceed
 			}
 			// lists with set semantics require unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual).MarkAlpha()...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1457,7 +1515,9 @@ func Validate_DeviceConstraint(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.ResourceFullyQualifiedName(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.ResourceFullyQualifiedName(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1497,7 +1557,9 @@ func Validate_DeviceCounterConsumption(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.ShortName(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.ShortName(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1527,7 +1589,9 @@ func Validate_DeviceCounterConsumption(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.EachMapKey(ctx, op, fldPath, obj, oldObj, validate.ShortName).MarkAlpha()...)
+			if e := validate.EachMapKey(ctx, op, fldPath, obj, oldObj, validate.ShortName).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1638,13 +1702,19 @@ func Validate_DeviceRequest(
 				return // do not proceed
 			}
 			// lists with map semantics require unique keys
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.DeviceSubRequest, b resourcev1beta1.DeviceSubRequest) bool {
-				return a.Name == b.Name
-			}).MarkAlpha()...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.DeviceSubRequest, b resourcev1beta1.DeviceSubRequest) bool {
+					return a.Name == b.Name
+				}).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.DeviceSubRequest, b resourcev1beta1.DeviceSubRequest) bool {
-				return a.Name == b.Name
-			}, validate.SemanticDeepEqual, Validate_DeviceSubRequest)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.DeviceSubRequest, b resourcev1beta1.DeviceSubRequest) bool {
+					return a.Name == b.Name
+				}, validate.SemanticDeepEqual, Validate_DeviceSubRequest); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1674,7 +1744,9 @@ func Validate_DeviceRequest(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceToleration)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceToleration); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1716,8 +1788,12 @@ func Validate_DeviceRequestAllocationResult(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
-			errs = append(errs, validate.MaxLength(ctx, op, fldPath, obj, oldObj, 63).MarkAlpha()...)
+			if e := validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
+			if e := validate.MaxLength(ctx, op, fldPath, obj, oldObj, 63).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1747,7 +1823,9 @@ func Validate_DeviceRequestAllocationResult(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.ResourcePoolName(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.ResourcePoolName(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1784,7 +1862,9 @@ func Validate_DeviceRequestAllocationResult(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceToleration)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceToleration); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1877,7 +1957,9 @@ func Validate_DeviceRequestAllocationResult(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.UUID(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.UUID(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -1919,7 +2001,9 @@ func Validate_DeviceSubRequest(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.LongName(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.LongName(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -2013,7 +2097,9 @@ func Validate_DeviceSubRequest(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceToleration)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_DeviceToleration); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -2079,7 +2165,9 @@ func Validate_DeviceTaintEffect(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *resourcev1beta1.DeviceTaintEffect) (errs field.ErrorList) {
 
-	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceTaintEffect, nil).MarkAlpha()...)
+	if e := validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceTaintEffect, nil).MarkAlpha(); len(e) != 0 {
+		errs = append(errs, e...)
+	}
 
 	return errs
 }
@@ -2109,7 +2197,9 @@ func Validate_DeviceToleration(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.LabelKey(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.LabelKey(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -2195,7 +2285,9 @@ func Validate_DeviceTolerationOperator(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *resourcev1beta1.DeviceTolerationOperator) (errs field.ErrorList) {
 
-	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceTolerationOperator, nil).MarkAlpha()...)
+	if e := validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceTolerationOperator, nil).MarkAlpha(); len(e) != 0 {
+		errs = append(errs, e...)
+	}
 
 	return errs
 }
@@ -2225,7 +2317,9 @@ func Validate_NetworkDeviceData(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.MaxBytes(ctx, op, fldPath, obj, oldObj, 256).MarkAlpha()...)
+			if e := validate.MaxBytes(ctx, op, fldPath, obj, oldObj, 256).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -2259,7 +2353,9 @@ func Validate_NetworkDeviceData(
 				return // do not proceed
 			}
 			// lists with set semantics require unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual).MarkAlpha()...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -2288,7 +2384,9 @@ func Validate_NetworkDeviceData(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.MaxBytes(ctx, op, fldPath, obj, oldObj, 128).MarkAlpha()...)
+			if e := validate.MaxBytes(ctx, op, fldPath, obj, oldObj, 128).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -2327,8 +2425,12 @@ func Validate_OpaqueDeviceConfiguration(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.MaxLength(ctx, op, fldPath, obj, oldObj, 63).MarkAlpha()...)
-			errs = append(errs, validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.MaxLength(ctx, op, fldPath, obj, oldObj, 63).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
+			if e := validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -2502,9 +2604,12 @@ func Validate_ResourceClaimStatus(
 				return // do not proceed
 			}
 			// lists with map semantics require unique keys
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.ResourceClaimConsumerReference, b resourcev1beta1.ResourceClaimConsumerReference) bool {
-				return a.UID == b.UID
-			}).MarkAlpha()...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.ResourceClaimConsumerReference, b resourcev1beta1.ResourceClaimConsumerReference) bool {
+					return a.UID == b.UID
+				}).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -2534,13 +2639,19 @@ func Validate_ResourceClaimStatus(
 				return // do not proceed
 			}
 			// lists with map semantics require unique keys
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.AllocatedDeviceStatus, b resourcev1beta1.AllocatedDeviceStatus) bool {
-				return a.Driver == b.Driver && a.Device == b.Device && a.Pool == b.Pool && ((a.ShareID == nil && b.ShareID == nil) || (a.ShareID != nil && b.ShareID != nil && *a.ShareID == *b.ShareID))
-			}).MarkAlpha()...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.AllocatedDeviceStatus, b resourcev1beta1.AllocatedDeviceStatus) bool {
+					return a.Driver == b.Driver && a.Device == b.Device && a.Pool == b.Pool && ((a.ShareID == nil && b.ShareID == nil) || (a.ShareID != nil && b.ShareID != nil && *a.ShareID == *b.ShareID))
+				}).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.AllocatedDeviceStatus, b resourcev1beta1.AllocatedDeviceStatus) bool {
-				return a.Driver == b.Driver && a.Device == b.Device && a.Pool == b.Pool && ((a.ShareID == nil && b.ShareID == nil) || (a.ShareID != nil && b.ShareID != nil && *a.ShareID == *b.ShareID))
-			}, validate.SemanticDeepEqual, Validate_AllocatedDeviceStatus)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.AllocatedDeviceStatus, b resourcev1beta1.AllocatedDeviceStatus) bool {
+					return a.Driver == b.Driver && a.Device == b.Device && a.Pool == b.Pool && ((a.ShareID == nil && b.ShareID == nil) || (a.ShareID != nil && b.ShareID != nil && *a.ShareID == *b.ShareID))
+				}, validate.SemanticDeepEqual, Validate_AllocatedDeviceStatus); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -2686,7 +2797,9 @@ func Validate_ResourceSliceSpec(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_Device)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_Device); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -2722,9 +2835,15 @@ func Validate_ResourceSliceSpec(
 				return // do not proceed
 			}
 			// lists with map semantics require unique keys
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.CounterSet, b resourcev1beta1.CounterSet) bool { return a.Name == b.Name }).MarkAlpha()...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.CounterSet, b resourcev1beta1.CounterSet) bool { return a.Name == b.Name }).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta1.CounterSet, b resourcev1beta1.CounterSet) bool { return a.Name == b.Name }, validate.SemanticDeepEqual, Validate_CounterSet)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj,
+				func(a resourcev1beta1.CounterSet, b resourcev1beta1.CounterSet) bool { return a.Name == b.Name }, validate.SemanticDeepEqual, Validate_CounterSet); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,

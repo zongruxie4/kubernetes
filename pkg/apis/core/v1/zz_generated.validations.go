@@ -78,15 +78,19 @@ func Validate_ReplicationController(
 				}
 			}
 			// call field-attached validations
-			func() { // cohort name
+			func() { // cohort = "name"
 				earlyReturn := false
-				if e := validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *metav1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.OptionalValue).MarkAlpha(); len(e) != 0 {
+				if e := validate.Subfield(ctx, op, fldPath, obj, oldObj, "name",
+					func(o *metav1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.OptionalValue).MarkAlpha(); len(e) != 0 {
 					earlyReturn = true
 				}
 				if earlyReturn {
 					return // do not proceed
 				}
-				errs = append(errs, validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *metav1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.LongName).MarkAlpha()...)
+				if e := validate.Subfield(ctx, op, fldPath, obj, oldObj, "name",
+					func(o *metav1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.LongName).MarkAlpha(); len(e) != 0 {
+					errs = append(errs, e...)
+				}
 			}()
 			return
 		}
@@ -150,7 +154,9 @@ func Validate_ReplicationControllerSpec(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0).MarkAlpha()...)
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 0).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -173,7 +179,9 @@ func Validate_ReplicationControllerSpec(
 				}
 			}
 			// call field-attached validations
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0).MarkAlpha()...)
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 0).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,

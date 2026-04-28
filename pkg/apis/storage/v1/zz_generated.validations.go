@@ -288,8 +288,12 @@ func Validate_VolumeAttachmentSpec(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
-			errs = append(errs, validate.MaxLength(ctx, op, fldPath, obj, oldObj, 63).MarkAlpha()...)
+			if e := validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
+			if e := validate.MaxLength(ctx, op, fldPath, obj, oldObj, 63).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,

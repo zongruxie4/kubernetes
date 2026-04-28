@@ -66,7 +66,9 @@ func Validate_AddressType(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *discoveryv1.AddressType) (errs field.ErrorList) {
 
-	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForAddressType, nil).MarkAlpha()...)
+	if e := validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForAddressType, nil).MarkAlpha(); len(e) != 0 {
+		errs = append(errs, e...)
+	}
 
 	return errs
 }
@@ -184,7 +186,9 @@ func Validate_EndpointSlice(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_Endpoint)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_Endpoint); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,

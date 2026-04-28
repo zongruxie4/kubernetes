@@ -120,21 +120,25 @@ func Validate_CertificateSigningRequestStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.ZeroOrOneOfUnion(ctx, op, fldPath, obj, oldObj, zeroOrOneOfMembershipFor_k8s_io_api_certificates_v1_CertificateSigningRequestStatus_conditions_, func(list []certificatesv1.CertificateSigningRequestCondition) bool {
-				for i := range list {
-					if list[i].Type == "Approved" {
-						return true
+			if e := validate.ZeroOrOneOfUnion(ctx, op, fldPath, obj, oldObj, zeroOrOneOfMembershipFor_k8s_io_api_certificates_v1_CertificateSigningRequestStatus_conditions_,
+				func(list []certificatesv1.CertificateSigningRequestCondition) bool {
+					for i := range list {
+						if list[i].Type == "Approved" {
+							return true
+						}
 					}
-				}
-				return false
-			}, func(list []certificatesv1.CertificateSigningRequestCondition) bool {
-				for i := range list {
-					if list[i].Type == "Denied" {
-						return true
+					return false
+				},
+				func(list []certificatesv1.CertificateSigningRequestCondition) bool {
+					for i := range list {
+						if list[i].Type == "Denied" {
+							return true
+						}
 					}
-				}
-				return false
-			}).MarkAlpha()...)
+					return false
+				}).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,

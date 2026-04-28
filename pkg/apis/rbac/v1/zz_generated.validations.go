@@ -131,7 +131,9 @@ func Validate_ClusterRole(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_PolicyRule)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_PolicyRule); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -174,7 +176,9 @@ func Validate_ClusterRoleBinding(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_Subject)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_Subject); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -280,7 +284,9 @@ func Validate_Role(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_PolicyRule)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_PolicyRule); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -322,7 +328,9 @@ func Validate_RoleBinding(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_Subject)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_Subject); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,

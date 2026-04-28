@@ -121,7 +121,9 @@ func Validate_RuntimeClassSpec(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.ShortName(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
+			if e := validate.ShortName(ctx, op, fldPath, obj, oldObj).MarkAlpha(); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,

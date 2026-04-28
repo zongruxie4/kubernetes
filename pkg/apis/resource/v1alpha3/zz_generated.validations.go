@@ -126,7 +126,9 @@ func Validate_DeviceTaintEffect(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *resourcev1alpha3.DeviceTaintEffect) (errs field.ErrorList) {
 
-	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceTaintEffect, nil)...)
+	if e := validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceTaintEffect, nil); len(e) != 0 {
+		errs = append(errs, e...)
+	}
 
 	return errs
 }
@@ -225,7 +227,9 @@ func Validate_PoolStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj)...)
+			if e := validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -255,7 +259,9 @@ func Validate_PoolStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.ResourcePoolName(ctx, op, fldPath, obj, oldObj)...)
+			if e := validate.ResourcePoolName(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -285,7 +291,9 @@ func Validate_PoolStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 0); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -314,7 +322,9 @@ func Validate_PoolStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 1)...)
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 1); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -343,7 +353,9 @@ func Validate_PoolStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 0); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -372,7 +384,9 @@ func Validate_PoolStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 0); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -401,7 +415,9 @@ func Validate_PoolStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 0); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -430,7 +446,9 @@ func Validate_PoolStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 0); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -459,7 +477,9 @@ func Validate_PoolStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.LongName(ctx, op, fldPath, obj, oldObj)...)
+			if e := validate.LongName(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -488,7 +508,9 @@ func Validate_PoolStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.MaxBytes(ctx, op, fldPath, obj, oldObj, 256)...)
+			if e := validate.MaxBytes(ctx, op, fldPath, obj, oldObj, 256); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -600,7 +622,9 @@ func Validate_ResourcePoolStatusRequestSpec(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj)...)
+			if e := validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -629,7 +653,9 @@ func Validate_ResourcePoolStatusRequestSpec(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.ResourcePoolName(ctx, op, fldPath, obj, oldObj)...)
+			if e := validate.ResourcePoolName(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -660,8 +686,12 @@ func Validate_ResourcePoolStatusRequestSpec(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.Maximum(ctx, op, fldPath, obj, oldObj, 1000)...)
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 1)...)
+			if e := validate.Maximum(ctx, op, fldPath, obj, oldObj, 1000); len(e) != 0 {
+				errs = append(errs, e...)
+			}
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 1); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -700,7 +730,9 @@ func Validate_ResourcePoolStatusRequestStatus(
 			if earlyReturn {
 				return // do not proceed
 			}
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
+			if e := validate.Minimum(ctx, op, fldPath, obj, oldObj, 0); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -734,7 +766,9 @@ func Validate_ResourcePoolStatusRequestStatus(
 				return // do not proceed
 			}
 			// iterate the list and call the type's validation function
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_PoolStatus)...)
+			if e := validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_PoolStatus); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
@@ -768,7 +802,10 @@ func Validate_ResourcePoolStatusRequestStatus(
 				return // do not proceed
 			}
 			// lists with map semantics require unique keys
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, func(a v1.Condition, b v1.Condition) bool { return a.Type == b.Type })...)
+			if e := validate.Unique(ctx, op, fldPath, obj, oldObj,
+				func(a v1.Condition, b v1.Condition) bool { return a.Type == b.Type }); len(e) != 0 {
+				errs = append(errs, e...)
+			}
 			return
 		}
 		oldVal := safe.Field(oldObj,
