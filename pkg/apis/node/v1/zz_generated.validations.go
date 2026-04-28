@@ -65,9 +65,11 @@ func Validate_RuntimeClass(
 	// field nodev1.RuntimeClass.TypeMeta has no validation
 	// field nodev1.RuntimeClass.ObjectMeta has no validation
 
-	// field nodev1.RuntimeClass.Handler
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field nodev1.RuntimeClass.Handler
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -87,7 +89,13 @@ func Validate_RuntimeClass(
 			}
 			errs = append(errs, validate.ShortName(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
 			return
-		}(fldPath.Child("handler"), &obj.Handler, safe.Field(oldObj, func(oldObj *nodev1.RuntimeClass) *string { return &oldObj.Handler }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *nodev1.RuntimeClass) *string {
+				return &oldObj.Handler
+			})
+		errs = append(errs, fn(fldPath.Child("handler"), &obj.Handler, oldVal, oldObj != nil)...)
+	}
 
 	// field nodev1.RuntimeClass.Overhead has no validation
 	// field nodev1.RuntimeClass.Scheduling has no validation

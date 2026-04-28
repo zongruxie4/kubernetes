@@ -82,9 +82,11 @@ func Validate_StorageClass(
 	// field storagev1.StorageClass.TypeMeta has no validation
 	// field storagev1.StorageClass.ObjectMeta has no validation
 
-	// field storagev1.StorageClass.Provisioner
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field storagev1.StorageClass.Provisioner
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -103,11 +105,19 @@ func Validate_StorageClass(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("provisioner"), &obj.Provisioner, safe.Field(oldObj, func(oldObj *storagev1.StorageClass) *string { return &oldObj.Provisioner }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *storagev1.StorageClass) *string {
+				return &oldObj.Provisioner
+			})
+		errs = append(errs, fn(fldPath.Child("provisioner"), &obj.Provisioner, oldVal, oldObj != nil)...)
+	}
 
-	// field storagev1.StorageClass.Parameters
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj map[string]string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field storagev1.StorageClass.Parameters
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj map[string]string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -125,11 +135,19 @@ func Validate_StorageClass(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("parameters"), obj.Parameters, safe.Field(oldObj, func(oldObj *storagev1.StorageClass) map[string]string { return oldObj.Parameters }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *storagev1.StorageClass) map[string]string {
+				return oldObj.Parameters
+			})
+		errs = append(errs, fn(fldPath.Child("parameters"), obj.Parameters, oldVal, oldObj != nil)...)
+	}
 
-	// field storagev1.StorageClass.ReclaimPolicy
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *corev1.PersistentVolumeReclaimPolicy, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field storagev1.StorageClass.ReclaimPolicy
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *corev1.PersistentVolumeReclaimPolicy,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -147,16 +165,22 @@ func Validate_StorageClass(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("reclaimPolicy"), obj.ReclaimPolicy, safe.Field(oldObj, func(oldObj *storagev1.StorageClass) *corev1.PersistentVolumeReclaimPolicy {
-			return oldObj.ReclaimPolicy
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *storagev1.StorageClass) *corev1.PersistentVolumeReclaimPolicy {
+				return oldObj.ReclaimPolicy
+			})
+		errs = append(errs, fn(fldPath.Child("reclaimPolicy"), obj.ReclaimPolicy, oldVal, oldObj != nil)...)
+	}
 
 	// field storagev1.StorageClass.MountOptions has no validation
 	// field storagev1.StorageClass.AllowVolumeExpansion has no validation
 
-	// field storagev1.StorageClass.VolumeBindingMode
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *storagev1.VolumeBindingMode, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field storagev1.StorageClass.VolumeBindingMode
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *storagev1.VolumeBindingMode,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -174,7 +198,13 @@ func Validate_StorageClass(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("volumeBindingMode"), obj.VolumeBindingMode, safe.Field(oldObj, func(oldObj *storagev1.StorageClass) *storagev1.VolumeBindingMode { return oldObj.VolumeBindingMode }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *storagev1.StorageClass) *storagev1.VolumeBindingMode {
+				return oldObj.VolumeBindingMode
+			})
+		errs = append(errs, fn(fldPath.Child("volumeBindingMode"), obj.VolumeBindingMode, oldVal, oldObj != nil)...)
+	}
 
 	// field storagev1.StorageClass.AllowedTopologies has no validation
 	return errs
@@ -189,9 +219,11 @@ func Validate_VolumeAttachment(
 	// field storagev1.VolumeAttachment.TypeMeta has no validation
 	// field storagev1.VolumeAttachment.ObjectMeta has no validation
 
-	// field storagev1.VolumeAttachment.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *storagev1.VolumeAttachmentSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field storagev1.VolumeAttachment.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *storagev1.VolumeAttachmentSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -208,7 +240,13 @@ func Validate_VolumeAttachment(
 			// call the type's validation function
 			errs = append(errs, Validate_VolumeAttachmentSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *storagev1.VolumeAttachment) *storagev1.VolumeAttachmentSpec { return &oldObj.Spec }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *storagev1.VolumeAttachment) *storagev1.VolumeAttachmentSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	// field storagev1.VolumeAttachment.Status has no validation
 	return errs
@@ -220,9 +258,11 @@ func Validate_VolumeAttachmentSpec(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *storagev1.VolumeAttachmentSpec) (errs field.ErrorList) {
 
-	// field storagev1.VolumeAttachmentSpec.Attacher
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field storagev1.VolumeAttachmentSpec.Attacher
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -239,7 +279,13 @@ func Validate_VolumeAttachmentSpec(
 			errs = append(errs, validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
 			errs = append(errs, validate.MaxLength(ctx, op, fldPath, obj, oldObj, 63).MarkAlpha()...)
 			return
-		}(fldPath.Child("attacher"), &obj.Attacher, safe.Field(oldObj, func(oldObj *storagev1.VolumeAttachmentSpec) *string { return &oldObj.Attacher }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *storagev1.VolumeAttachmentSpec) *string {
+				return &oldObj.Attacher
+			})
+		errs = append(errs, fn(fldPath.Child("attacher"), &obj.Attacher, oldVal, oldObj != nil)...)
+	}
 
 	// field storagev1.VolumeAttachmentSpec.Source has no validation
 	// field storagev1.VolumeAttachmentSpec.NodeName has no validation

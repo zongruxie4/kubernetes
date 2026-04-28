@@ -85,9 +85,11 @@ func Validate_LimitResponse(
 			}},
 	})...)
 
-	// field flowcontrolv1beta1.LimitResponse.Type
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *flowcontrolv1beta1.LimitResponseType, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field flowcontrolv1beta1.LimitResponse.Type
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *flowcontrolv1beta1.LimitResponseType,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -102,13 +104,19 @@ func Validate_LimitResponse(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("type"), &obj.Type, safe.Field(oldObj, func(oldObj *flowcontrolv1beta1.LimitResponse) *flowcontrolv1beta1.LimitResponseType {
-			return &oldObj.Type
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *flowcontrolv1beta1.LimitResponse) *flowcontrolv1beta1.LimitResponseType {
+				return &oldObj.Type
+			})
+		errs = append(errs, fn(fldPath.Child("type"), &obj.Type, oldVal, oldObj != nil)...)
+	}
 
-	// field flowcontrolv1beta1.LimitResponse.Queuing
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *flowcontrolv1beta1.QueuingConfiguration, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field flowcontrolv1beta1.LimitResponse.Queuing
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *flowcontrolv1beta1.QueuingConfiguration,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -122,9 +130,13 @@ func Validate_LimitResponse(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("queuing"), obj.Queuing, safe.Field(oldObj, func(oldObj *flowcontrolv1beta1.LimitResponse) *flowcontrolv1beta1.QueuingConfiguration {
-			return oldObj.Queuing
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *flowcontrolv1beta1.LimitResponse) *flowcontrolv1beta1.QueuingConfiguration {
+				return oldObj.Queuing
+			})
+		errs = append(errs, fn(fldPath.Child("queuing"), obj.Queuing, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -137,9 +149,11 @@ func Validate_LimitedPriorityLevelConfiguration(
 
 	// field flowcontrolv1beta1.LimitedPriorityLevelConfiguration.AssuredConcurrencyShares has no validation
 
-	// field flowcontrolv1beta1.LimitedPriorityLevelConfiguration.LimitResponse
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *flowcontrolv1beta1.LimitResponse, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field flowcontrolv1beta1.LimitedPriorityLevelConfiguration.LimitResponse
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *flowcontrolv1beta1.LimitResponse,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -147,9 +161,13 @@ func Validate_LimitedPriorityLevelConfiguration(
 			// call the type's validation function
 			errs = append(errs, Validate_LimitResponse(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("limitResponse"), &obj.LimitResponse, safe.Field(oldObj, func(oldObj *flowcontrolv1beta1.LimitedPriorityLevelConfiguration) *flowcontrolv1beta1.LimitResponse {
-			return &oldObj.LimitResponse
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *flowcontrolv1beta1.LimitedPriorityLevelConfiguration) *flowcontrolv1beta1.LimitResponse {
+				return &oldObj.LimitResponse
+			})
+		errs = append(errs, fn(fldPath.Child("limitResponse"), &obj.LimitResponse, oldVal, oldObj != nil)...)
+	}
 
 	// field flowcontrolv1beta1.LimitedPriorityLevelConfiguration.LendablePercent has no validation
 	// field flowcontrolv1beta1.LimitedPriorityLevelConfiguration.BorrowingLimitPercent has no validation
@@ -165,9 +183,11 @@ func Validate_PriorityLevelConfiguration(
 	// field flowcontrolv1beta1.PriorityLevelConfiguration.TypeMeta has no validation
 	// field flowcontrolv1beta1.PriorityLevelConfiguration.ObjectMeta has no validation
 
-	// field flowcontrolv1beta1.PriorityLevelConfiguration.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *flowcontrolv1beta1.PriorityLevelConfigurationSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field flowcontrolv1beta1.PriorityLevelConfiguration.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *flowcontrolv1beta1.PriorityLevelConfigurationSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -175,9 +195,13 @@ func Validate_PriorityLevelConfiguration(
 			// call the type's validation function
 			errs = append(errs, Validate_PriorityLevelConfigurationSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *flowcontrolv1beta1.PriorityLevelConfiguration) *flowcontrolv1beta1.PriorityLevelConfigurationSpec {
-			return &oldObj.Spec
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *flowcontrolv1beta1.PriorityLevelConfiguration) *flowcontrolv1beta1.PriorityLevelConfigurationSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	// field flowcontrolv1beta1.PriorityLevelConfiguration.Status has no validation
 	return errs
@@ -235,9 +259,11 @@ func Validate_PriorityLevelConfigurationSpec(
 			}},
 	})...)
 
-	// field flowcontrolv1beta1.PriorityLevelConfigurationSpec.Type
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *flowcontrolv1beta1.PriorityLevelEnablement, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field flowcontrolv1beta1.PriorityLevelConfigurationSpec.Type
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *flowcontrolv1beta1.PriorityLevelEnablement,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -252,13 +278,19 @@ func Validate_PriorityLevelConfigurationSpec(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("type"), &obj.Type, safe.Field(oldObj, func(oldObj *flowcontrolv1beta1.PriorityLevelConfigurationSpec) *flowcontrolv1beta1.PriorityLevelEnablement {
-			return &oldObj.Type
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *flowcontrolv1beta1.PriorityLevelConfigurationSpec) *flowcontrolv1beta1.PriorityLevelEnablement {
+				return &oldObj.Type
+			})
+		errs = append(errs, fn(fldPath.Child("type"), &obj.Type, oldVal, oldObj != nil)...)
+	}
 
-	// field flowcontrolv1beta1.PriorityLevelConfigurationSpec.Limited
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *flowcontrolv1beta1.LimitedPriorityLevelConfiguration, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field flowcontrolv1beta1.PriorityLevelConfigurationSpec.Limited
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *flowcontrolv1beta1.LimitedPriorityLevelConfiguration,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -274,13 +306,19 @@ func Validate_PriorityLevelConfigurationSpec(
 			// call the type's validation function
 			errs = append(errs, Validate_LimitedPriorityLevelConfiguration(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("limited"), obj.Limited, safe.Field(oldObj, func(oldObj *flowcontrolv1beta1.PriorityLevelConfigurationSpec) *flowcontrolv1beta1.LimitedPriorityLevelConfiguration {
-			return oldObj.Limited
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *flowcontrolv1beta1.PriorityLevelConfigurationSpec) *flowcontrolv1beta1.LimitedPriorityLevelConfiguration {
+				return oldObj.Limited
+			})
+		errs = append(errs, fn(fldPath.Child("limited"), obj.Limited, oldVal, oldObj != nil)...)
+	}
 
-	// field flowcontrolv1beta1.PriorityLevelConfigurationSpec.Exempt
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *flowcontrolv1beta1.ExemptPriorityLevelConfiguration, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field flowcontrolv1beta1.PriorityLevelConfigurationSpec.Exempt
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *flowcontrolv1beta1.ExemptPriorityLevelConfiguration,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -294,9 +332,13 @@ func Validate_PriorityLevelConfigurationSpec(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("exempt"), obj.Exempt, safe.Field(oldObj, func(oldObj *flowcontrolv1beta1.PriorityLevelConfigurationSpec) *flowcontrolv1beta1.ExemptPriorityLevelConfiguration {
-			return oldObj.Exempt
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *flowcontrolv1beta1.PriorityLevelConfigurationSpec) *flowcontrolv1beta1.ExemptPriorityLevelConfiguration {
+				return oldObj.Exempt
+			})
+		errs = append(errs, fn(fldPath.Child("exempt"), obj.Exempt, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }

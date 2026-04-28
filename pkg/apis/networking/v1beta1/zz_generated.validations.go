@@ -81,9 +81,11 @@ func Validate_IPAddress(
 	// field networkingv1beta1.IPAddress.TypeMeta has no validation
 	// field networkingv1beta1.IPAddress.ObjectMeta has no validation
 
-	// field networkingv1beta1.IPAddress.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *networkingv1beta1.IPAddressSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field networkingv1beta1.IPAddress.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *networkingv1beta1.IPAddressSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -91,7 +93,13 @@ func Validate_IPAddress(
 			// call the type's validation function
 			errs = append(errs, Validate_IPAddressSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *networkingv1beta1.IPAddress) *networkingv1beta1.IPAddressSpec { return &oldObj.Spec }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *networkingv1beta1.IPAddress) *networkingv1beta1.IPAddressSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -102,9 +110,11 @@ func Validate_IPAddressSpec(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *networkingv1beta1.IPAddressSpec) (errs field.ErrorList) {
 
-	// field networkingv1beta1.IPAddressSpec.ParentRef
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *networkingv1beta1.ParentReference, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field networkingv1beta1.IPAddressSpec.ParentRef
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *networkingv1beta1.ParentReference,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -125,9 +135,13 @@ func Validate_IPAddressSpec(
 			// call the type's validation function
 			errs = append(errs, Validate_ParentReference(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("parentRef"), obj.ParentRef, safe.Field(oldObj, func(oldObj *networkingv1beta1.IPAddressSpec) *networkingv1beta1.ParentReference {
-			return oldObj.ParentRef
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *networkingv1beta1.IPAddressSpec) *networkingv1beta1.ParentReference {
+				return oldObj.ParentRef
+			})
+		errs = append(errs, fn(fldPath.Child("parentRef"), obj.ParentRef, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -141,9 +155,11 @@ func Validate_IngressClass(
 	// field networkingv1beta1.IngressClass.TypeMeta has no validation
 	// field networkingv1beta1.IngressClass.ObjectMeta has no validation
 
-	// field networkingv1beta1.IngressClass.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *networkingv1beta1.IngressClassSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field networkingv1beta1.IngressClass.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *networkingv1beta1.IngressClassSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -151,7 +167,13 @@ func Validate_IngressClass(
 			// call the type's validation function
 			errs = append(errs, Validate_IngressClassSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *networkingv1beta1.IngressClass) *networkingv1beta1.IngressClassSpec { return &oldObj.Spec }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *networkingv1beta1.IngressClass) *networkingv1beta1.IngressClassSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -164,9 +186,11 @@ func Validate_IngressClassParametersReference(
 
 	// field networkingv1beta1.IngressClassParametersReference.APIGroup has no validation
 
-	// field networkingv1beta1.IngressClassParametersReference.Kind
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field networkingv1beta1.IngressClassParametersReference.Kind
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -181,11 +205,19 @@ func Validate_IngressClassParametersReference(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("kind"), &obj.Kind, safe.Field(oldObj, func(oldObj *networkingv1beta1.IngressClassParametersReference) *string { return &oldObj.Kind }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *networkingv1beta1.IngressClassParametersReference) *string {
+				return &oldObj.Kind
+			})
+		errs = append(errs, fn(fldPath.Child("kind"), &obj.Kind, oldVal, oldObj != nil)...)
+	}
 
-	// field networkingv1beta1.IngressClassParametersReference.Name
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field networkingv1beta1.IngressClassParametersReference.Name
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -200,7 +232,13 @@ func Validate_IngressClassParametersReference(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("name"), &obj.Name, safe.Field(oldObj, func(oldObj *networkingv1beta1.IngressClassParametersReference) *string { return &oldObj.Name }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *networkingv1beta1.IngressClassParametersReference) *string {
+				return &oldObj.Name
+			})
+		errs = append(errs, fn(fldPath.Child("name"), &obj.Name, oldVal, oldObj != nil)...)
+	}
 
 	// field networkingv1beta1.IngressClassParametersReference.Scope has no validation
 	// field networkingv1beta1.IngressClassParametersReference.Namespace has no validation
@@ -215,9 +253,11 @@ func Validate_IngressClassSpec(
 
 	// field networkingv1beta1.IngressClassSpec.Controller has no validation
 
-	// field networkingv1beta1.IngressClassSpec.Parameters
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *networkingv1beta1.IngressClassParametersReference, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field networkingv1beta1.IngressClassSpec.Parameters
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *networkingv1beta1.IngressClassParametersReference,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -233,9 +273,13 @@ func Validate_IngressClassSpec(
 			// call the type's validation function
 			errs = append(errs, Validate_IngressClassParametersReference(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("parameters"), obj.Parameters, safe.Field(oldObj, func(oldObj *networkingv1beta1.IngressClassSpec) *networkingv1beta1.IngressClassParametersReference {
-			return oldObj.Parameters
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *networkingv1beta1.IngressClassSpec) *networkingv1beta1.IngressClassParametersReference {
+				return oldObj.Parameters
+			})
+		errs = append(errs, fn(fldPath.Child("parameters"), obj.Parameters, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -248,9 +292,11 @@ func Validate_ParentReference(
 
 	// field networkingv1beta1.ParentReference.Group has no validation
 
-	// field networkingv1beta1.ParentReference.Resource
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field networkingv1beta1.ParentReference.Resource
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -265,13 +311,21 @@ func Validate_ParentReference(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("resource"), &obj.Resource, safe.Field(oldObj, func(oldObj *networkingv1beta1.ParentReference) *string { return &oldObj.Resource }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *networkingv1beta1.ParentReference) *string {
+				return &oldObj.Resource
+			})
+		errs = append(errs, fn(fldPath.Child("resource"), &obj.Resource, oldVal, oldObj != nil)...)
+	}
 
 	// field networkingv1beta1.ParentReference.Namespace has no validation
 
-	// field networkingv1beta1.ParentReference.Name
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field networkingv1beta1.ParentReference.Name
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -286,7 +340,13 @@ func Validate_ParentReference(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("name"), &obj.Name, safe.Field(oldObj, func(oldObj *networkingv1beta1.ParentReference) *string { return &oldObj.Name }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *networkingv1beta1.ParentReference) *string {
+				return &oldObj.Name
+			})
+		errs = append(errs, fn(fldPath.Child("name"), &obj.Name, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }

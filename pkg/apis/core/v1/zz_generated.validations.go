@@ -66,9 +66,11 @@ func Validate_ReplicationController(
 
 	// field corev1.ReplicationController.TypeMeta has no validation
 
-	// field corev1.ReplicationController.ObjectMeta
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *metav1.ObjectMeta, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field corev1.ReplicationController.ObjectMeta
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *metav1.ObjectMeta,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -85,11 +87,19 @@ func Validate_ReplicationController(
 				errs = append(errs, validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *metav1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.LongName).MarkAlpha()...)
 			}()
 			return
-		}(fldPath.Child("metadata"), &obj.ObjectMeta, safe.Field(oldObj, func(oldObj *corev1.ReplicationController) *metav1.ObjectMeta { return &oldObj.ObjectMeta }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *corev1.ReplicationController) *metav1.ObjectMeta {
+				return &oldObj.ObjectMeta
+			})
+		errs = append(errs, fn(fldPath.Child("metadata"), &obj.ObjectMeta, oldVal, oldObj != nil)...)
+	}
 
-	// field corev1.ReplicationController.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *corev1.ReplicationControllerSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field corev1.ReplicationController.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *corev1.ReplicationControllerSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -97,7 +107,13 @@ func Validate_ReplicationController(
 			// call the type's validation function
 			errs = append(errs, Validate_ReplicationControllerSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *corev1.ReplicationController) *corev1.ReplicationControllerSpec { return &oldObj.Spec }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *corev1.ReplicationController) *corev1.ReplicationControllerSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	// field corev1.ReplicationController.Status has no validation
 	return errs
@@ -109,9 +125,11 @@ func Validate_ReplicationControllerSpec(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *corev1.ReplicationControllerSpec) (errs field.ErrorList) {
 
-	// field corev1.ReplicationControllerSpec.Replicas
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field corev1.ReplicationControllerSpec.Replicas
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -128,11 +146,19 @@ func Validate_ReplicationControllerSpec(
 			}
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0).MarkAlpha()...)
 			return
-		}(fldPath.Child("replicas"), obj.Replicas, safe.Field(oldObj, func(oldObj *corev1.ReplicationControllerSpec) *int32 { return oldObj.Replicas }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *corev1.ReplicationControllerSpec) *int32 {
+				return oldObj.Replicas
+			})
+		errs = append(errs, fn(fldPath.Child("replicas"), obj.Replicas, oldVal, oldObj != nil)...)
+	}
 
-	// field corev1.ReplicationControllerSpec.MinReadySeconds
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field corev1.ReplicationControllerSpec.MinReadySeconds
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// optional value-type fields with zero-value defaults are purely documentation
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
@@ -141,7 +167,13 @@ func Validate_ReplicationControllerSpec(
 			// call field-attached validations
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0).MarkAlpha()...)
 			return
-		}(fldPath.Child("minReadySeconds"), &obj.MinReadySeconds, safe.Field(oldObj, func(oldObj *corev1.ReplicationControllerSpec) *int32 { return &oldObj.MinReadySeconds }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *corev1.ReplicationControllerSpec) *int32 {
+				return &oldObj.MinReadySeconds
+			})
+		errs = append(errs, fn(fldPath.Child("minReadySeconds"), &obj.MinReadySeconds, oldVal, oldObj != nil)...)
+	}
 
 	// field corev1.ReplicationControllerSpec.Selector has no validation
 	// field corev1.ReplicationControllerSpec.Template has no validation

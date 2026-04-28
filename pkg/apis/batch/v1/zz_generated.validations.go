@@ -66,9 +66,11 @@ func Validate_CronJob(
 	// field batchv1.CronJob.TypeMeta has no validation
 	// field batchv1.CronJob.ObjectMeta has no validation
 
-	// field batchv1.CronJob.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *batchv1.CronJobSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field batchv1.CronJob.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *batchv1.CronJobSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -76,7 +78,13 @@ func Validate_CronJob(
 			// call the type's validation function
 			errs = append(errs, Validate_CronJobSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *batchv1.CronJob) *batchv1.CronJobSpec { return &oldObj.Spec }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *batchv1.CronJob) *batchv1.CronJobSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	// field batchv1.CronJob.Status has no validation
 	return errs
@@ -88,9 +96,11 @@ func Validate_CronJobSpec(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *batchv1.CronJobSpec) (errs field.ErrorList) {
 
-	// field batchv1.CronJobSpec.Schedule
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field batchv1.CronJobSpec.Schedule
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -105,7 +115,13 @@ func Validate_CronJobSpec(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("schedule"), &obj.Schedule, safe.Field(oldObj, func(oldObj *batchv1.CronJobSpec) *string { return &oldObj.Schedule }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *batchv1.CronJobSpec) *string {
+				return &oldObj.Schedule
+			})
+		errs = append(errs, fn(fldPath.Child("schedule"), &obj.Schedule, oldVal, oldObj != nil)...)
+	}
 
 	// field batchv1.CronJobSpec.TimeZone has no validation
 	// field batchv1.CronJobSpec.StartingDeadlineSeconds has no validation

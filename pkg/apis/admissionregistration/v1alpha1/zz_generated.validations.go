@@ -66,9 +66,11 @@ func Validate_ValidatingAdmissionPolicyBinding(
 	// field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBinding.TypeMeta has no validation
 	// field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBinding.ObjectMeta has no validation
 
-	// field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBinding.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBinding.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -76,9 +78,13 @@ func Validate_ValidatingAdmissionPolicyBinding(
 			// call the type's validation function
 			errs = append(errs, Validate_ValidatingAdmissionPolicyBindingSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBinding) *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec {
-			return &oldObj.Spec
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBinding) *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -89,9 +95,11 @@ func Validate_ValidatingAdmissionPolicyBindingSpec(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec) (errs field.ErrorList) {
 
-	// field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec.PolicyName
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec.PolicyName
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -106,16 +114,22 @@ func Validate_ValidatingAdmissionPolicyBindingSpec(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("policyName"), &obj.PolicyName, safe.Field(oldObj, func(oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec) *string {
-			return &oldObj.PolicyName
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec) *string {
+				return &oldObj.PolicyName
+			})
+		errs = append(errs, fn(fldPath.Child("policyName"), &obj.PolicyName, oldVal, oldObj != nil)...)
+	}
 
 	// field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec.ParamRef has no validation
 	// field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec.MatchResources has no validation
 
-	// field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec.ValidationActions
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj []admissionregistrationv1alpha1.ValidationAction, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec.ValidationActions
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj []admissionregistrationv1alpha1.ValidationAction,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -130,9 +144,13 @@ func Validate_ValidatingAdmissionPolicyBindingSpec(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("validationActions"), obj.ValidationActions, safe.Field(oldObj, func(oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec) []admissionregistrationv1alpha1.ValidationAction {
-			return oldObj.ValidationActions
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec) []admissionregistrationv1alpha1.ValidationAction {
+				return oldObj.ValidationActions
+			})
+		errs = append(errs, fn(fldPath.Child("validationActions"), obj.ValidationActions, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }

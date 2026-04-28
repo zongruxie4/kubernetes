@@ -66,9 +66,11 @@ func Validate_VolumeAttachment(
 	// field storagev1alpha1.VolumeAttachment.TypeMeta has no validation
 	// field storagev1alpha1.VolumeAttachment.ObjectMeta has no validation
 
-	// field storagev1alpha1.VolumeAttachment.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *storagev1alpha1.VolumeAttachmentSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field storagev1alpha1.VolumeAttachment.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *storagev1alpha1.VolumeAttachmentSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -85,9 +87,13 @@ func Validate_VolumeAttachment(
 			// call the type's validation function
 			errs = append(errs, Validate_VolumeAttachmentSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *storagev1alpha1.VolumeAttachment) *storagev1alpha1.VolumeAttachmentSpec {
-			return &oldObj.Spec
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *storagev1alpha1.VolumeAttachment) *storagev1alpha1.VolumeAttachmentSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	// field storagev1alpha1.VolumeAttachment.Status has no validation
 	return errs
@@ -99,9 +105,11 @@ func Validate_VolumeAttachmentSpec(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *storagev1alpha1.VolumeAttachmentSpec) (errs field.ErrorList) {
 
-	// field storagev1alpha1.VolumeAttachmentSpec.Attacher
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field storagev1alpha1.VolumeAttachmentSpec.Attacher
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -118,7 +126,13 @@ func Validate_VolumeAttachmentSpec(
 			errs = append(errs, validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
 			errs = append(errs, validate.MaxLength(ctx, op, fldPath, obj, oldObj, 63).MarkAlpha()...)
 			return
-		}(fldPath.Child("attacher"), &obj.Attacher, safe.Field(oldObj, func(oldObj *storagev1alpha1.VolumeAttachmentSpec) *string { return &oldObj.Attacher }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *storagev1alpha1.VolumeAttachmentSpec) *string {
+				return &oldObj.Attacher
+			})
+		errs = append(errs, fn(fldPath.Child("attacher"), &obj.Attacher, oldVal, oldObj != nil)...)
+	}
 
 	// field storagev1alpha1.VolumeAttachmentSpec.Source has no validation
 	// field storagev1alpha1.VolumeAttachmentSpec.NodeName has no validation

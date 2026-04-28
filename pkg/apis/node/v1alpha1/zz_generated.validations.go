@@ -66,9 +66,11 @@ func Validate_RuntimeClass(
 	// field nodev1alpha1.RuntimeClass.TypeMeta has no validation
 	// field nodev1alpha1.RuntimeClass.ObjectMeta has no validation
 
-	// field nodev1alpha1.RuntimeClass.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *nodev1alpha1.RuntimeClassSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field nodev1alpha1.RuntimeClass.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *nodev1alpha1.RuntimeClassSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -76,7 +78,13 @@ func Validate_RuntimeClass(
 			// call the type's validation function
 			errs = append(errs, Validate_RuntimeClassSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *nodev1alpha1.RuntimeClass) *nodev1alpha1.RuntimeClassSpec { return &oldObj.Spec }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *nodev1alpha1.RuntimeClass) *nodev1alpha1.RuntimeClassSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -87,9 +95,11 @@ func Validate_RuntimeClassSpec(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *nodev1alpha1.RuntimeClassSpec) (errs field.ErrorList) {
 
-	// field nodev1alpha1.RuntimeClassSpec.RuntimeHandler
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field nodev1alpha1.RuntimeClassSpec.RuntimeHandler
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -109,7 +119,13 @@ func Validate_RuntimeClassSpec(
 			}
 			errs = append(errs, validate.ShortName(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
 			return
-		}(fldPath.Child("runtimeHandler"), &obj.RuntimeHandler, safe.Field(oldObj, func(oldObj *nodev1alpha1.RuntimeClassSpec) *string { return &oldObj.RuntimeHandler }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *nodev1alpha1.RuntimeClassSpec) *string {
+				return &oldObj.RuntimeHandler
+			})
+		errs = append(errs, fn(fldPath.Child("runtimeHandler"), &obj.RuntimeHandler, oldVal, oldObj != nil)...)
+	}
 
 	// field nodev1alpha1.RuntimeClassSpec.Overhead has no validation
 	// field nodev1alpha1.RuntimeClassSpec.Scheduling has no validation

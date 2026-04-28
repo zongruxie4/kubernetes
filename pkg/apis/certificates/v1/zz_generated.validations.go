@@ -67,9 +67,11 @@ func Validate_CertificateSigningRequest(
 	// field certificatesv1.CertificateSigningRequest.ObjectMeta has no validation
 	// field certificatesv1.CertificateSigningRequest.Spec has no validation
 
-	// field certificatesv1.CertificateSigningRequest.Status
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *certificatesv1.CertificateSigningRequestStatus, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field certificatesv1.CertificateSigningRequest.Status
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *certificatesv1.CertificateSigningRequestStatus,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -77,9 +79,13 @@ func Validate_CertificateSigningRequest(
 			// call the type's validation function
 			errs = append(errs, Validate_CertificateSigningRequestStatus(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("status"), &obj.Status, safe.Field(oldObj, func(oldObj *certificatesv1.CertificateSigningRequest) *certificatesv1.CertificateSigningRequestStatus {
-			return &oldObj.Status
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *certificatesv1.CertificateSigningRequest) *certificatesv1.CertificateSigningRequestStatus {
+				return &oldObj.Status
+			})
+		errs = append(errs, fn(fldPath.Child("status"), &obj.Status, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -92,9 +98,11 @@ func Validate_CertificateSigningRequestStatus(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *certificatesv1.CertificateSigningRequestStatus) (errs field.ErrorList) {
 
-	// field certificatesv1.CertificateSigningRequestStatus.Conditions
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj []certificatesv1.CertificateSigningRequestCondition, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field certificatesv1.CertificateSigningRequestStatus.Conditions
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj []certificatesv1.CertificateSigningRequestCondition,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// Uniqueness validation is implemented via custom, handwritten validation
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
@@ -124,9 +132,13 @@ func Validate_CertificateSigningRequestStatus(
 				return false
 			}).MarkAlpha()...)
 			return
-		}(fldPath.Child("conditions"), obj.Conditions, safe.Field(oldObj, func(oldObj *certificatesv1.CertificateSigningRequestStatus) []certificatesv1.CertificateSigningRequestCondition {
-			return oldObj.Conditions
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *certificatesv1.CertificateSigningRequestStatus) []certificatesv1.CertificateSigningRequestCondition {
+				return oldObj.Conditions
+			})
+		errs = append(errs, fn(fldPath.Child("conditions"), obj.Conditions, oldVal, oldObj != nil)...)
+	}
 
 	// field certificatesv1.CertificateSigningRequestStatus.Certificate has no validation
 	return errs

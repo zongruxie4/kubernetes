@@ -77,9 +77,11 @@ func Validate_Endpoint(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *discoveryv1beta1.Endpoint) (errs field.ErrorList) {
 
-	// field discoveryv1beta1.Endpoint.Addresses
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj []string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field discoveryv1beta1.Endpoint.Addresses
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj []string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -98,7 +100,13 @@ func Validate_Endpoint(
 				return // do not proceed
 			}
 			return
-		}(fldPath.Child("addresses"), obj.Addresses, safe.Field(oldObj, func(oldObj *discoveryv1beta1.Endpoint) []string { return oldObj.Addresses }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *discoveryv1beta1.Endpoint) []string {
+				return oldObj.Addresses
+			})
+		errs = append(errs, fn(fldPath.Child("addresses"), obj.Addresses, oldVal, oldObj != nil)...)
+	}
 
 	// field discoveryv1beta1.Endpoint.Conditions has no validation
 	// field discoveryv1beta1.Endpoint.Hostname has no validation
@@ -118,9 +126,11 @@ func Validate_EndpointSlice(
 	// field discoveryv1beta1.EndpointSlice.TypeMeta has no validation
 	// field discoveryv1beta1.EndpointSlice.ObjectMeta has no validation
 
-	// field discoveryv1beta1.EndpointSlice.AddressType
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *discoveryv1beta1.AddressType, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field discoveryv1beta1.EndpointSlice.AddressType
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *discoveryv1beta1.AddressType,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -141,11 +151,19 @@ func Validate_EndpointSlice(
 			// call the type's validation function
 			errs = append(errs, Validate_AddressType(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("addressType"), &obj.AddressType, safe.Field(oldObj, func(oldObj *discoveryv1beta1.EndpointSlice) *discoveryv1beta1.AddressType { return &oldObj.AddressType }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *discoveryv1beta1.EndpointSlice) *discoveryv1beta1.AddressType {
+				return &oldObj.AddressType
+			})
+		errs = append(errs, fn(fldPath.Child("addressType"), &obj.AddressType, oldVal, oldObj != nil)...)
+	}
 
-	// field discoveryv1beta1.EndpointSlice.Endpoints
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj []discoveryv1beta1.Endpoint, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field discoveryv1beta1.EndpointSlice.Endpoints
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj []discoveryv1beta1.Endpoint,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -161,7 +179,13 @@ func Validate_EndpointSlice(
 			// iterate the list and call the type's validation function
 			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_Endpoint)...)
 			return
-		}(fldPath.Child("endpoints"), obj.Endpoints, safe.Field(oldObj, func(oldObj *discoveryv1beta1.EndpointSlice) []discoveryv1beta1.Endpoint { return oldObj.Endpoints }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *discoveryv1beta1.EndpointSlice) []discoveryv1beta1.Endpoint {
+				return oldObj.Endpoints
+			})
+		errs = append(errs, fn(fldPath.Child("endpoints"), obj.Endpoints, oldVal, oldObj != nil)...)
+	}
 
 	// field discoveryv1beta1.EndpointSlice.Ports has no validation
 	return errs

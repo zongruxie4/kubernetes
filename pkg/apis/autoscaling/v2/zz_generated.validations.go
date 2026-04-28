@@ -66,9 +66,11 @@ func Validate_HorizontalPodAutoscaler(
 	// field autoscalingv2.HorizontalPodAutoscaler.TypeMeta has no validation
 	// field autoscalingv2.HorizontalPodAutoscaler.ObjectMeta has no validation
 
-	// field autoscalingv2.HorizontalPodAutoscaler.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *autoscalingv2.HorizontalPodAutoscalerSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field autoscalingv2.HorizontalPodAutoscaler.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *autoscalingv2.HorizontalPodAutoscalerSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -76,9 +78,13 @@ func Validate_HorizontalPodAutoscaler(
 			// call the type's validation function
 			errs = append(errs, Validate_HorizontalPodAutoscalerSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *autoscalingv2.HorizontalPodAutoscaler) *autoscalingv2.HorizontalPodAutoscalerSpec {
-			return &oldObj.Spec
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *autoscalingv2.HorizontalPodAutoscaler) *autoscalingv2.HorizontalPodAutoscalerSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	// field autoscalingv2.HorizontalPodAutoscaler.Status has no validation
 	return errs
@@ -92,9 +98,11 @@ func Validate_HorizontalPodAutoscalerSpec(
 
 	// field autoscalingv2.HorizontalPodAutoscalerSpec.ScaleTargetRef has no validation
 
-	// field autoscalingv2.HorizontalPodAutoscalerSpec.MinReplicas
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field autoscalingv2.HorizontalPodAutoscalerSpec.MinReplicas
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -114,11 +122,19 @@ func Validate_HorizontalPodAutoscalerSpec(
 				return validate.Minimum(ctx, op, fldPath, obj, oldObj, 1)
 			}).MarkAlpha()...)
 			return
-		}(fldPath.Child("minReplicas"), obj.MinReplicas, safe.Field(oldObj, func(oldObj *autoscalingv2.HorizontalPodAutoscalerSpec) *int32 { return oldObj.MinReplicas }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *autoscalingv2.HorizontalPodAutoscalerSpec) *int32 {
+				return oldObj.MinReplicas
+			})
+		errs = append(errs, fn(fldPath.Child("minReplicas"), obj.MinReplicas, oldVal, oldObj != nil)...)
+	}
 
-	// field autoscalingv2.HorizontalPodAutoscalerSpec.MaxReplicas
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field autoscalingv2.HorizontalPodAutoscalerSpec.MaxReplicas
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -134,7 +150,13 @@ func Validate_HorizontalPodAutoscalerSpec(
 			}
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 1).MarkAlpha()...)
 			return
-		}(fldPath.Child("maxReplicas"), &obj.MaxReplicas, safe.Field(oldObj, func(oldObj *autoscalingv2.HorizontalPodAutoscalerSpec) *int32 { return &oldObj.MaxReplicas }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *autoscalingv2.HorizontalPodAutoscalerSpec) *int32 {
+				return &oldObj.MaxReplicas
+			})
+		errs = append(errs, fn(fldPath.Child("maxReplicas"), &obj.MaxReplicas, oldVal, oldObj != nil)...)
+	}
 
 	// field autoscalingv2.HorizontalPodAutoscalerSpec.Metrics has no validation
 	// field autoscalingv2.HorizontalPodAutoscalerSpec.Behavior has no validation

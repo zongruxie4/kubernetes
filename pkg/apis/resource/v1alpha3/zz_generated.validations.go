@@ -83,9 +83,11 @@ func Validate_DeviceTaint(
 	// field resourcev1alpha3.DeviceTaint.Key has no validation
 	// field resourcev1alpha3.DeviceTaint.Value has no validation
 
-	// field resourcev1alpha3.DeviceTaint.Effect
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *resourcev1alpha3.DeviceTaintEffect, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.DeviceTaint.Effect
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *resourcev1alpha3.DeviceTaintEffect,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -102,7 +104,13 @@ func Validate_DeviceTaint(
 			// call the type's validation function
 			errs = append(errs, Validate_DeviceTaintEffect(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("effect"), &obj.Effect, safe.Field(oldObj, func(oldObj *resourcev1alpha3.DeviceTaint) *resourcev1alpha3.DeviceTaintEffect { return &oldObj.Effect }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.DeviceTaint) *resourcev1alpha3.DeviceTaintEffect {
+				return &oldObj.Effect
+			})
+		errs = append(errs, fn(fldPath.Child("effect"), &obj.Effect, oldVal, oldObj != nil)...)
+	}
 
 	// field resourcev1alpha3.DeviceTaint.TimeAdded has no validation
 	return errs
@@ -130,9 +138,11 @@ func Validate_DeviceTaintRule(
 	// field resourcev1alpha3.DeviceTaintRule.TypeMeta has no validation
 	// field resourcev1alpha3.DeviceTaintRule.ObjectMeta has no validation
 
-	// field resourcev1alpha3.DeviceTaintRule.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *resourcev1alpha3.DeviceTaintRuleSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.DeviceTaintRule.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *resourcev1alpha3.DeviceTaintRuleSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -140,9 +150,13 @@ func Validate_DeviceTaintRule(
 			// call the type's validation function
 			errs = append(errs, Validate_DeviceTaintRuleSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *resourcev1alpha3.DeviceTaintRule) *resourcev1alpha3.DeviceTaintRuleSpec {
-			return &oldObj.Spec
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.DeviceTaintRule) *resourcev1alpha3.DeviceTaintRuleSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
 	// field resourcev1alpha3.DeviceTaintRule.Status has no validation
 	return errs
@@ -156,9 +170,11 @@ func Validate_DeviceTaintRuleSpec(
 
 	// field resourcev1alpha3.DeviceTaintRuleSpec.DeviceSelector has no validation
 
-	// field resourcev1alpha3.DeviceTaintRuleSpec.Taint
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *resourcev1alpha3.DeviceTaint, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.DeviceTaintRuleSpec.Taint
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *resourcev1alpha3.DeviceTaint,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -166,7 +182,13 @@ func Validate_DeviceTaintRuleSpec(
 			// call the type's validation function
 			errs = append(errs, Validate_DeviceTaint(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("taint"), &obj.Taint, safe.Field(oldObj, func(oldObj *resourcev1alpha3.DeviceTaintRuleSpec) *resourcev1alpha3.DeviceTaint { return &oldObj.Taint }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.DeviceTaintRuleSpec) *resourcev1alpha3.DeviceTaint {
+				return &oldObj.Taint
+			})
+		errs = append(errs, fn(fldPath.Child("taint"), &obj.Taint, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -177,9 +199,11 @@ func Validate_PoolStatus(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *resourcev1alpha3.PoolStatus) (errs field.ErrorList) {
 
-	// field resourcev1alpha3.PoolStatus.Driver
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.PoolStatus.Driver
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -195,11 +219,19 @@ func Validate_PoolStatus(
 			}
 			errs = append(errs, validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("driver"), &obj.Driver, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *string { return &oldObj.Driver }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.PoolStatus) *string {
+				return &oldObj.Driver
+			})
+		errs = append(errs, fn(fldPath.Child("driver"), &obj.Driver, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.PoolStatus.PoolName
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.PoolStatus.PoolName
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -215,11 +247,19 @@ func Validate_PoolStatus(
 			}
 			errs = append(errs, validate.ResourcePoolName(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("poolName"), &obj.PoolName, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *string { return &oldObj.PoolName }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.PoolStatus) *string {
+				return &oldObj.PoolName
+			})
+		errs = append(errs, fn(fldPath.Child("poolName"), &obj.PoolName, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.PoolStatus.Generation
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int64, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.PoolStatus.Generation
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int64,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -235,11 +275,19 @@ func Validate_PoolStatus(
 			}
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
 			return
-		}(fldPath.Child("generation"), &obj.Generation, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *int64 { return &oldObj.Generation }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.PoolStatus) *int64 {
+				return &oldObj.Generation
+			})
+		errs = append(errs, fn(fldPath.Child("generation"), &obj.Generation, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.PoolStatus.ResourceSliceCount
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.PoolStatus.ResourceSliceCount
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -254,11 +302,19 @@ func Validate_PoolStatus(
 			}
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 1)...)
 			return
-		}(fldPath.Child("resourceSliceCount"), obj.ResourceSliceCount, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *int32 { return oldObj.ResourceSliceCount }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.PoolStatus) *int32 {
+				return oldObj.ResourceSliceCount
+			})
+		errs = append(errs, fn(fldPath.Child("resourceSliceCount"), obj.ResourceSliceCount, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.PoolStatus.TotalDevices
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.PoolStatus.TotalDevices
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -273,11 +329,19 @@ func Validate_PoolStatus(
 			}
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
 			return
-		}(fldPath.Child("totalDevices"), obj.TotalDevices, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *int32 { return oldObj.TotalDevices }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.PoolStatus) *int32 {
+				return oldObj.TotalDevices
+			})
+		errs = append(errs, fn(fldPath.Child("totalDevices"), obj.TotalDevices, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.PoolStatus.AllocatedDevices
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.PoolStatus.AllocatedDevices
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -292,11 +356,19 @@ func Validate_PoolStatus(
 			}
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
 			return
-		}(fldPath.Child("allocatedDevices"), obj.AllocatedDevices, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *int32 { return oldObj.AllocatedDevices }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.PoolStatus) *int32 {
+				return oldObj.AllocatedDevices
+			})
+		errs = append(errs, fn(fldPath.Child("allocatedDevices"), obj.AllocatedDevices, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.PoolStatus.AvailableDevices
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.PoolStatus.AvailableDevices
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -311,11 +383,19 @@ func Validate_PoolStatus(
 			}
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
 			return
-		}(fldPath.Child("availableDevices"), obj.AvailableDevices, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *int32 { return oldObj.AvailableDevices }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.PoolStatus) *int32 {
+				return oldObj.AvailableDevices
+			})
+		errs = append(errs, fn(fldPath.Child("availableDevices"), obj.AvailableDevices, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.PoolStatus.UnavailableDevices
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.PoolStatus.UnavailableDevices
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -330,11 +410,19 @@ func Validate_PoolStatus(
 			}
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
 			return
-		}(fldPath.Child("unavailableDevices"), obj.UnavailableDevices, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *int32 { return oldObj.UnavailableDevices }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.PoolStatus) *int32 {
+				return oldObj.UnavailableDevices
+			})
+		errs = append(errs, fn(fldPath.Child("unavailableDevices"), obj.UnavailableDevices, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.PoolStatus.NodeName
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.PoolStatus.NodeName
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -349,11 +437,19 @@ func Validate_PoolStatus(
 			}
 			errs = append(errs, validate.LongName(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("nodeName"), obj.NodeName, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *string { return oldObj.NodeName }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.PoolStatus) *string {
+				return oldObj.NodeName
+			})
+		errs = append(errs, fn(fldPath.Child("nodeName"), obj.NodeName, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.PoolStatus.ValidationError
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.PoolStatus.ValidationError
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -368,7 +464,13 @@ func Validate_PoolStatus(
 			}
 			errs = append(errs, validate.MaxBytes(ctx, op, fldPath, obj, oldObj, 256)...)
 			return
-		}(fldPath.Child("validationError"), obj.ValidationError, safe.Field(oldObj, func(oldObj *resourcev1alpha3.PoolStatus) *string { return oldObj.ValidationError }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.PoolStatus) *string {
+				return oldObj.ValidationError
+			})
+		errs = append(errs, fn(fldPath.Child("validationError"), obj.ValidationError, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -382,9 +484,11 @@ func Validate_ResourcePoolStatusRequest(
 	// field resourcev1alpha3.ResourcePoolStatusRequest.TypeMeta has no validation
 	// field resourcev1alpha3.ResourcePoolStatusRequest.ObjectMeta has no validation
 
-	// field resourcev1alpha3.ResourcePoolStatusRequest.Spec
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.ResourcePoolStatusRequest.Spec
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -401,13 +505,19 @@ func Validate_ResourcePoolStatusRequest(
 			// call the type's validation function
 			errs = append(errs, Validate_ResourcePoolStatusRequestSpec(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *resourcev1alpha3.ResourcePoolStatusRequest) *resourcev1alpha3.ResourcePoolStatusRequestSpec {
-			return &oldObj.Spec
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.ResourcePoolStatusRequest) *resourcev1alpha3.ResourcePoolStatusRequestSpec {
+				return &oldObj.Spec
+			})
+		errs = append(errs, fn(fldPath.Child("spec"), &obj.Spec, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.ResourcePoolStatusRequest.Status
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.ResourcePoolStatusRequest.Status
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -423,9 +533,13 @@ func Validate_ResourcePoolStatusRequest(
 			// call the type's validation function
 			errs = append(errs, Validate_ResourcePoolStatusRequestStatus(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("status"), obj.Status, safe.Field(oldObj, func(oldObj *resourcev1alpha3.ResourcePoolStatusRequest) *resourcev1alpha3.ResourcePoolStatusRequestStatus {
-			return oldObj.Status
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.ResourcePoolStatusRequest) *resourcev1alpha3.ResourcePoolStatusRequestStatus {
+				return oldObj.Status
+			})
+		errs = append(errs, fn(fldPath.Child("status"), obj.Status, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -436,9 +550,11 @@ func Validate_ResourcePoolStatusRequestSpec(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec) (errs field.ErrorList) {
 
-	// field resourcev1alpha3.ResourcePoolStatusRequestSpec.Driver
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.ResourcePoolStatusRequestSpec.Driver
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -454,11 +570,19 @@ func Validate_ResourcePoolStatusRequestSpec(
 			}
 			errs = append(errs, validate.LongNameCaseless(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("driver"), &obj.Driver, safe.Field(oldObj, func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec) *string { return &oldObj.Driver }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec) *string {
+				return &oldObj.Driver
+			})
+		errs = append(errs, fn(fldPath.Child("driver"), &obj.Driver, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.ResourcePoolStatusRequestSpec.PoolName
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.ResourcePoolStatusRequestSpec.PoolName
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *string,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -473,11 +597,19 @@ func Validate_ResourcePoolStatusRequestSpec(
 			}
 			errs = append(errs, validate.ResourcePoolName(ctx, op, fldPath, obj, oldObj)...)
 			return
-		}(fldPath.Child("poolName"), obj.PoolName, safe.Field(oldObj, func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec) *string { return oldObj.PoolName }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec) *string {
+				return oldObj.PoolName
+			})
+		errs = append(errs, fn(fldPath.Child("poolName"), obj.PoolName, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.ResourcePoolStatusRequestSpec.Limit
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.ResourcePoolStatusRequestSpec.Limit
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -495,7 +627,13 @@ func Validate_ResourcePoolStatusRequestSpec(
 			errs = append(errs, validate.Maximum(ctx, op, fldPath, obj, oldObj, 1000)...)
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 1)...)
 			return
-		}(fldPath.Child("limit"), obj.Limit, safe.Field(oldObj, func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec) *int32 { return oldObj.Limit }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec) *int32 {
+				return oldObj.Limit
+			})
+		errs = append(errs, fn(fldPath.Child("limit"), obj.Limit, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
@@ -506,9 +644,11 @@ func Validate_ResourcePoolStatusRequestStatus(
 	ctx context.Context, op operation.Operation, fldPath *field.Path,
 	obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus) (errs field.ErrorList) {
 
-	// field resourcev1alpha3.ResourcePoolStatusRequestStatus.PoolCount
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.ResourcePoolStatusRequestStatus.PoolCount
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj *int32,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
 				return nil
@@ -524,11 +664,19 @@ func Validate_ResourcePoolStatusRequestStatus(
 			}
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
 			return
-		}(fldPath.Child("poolCount"), obj.PoolCount, safe.Field(oldObj, func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus) *int32 { return oldObj.PoolCount }), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus) *int32 {
+				return oldObj.PoolCount
+			})
+		errs = append(errs, fn(fldPath.Child("poolCount"), obj.PoolCount, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.ResourcePoolStatusRequestStatus.Pools
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj []resourcev1alpha3.PoolStatus, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.ResourcePoolStatusRequestStatus.Pools
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj []resourcev1alpha3.PoolStatus,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -548,13 +696,19 @@ func Validate_ResourcePoolStatusRequestStatus(
 			// iterate the list and call the type's validation function
 			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_PoolStatus)...)
 			return
-		}(fldPath.Child("pools"), obj.Pools, safe.Field(oldObj, func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus) []resourcev1alpha3.PoolStatus {
-			return oldObj.Pools
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus) []resourcev1alpha3.PoolStatus {
+				return oldObj.Pools
+			})
+		errs = append(errs, fn(fldPath.Child("pools"), obj.Pools, oldVal, oldObj != nil)...)
+	}
 
-	// field resourcev1alpha3.ResourcePoolStatusRequestStatus.Conditions
-	errs = append(errs,
-		func(fldPath *field.Path, obj, oldObj []v1.Condition, oldValueCorrelated bool) (errs field.ErrorList) {
+	{ // field resourcev1alpha3.ResourcePoolStatusRequestStatus.Conditions
+		fn := func(
+			fldPath *field.Path,
+			obj, oldObj []v1.Condition,
+			oldValueCorrelated bool) (errs field.ErrorList) {
 			// don't revalidate unchanged data
 			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
 				return nil
@@ -574,9 +728,13 @@ func Validate_ResourcePoolStatusRequestStatus(
 			// lists with map semantics require unique keys
 			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, func(a v1.Condition, b v1.Condition) bool { return a.Type == b.Type })...)
 			return
-		}(fldPath.Child("conditions"), obj.Conditions, safe.Field(oldObj, func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus) []v1.Condition {
-			return oldObj.Conditions
-		}), oldObj != nil)...)
+		}
+		oldVal := safe.Field(oldObj,
+			func(oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus) []v1.Condition {
+				return oldObj.Conditions
+			})
+		errs = append(errs, fn(fldPath.Child("conditions"), obj.Conditions, oldVal, oldObj != nil)...)
+	}
 
 	return errs
 }
