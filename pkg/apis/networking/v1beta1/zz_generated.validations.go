@@ -40,21 +40,35 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
 	// type IPAddress
-	scheme.AddValidationFunc((*networkingv1beta1.IPAddress)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_IPAddress(ctx, op, nil /* fldPath */, obj.(*networkingv1beta1.IPAddress), safe.Cast[*networkingv1beta1.IPAddress](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*networkingv1beta1.IPAddress)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_IPAddress(
+					ctx, op, nil, /* fldPath */
+					obj.(*networkingv1beta1.IPAddress),
+					safe.Cast[*networkingv1beta1.IPAddress](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	// type IngressClass
-	scheme.AddValidationFunc((*networkingv1beta1.IngressClass)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_IngressClass(ctx, op, nil /* fldPath */, obj.(*networkingv1beta1.IngressClass), safe.Cast[*networkingv1beta1.IngressClass](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*networkingv1beta1.IngressClass)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_IngressClass(
+					ctx, op, nil, /* fldPath */
+					obj.(*networkingv1beta1.IngressClass),
+					safe.Cast[*networkingv1beta1.IngressClass](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	return nil
 }
 

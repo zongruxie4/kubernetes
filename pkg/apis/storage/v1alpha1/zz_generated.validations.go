@@ -40,13 +40,20 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
 	// type VolumeAttachment
-	scheme.AddValidationFunc((*storagev1alpha1.VolumeAttachment)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/", "/status":
-			return Validate_VolumeAttachment(ctx, op, nil /* fldPath */, obj.(*storagev1alpha1.VolumeAttachment), safe.Cast[*storagev1alpha1.VolumeAttachment](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*storagev1alpha1.VolumeAttachment)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/", "/status":
+				return Validate_VolumeAttachment(
+					ctx, op, nil, /* fldPath */
+					obj.(*storagev1alpha1.VolumeAttachment),
+					safe.Cast[*storagev1alpha1.VolumeAttachment](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	return nil
 }
 

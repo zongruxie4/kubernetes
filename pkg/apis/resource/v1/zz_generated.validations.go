@@ -43,37 +43,65 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
 	// type DeviceClass
-	scheme.AddValidationFunc((*resourcev1.DeviceClass)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_DeviceClass(ctx, op, nil /* fldPath */, obj.(*resourcev1.DeviceClass), safe.Cast[*resourcev1.DeviceClass](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*resourcev1.DeviceClass)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_DeviceClass(
+					ctx, op, nil, /* fldPath */
+					obj.(*resourcev1.DeviceClass),
+					safe.Cast[*resourcev1.DeviceClass](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	// type ResourceClaim
-	scheme.AddValidationFunc((*resourcev1.ResourceClaim)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/", "/status":
-			return Validate_ResourceClaim(ctx, op, nil /* fldPath */, obj.(*resourcev1.ResourceClaim), safe.Cast[*resourcev1.ResourceClaim](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*resourcev1.ResourceClaim)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/", "/status":
+				return Validate_ResourceClaim(
+					ctx, op, nil, /* fldPath */
+					obj.(*resourcev1.ResourceClaim),
+					safe.Cast[*resourcev1.ResourceClaim](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	// type ResourceClaimTemplate
-	scheme.AddValidationFunc((*resourcev1.ResourceClaimTemplate)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_ResourceClaimTemplate(ctx, op, nil /* fldPath */, obj.(*resourcev1.ResourceClaimTemplate), safe.Cast[*resourcev1.ResourceClaimTemplate](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*resourcev1.ResourceClaimTemplate)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_ResourceClaimTemplate(
+					ctx, op, nil, /* fldPath */
+					obj.(*resourcev1.ResourceClaimTemplate),
+					safe.Cast[*resourcev1.ResourceClaimTemplate](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	// type ResourceSlice
-	scheme.AddValidationFunc((*resourcev1.ResourceSlice)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_ResourceSlice(ctx, op, nil /* fldPath */, obj.(*resourcev1.ResourceSlice), safe.Cast[*resourcev1.ResourceSlice](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*resourcev1.ResourceSlice)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_ResourceSlice(
+					ctx, op, nil, /* fldPath */
+					obj.(*resourcev1.ResourceSlice),
+					safe.Cast[*resourcev1.ResourceSlice](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	return nil
 }
 

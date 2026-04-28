@@ -40,13 +40,20 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
 	// type RuntimeClass
-	scheme.AddValidationFunc((*nodev1alpha1.RuntimeClass)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_RuntimeClass(ctx, op, nil /* fldPath */, obj.(*nodev1alpha1.RuntimeClass), safe.Cast[*nodev1alpha1.RuntimeClass](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*nodev1alpha1.RuntimeClass)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_RuntimeClass(
+					ctx, op, nil, /* fldPath */
+					obj.(*nodev1alpha1.RuntimeClass),
+					safe.Cast[*nodev1alpha1.RuntimeClass](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	return nil
 }
 

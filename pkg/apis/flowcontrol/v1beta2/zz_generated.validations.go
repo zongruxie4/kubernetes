@@ -40,13 +40,20 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
 	// type PriorityLevelConfiguration
-	scheme.AddValidationFunc((*flowcontrolv1beta2.PriorityLevelConfiguration)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/", "/status":
-			return Validate_PriorityLevelConfiguration(ctx, op, nil /* fldPath */, obj.(*flowcontrolv1beta2.PriorityLevelConfiguration), safe.Cast[*flowcontrolv1beta2.PriorityLevelConfiguration](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*flowcontrolv1beta2.PriorityLevelConfiguration)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/", "/status":
+				return Validate_PriorityLevelConfiguration(
+					ctx, op, nil, /* fldPath */
+					obj.(*flowcontrolv1beta2.PriorityLevelConfiguration),
+					safe.Cast[*flowcontrolv1beta2.PriorityLevelConfiguration](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	return nil
 }
 

@@ -40,37 +40,65 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
 	// type ClusterRole
-	scheme.AddValidationFunc((*rbacv1.ClusterRole)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_ClusterRole(ctx, op, nil /* fldPath */, obj.(*rbacv1.ClusterRole), safe.Cast[*rbacv1.ClusterRole](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*rbacv1.ClusterRole)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_ClusterRole(
+					ctx, op, nil, /* fldPath */
+					obj.(*rbacv1.ClusterRole),
+					safe.Cast[*rbacv1.ClusterRole](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	// type ClusterRoleBinding
-	scheme.AddValidationFunc((*rbacv1.ClusterRoleBinding)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_ClusterRoleBinding(ctx, op, nil /* fldPath */, obj.(*rbacv1.ClusterRoleBinding), safe.Cast[*rbacv1.ClusterRoleBinding](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*rbacv1.ClusterRoleBinding)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_ClusterRoleBinding(
+					ctx, op, nil, /* fldPath */
+					obj.(*rbacv1.ClusterRoleBinding),
+					safe.Cast[*rbacv1.ClusterRoleBinding](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	// type Role
-	scheme.AddValidationFunc((*rbacv1.Role)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_Role(ctx, op, nil /* fldPath */, obj.(*rbacv1.Role), safe.Cast[*rbacv1.Role](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*rbacv1.Role)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_Role(
+					ctx, op, nil, /* fldPath */
+					obj.(*rbacv1.Role),
+					safe.Cast[*rbacv1.Role](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	// type RoleBinding
-	scheme.AddValidationFunc((*rbacv1.RoleBinding)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_RoleBinding(ctx, op, nil /* fldPath */, obj.(*rbacv1.RoleBinding), safe.Cast[*rbacv1.RoleBinding](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*rbacv1.RoleBinding)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_RoleBinding(
+					ctx, op, nil, /* fldPath */
+					obj.(*rbacv1.RoleBinding),
+					safe.Cast[*rbacv1.RoleBinding](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	return nil
 }
 

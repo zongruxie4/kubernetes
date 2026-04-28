@@ -40,13 +40,20 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
 	// type CertificateSigningRequest
-	scheme.AddValidationFunc((*certificatesv1.CertificateSigningRequest)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/", "/approval", "/status":
-			return Validate_CertificateSigningRequest(ctx, op, nil /* fldPath */, obj.(*certificatesv1.CertificateSigningRequest), safe.Cast[*certificatesv1.CertificateSigningRequest](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*certificatesv1.CertificateSigningRequest)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/", "/approval", "/status":
+				return Validate_CertificateSigningRequest(
+					ctx, op, nil, /* fldPath */
+					obj.(*certificatesv1.CertificateSigningRequest),
+					safe.Cast[*certificatesv1.CertificateSigningRequest](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	return nil
 }
 

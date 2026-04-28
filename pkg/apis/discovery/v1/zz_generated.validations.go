@@ -41,13 +41,20 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
 	// type EndpointSlice
-	scheme.AddValidationFunc((*discoveryv1.EndpointSlice)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_EndpointSlice(ctx, op, nil /* fldPath */, obj.(*discoveryv1.EndpointSlice), safe.Cast[*discoveryv1.EndpointSlice](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*discoveryv1.EndpointSlice)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_EndpointSlice(
+					ctx, op, nil, /* fldPath */
+					obj.(*discoveryv1.EndpointSlice),
+					safe.Cast[*discoveryv1.EndpointSlice](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	return nil
 }
 

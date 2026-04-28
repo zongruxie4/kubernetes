@@ -41,21 +41,35 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
 	// type PodGroup
-	scheme.AddValidationFunc((*schedulingv1alpha2.PodGroup)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/", "/status":
-			return Validate_PodGroup(ctx, op, nil /* fldPath */, obj.(*schedulingv1alpha2.PodGroup), safe.Cast[*schedulingv1alpha2.PodGroup](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*schedulingv1alpha2.PodGroup)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/", "/status":
+				return Validate_PodGroup(
+					ctx, op, nil, /* fldPath */
+					obj.(*schedulingv1alpha2.PodGroup),
+					safe.Cast[*schedulingv1alpha2.PodGroup](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	// type Workload
-	scheme.AddValidationFunc((*schedulingv1alpha2.Workload)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
-		switch op.Request.SubresourcePath() {
-		case "/":
-			return Validate_Workload(ctx, op, nil /* fldPath */, obj.(*schedulingv1alpha2.Workload), safe.Cast[*schedulingv1alpha2.Workload](oldObj))
-		}
-		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
-	})
+	scheme.AddValidationFunc(
+		(*schedulingv1alpha2.Workload)(nil),
+		func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+			switch op.Request.SubresourcePath() {
+			case "/":
+				return Validate_Workload(
+					ctx, op, nil, /* fldPath */
+					obj.(*schedulingv1alpha2.Workload),
+					safe.Cast[*schedulingv1alpha2.Workload](oldObj))
+			}
+			return field.ErrorList{
+				field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath())),
+			}
+		})
 	return nil
 }
 
