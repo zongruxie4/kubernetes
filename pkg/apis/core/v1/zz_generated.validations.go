@@ -60,7 +60,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_ReplicationController validates an instance of ReplicationController according
 // to declarative validation rules in the API schema.
-func Validate_ReplicationController(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *corev1.ReplicationController) (errs field.ErrorList) {
+func Validate_ReplicationController(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *corev1.ReplicationController) (errs field.ErrorList) {
+
 	// field corev1.ReplicationController.TypeMeta has no validation
 
 	// field corev1.ReplicationController.ObjectMeta
@@ -102,7 +105,10 @@ func Validate_ReplicationController(ctx context.Context, op operation.Operation,
 
 // Validate_ReplicationControllerSpec validates an instance of ReplicationControllerSpec according
 // to declarative validation rules in the API schema.
-func Validate_ReplicationControllerSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *corev1.ReplicationControllerSpec) (errs field.ErrorList) {
+func Validate_ReplicationControllerSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *corev1.ReplicationControllerSpec) (errs field.ErrorList) {
+
 	// field corev1.ReplicationControllerSpec.Replicas
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {

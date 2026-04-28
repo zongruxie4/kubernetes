@@ -107,7 +107,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_AllocatedDeviceStatus validates an instance of AllocatedDeviceStatus according
 // to declarative validation rules in the API schema.
-func Validate_AllocatedDeviceStatus(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.AllocatedDeviceStatus) (errs field.ErrorList) {
+func Validate_AllocatedDeviceStatus(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.AllocatedDeviceStatus) (errs field.ErrorList) {
+
 	// field resourcev1.AllocatedDeviceStatus.Driver has no validation
 	// field resourcev1.AllocatedDeviceStatus.Pool has no validation
 	// field resourcev1.AllocatedDeviceStatus.Device has no validation
@@ -163,7 +166,10 @@ var symbolsForAllocationConfigSource = sets.New(resourcev1.AllocationConfigSourc
 
 // Validate_AllocationConfigSource validates an instance of AllocationConfigSource according
 // to declarative validation rules in the API schema.
-func Validate_AllocationConfigSource(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.AllocationConfigSource) (errs field.ErrorList) {
+func Validate_AllocationConfigSource(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.AllocationConfigSource) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForAllocationConfigSource, nil).MarkAlpha()...)
 
 	return errs
@@ -171,7 +177,10 @@ func Validate_AllocationConfigSource(ctx context.Context, op operation.Operation
 
 // Validate_AllocationResult validates an instance of AllocationResult according
 // to declarative validation rules in the API schema.
-func Validate_AllocationResult(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.AllocationResult) (errs field.ErrorList) {
+func Validate_AllocationResult(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.AllocationResult) (errs field.ErrorList) {
+
 	// field resourcev1.AllocationResult.Devices
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *resourcev1.DeviceAllocationResult, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -191,7 +200,10 @@ func Validate_AllocationResult(ctx context.Context, op operation.Operation, fldP
 
 // Validate_CounterSet validates an instance of CounterSet according
 // to declarative validation rules in the API schema.
-func Validate_CounterSet(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.CounterSet) (errs field.ErrorList) {
+func Validate_CounterSet(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.CounterSet) (errs field.ErrorList) {
+
 	// field resourcev1.CounterSet.Name
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -237,7 +249,10 @@ func Validate_CounterSet(ctx context.Context, op operation.Operation, fldPath *f
 
 // Validate_Device validates an instance of Device according
 // to declarative validation rules in the API schema.
-func Validate_Device(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.Device) (errs field.ErrorList) {
+func Validate_Device(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.Device) (errs field.ErrorList) {
+
 	// field resourcev1.Device.Name has no validation
 
 	// field resourcev1.Device.Attributes
@@ -371,7 +386,10 @@ func Validate_Device(ctx context.Context, op operation.Operation, fldPath *field
 
 // Validate_DeviceAllocationConfiguration validates an instance of DeviceAllocationConfiguration according
 // to declarative validation rules in the API schema.
-func Validate_DeviceAllocationConfiguration(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceAllocationConfiguration) (errs field.ErrorList) {
+func Validate_DeviceAllocationConfiguration(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceAllocationConfiguration) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceAllocationConfiguration.Source
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *resourcev1.AllocationConfigSource, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -440,7 +458,10 @@ var symbolsForDeviceAllocationMode = sets.New(resourcev1.DeviceAllocationModeAll
 
 // Validate_DeviceAllocationMode validates an instance of DeviceAllocationMode according
 // to declarative validation rules in the API schema.
-func Validate_DeviceAllocationMode(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceAllocationMode) (errs field.ErrorList) {
+func Validate_DeviceAllocationMode(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceAllocationMode) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceAllocationMode, nil).MarkAlpha()...)
 
 	return errs
@@ -448,7 +469,10 @@ func Validate_DeviceAllocationMode(ctx context.Context, op operation.Operation, 
 
 // Validate_DeviceAllocationResult validates an instance of DeviceAllocationResult according
 // to declarative validation rules in the API schema.
-func Validate_DeviceAllocationResult(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceAllocationResult) (errs field.ErrorList) {
+func Validate_DeviceAllocationResult(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceAllocationResult) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceAllocationResult.Results
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []resourcev1.DeviceRequestAllocationResult, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -508,7 +532,10 @@ var unionMembershipFor_k8s_io_api_resource_v1_DeviceAttribute_ = validate.NewUni
 
 // Validate_DeviceAttribute validates an instance of DeviceAttribute according
 // to declarative validation rules in the API schema.
-func Validate_DeviceAttribute(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceAttribute) (errs field.ErrorList) {
+func Validate_DeviceAttribute(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceAttribute) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Union(ctx, op, fldPath, obj, oldObj, unionMembershipFor_k8s_io_api_resource_v1_DeviceAttribute_, func(obj *resourcev1.DeviceAttribute) bool {
 		if obj == nil {
 			return false
@@ -700,7 +727,10 @@ func Validate_DeviceAttribute(ctx context.Context, op operation.Operation, fldPa
 
 // Validate_DeviceClaim validates an instance of DeviceClaim according
 // to declarative validation rules in the API schema.
-func Validate_DeviceClaim(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceClaim) (errs field.ErrorList) {
+func Validate_DeviceClaim(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceClaim) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceClaim.Requests
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []resourcev1.DeviceRequest, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -780,7 +810,10 @@ func Validate_DeviceClaim(ctx context.Context, op operation.Operation, fldPath *
 
 // Validate_DeviceClaimConfiguration validates an instance of DeviceClaimConfiguration according
 // to declarative validation rules in the API schema.
-func Validate_DeviceClaimConfiguration(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceClaimConfiguration) (errs field.ErrorList) {
+func Validate_DeviceClaimConfiguration(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceClaimConfiguration) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceClaimConfiguration.Requests
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -824,7 +857,10 @@ func Validate_DeviceClaimConfiguration(ctx context.Context, op operation.Operati
 
 // Validate_DeviceClass validates an instance of DeviceClass according
 // to declarative validation rules in the API schema.
-func Validate_DeviceClass(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceClass) (errs field.ErrorList) {
+func Validate_DeviceClass(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceClass) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceClass.TypeMeta has no validation
 
 	// field resourcev1.DeviceClass.ObjectMeta
@@ -865,7 +901,10 @@ func Validate_DeviceClass(ctx context.Context, op operation.Operation, fldPath *
 
 // Validate_DeviceClassConfiguration validates an instance of DeviceClassConfiguration according
 // to declarative validation rules in the API schema.
-func Validate_DeviceClassConfiguration(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceClassConfiguration) (errs field.ErrorList) {
+func Validate_DeviceClassConfiguration(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceClassConfiguration) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceClassConfiguration.DeviceConfiguration
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *resourcev1.DeviceConfiguration, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -885,7 +924,10 @@ func Validate_DeviceClassConfiguration(ctx context.Context, op operation.Operati
 
 // Validate_DeviceClassSpec validates an instance of DeviceClassSpec according
 // to declarative validation rules in the API schema.
-func Validate_DeviceClassSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceClassSpec) (errs field.ErrorList) {
+func Validate_DeviceClassSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceClassSpec) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceClassSpec.Selectors
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []resourcev1.DeviceSelector, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -956,7 +998,10 @@ func Validate_DeviceClassSpec(ctx context.Context, op operation.Operation, fldPa
 
 // Validate_DeviceConfiguration validates an instance of DeviceConfiguration according
 // to declarative validation rules in the API schema.
-func Validate_DeviceConfiguration(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceConfiguration) (errs field.ErrorList) {
+func Validate_DeviceConfiguration(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceConfiguration) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceConfiguration.Opaque
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *resourcev1.OpaqueDeviceConfiguration, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -984,7 +1029,10 @@ func Validate_DeviceConfiguration(ctx context.Context, op operation.Operation, f
 
 // Validate_DeviceConstraint validates an instance of DeviceConstraint according
 // to declarative validation rules in the API schema.
-func Validate_DeviceConstraint(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceConstraint) (errs field.ErrorList) {
+func Validate_DeviceConstraint(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceConstraint) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceConstraint.Requests
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -1034,7 +1082,10 @@ func Validate_DeviceConstraint(ctx context.Context, op operation.Operation, fldP
 
 // Validate_DeviceCounterConsumption validates an instance of DeviceCounterConsumption according
 // to declarative validation rules in the API schema.
-func Validate_DeviceCounterConsumption(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceCounterConsumption) (errs field.ErrorList) {
+func Validate_DeviceCounterConsumption(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceCounterConsumption) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceCounterConsumption.CounterSet
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -1082,7 +1133,10 @@ func Validate_DeviceCounterConsumption(ctx context.Context, op operation.Operati
 
 // Validate_DeviceRequest validates an instance of DeviceRequest according
 // to declarative validation rules in the API schema.
-func Validate_DeviceRequest(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceRequest) (errs field.ErrorList) {
+func Validate_DeviceRequest(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceRequest) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceRequest.Name has no validation
 
 	// field resourcev1.DeviceRequest.Exactly
@@ -1136,7 +1190,10 @@ func Validate_DeviceRequest(ctx context.Context, op operation.Operation, fldPath
 
 // Validate_DeviceRequestAllocationResult validates an instance of DeviceRequestAllocationResult according
 // to declarative validation rules in the API schema.
-func Validate_DeviceRequestAllocationResult(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceRequestAllocationResult) (errs field.ErrorList) {
+func Validate_DeviceRequestAllocationResult(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceRequestAllocationResult) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceRequestAllocationResult.Request has no validation
 
 	// field resourcev1.DeviceRequestAllocationResult.Driver
@@ -1276,7 +1333,10 @@ func Validate_DeviceRequestAllocationResult(ctx context.Context, op operation.Op
 
 // Validate_DeviceSubRequest validates an instance of DeviceSubRequest according
 // to declarative validation rules in the API schema.
-func Validate_DeviceSubRequest(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceSubRequest) (errs field.ErrorList) {
+func Validate_DeviceSubRequest(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceSubRequest) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceSubRequest.Name has no validation
 
 	// field resourcev1.DeviceSubRequest.DeviceClassName
@@ -1371,7 +1431,10 @@ func Validate_DeviceSubRequest(ctx context.Context, op operation.Operation, fldP
 
 // Validate_DeviceTaint validates an instance of DeviceTaint according
 // to declarative validation rules in the API schema.
-func Validate_DeviceTaint(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceTaint) (errs field.ErrorList) {
+func Validate_DeviceTaint(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceTaint) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceTaint.Key has no validation
 	// field resourcev1.DeviceTaint.Value has no validation
 
@@ -1404,7 +1467,10 @@ var symbolsForDeviceTaintEffect = sets.New(resourcev1.DeviceTaintEffectNoExecute
 
 // Validate_DeviceTaintEffect validates an instance of DeviceTaintEffect according
 // to declarative validation rules in the API schema.
-func Validate_DeviceTaintEffect(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceTaintEffect) (errs field.ErrorList) {
+func Validate_DeviceTaintEffect(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceTaintEffect) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceTaintEffect, nil).MarkAlpha()...)
 
 	return errs
@@ -1412,7 +1478,10 @@ func Validate_DeviceTaintEffect(ctx context.Context, op operation.Operation, fld
 
 // Validate_DeviceToleration validates an instance of DeviceToleration according
 // to declarative validation rules in the API schema.
-func Validate_DeviceToleration(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceToleration) (errs field.ErrorList) {
+func Validate_DeviceToleration(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceToleration) (errs field.ErrorList) {
+
 	// field resourcev1.DeviceToleration.Key
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -1486,7 +1555,10 @@ var symbolsForDeviceTolerationOperator = sets.New(resourcev1.DeviceTolerationOpE
 
 // Validate_DeviceTolerationOperator validates an instance of DeviceTolerationOperator according
 // to declarative validation rules in the API schema.
-func Validate_DeviceTolerationOperator(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.DeviceTolerationOperator) (errs field.ErrorList) {
+func Validate_DeviceTolerationOperator(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.DeviceTolerationOperator) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceTolerationOperator, nil).MarkAlpha()...)
 
 	return errs
@@ -1494,7 +1566,10 @@ func Validate_DeviceTolerationOperator(ctx context.Context, op operation.Operati
 
 // Validate_ExactDeviceRequest validates an instance of ExactDeviceRequest according
 // to declarative validation rules in the API schema.
-func Validate_ExactDeviceRequest(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.ExactDeviceRequest) (errs field.ErrorList) {
+func Validate_ExactDeviceRequest(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.ExactDeviceRequest) (errs field.ErrorList) {
+
 	// field resourcev1.ExactDeviceRequest.DeviceClassName has no validation
 
 	// field resourcev1.ExactDeviceRequest.Selectors
@@ -1570,7 +1645,10 @@ func Validate_ExactDeviceRequest(ctx context.Context, op operation.Operation, fl
 
 // Validate_NetworkDeviceData validates an instance of NetworkDeviceData according
 // to declarative validation rules in the API schema.
-func Validate_NetworkDeviceData(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.NetworkDeviceData) (errs field.ErrorList) {
+func Validate_NetworkDeviceData(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.NetworkDeviceData) (errs field.ErrorList) {
+
 	// field resourcev1.NetworkDeviceData.InterfaceName
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -1638,7 +1716,10 @@ func Validate_NetworkDeviceData(ctx context.Context, op operation.Operation, fld
 
 // Validate_OpaqueDeviceConfiguration validates an instance of OpaqueDeviceConfiguration according
 // to declarative validation rules in the API schema.
-func Validate_OpaqueDeviceConfiguration(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.OpaqueDeviceConfiguration) (errs field.ErrorList) {
+func Validate_OpaqueDeviceConfiguration(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.OpaqueDeviceConfiguration) (errs field.ErrorList) {
+
 	// field resourcev1.OpaqueDeviceConfiguration.Driver
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -1666,7 +1747,10 @@ func Validate_OpaqueDeviceConfiguration(ctx context.Context, op operation.Operat
 
 // Validate_ResourceClaim validates an instance of ResourceClaim according
 // to declarative validation rules in the API schema.
-func Validate_ResourceClaim(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.ResourceClaim) (errs field.ErrorList) {
+func Validate_ResourceClaim(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.ResourceClaim) (errs field.ErrorList) {
+
 	// field resourcev1.ResourceClaim.TypeMeta has no validation
 	// field resourcev1.ResourceClaim.ObjectMeta has no validation
 
@@ -1708,7 +1792,10 @@ func Validate_ResourceClaim(ctx context.Context, op operation.Operation, fldPath
 
 // Validate_ResourceClaimSpec validates an instance of ResourceClaimSpec according
 // to declarative validation rules in the API schema.
-func Validate_ResourceClaimSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.ResourceClaimSpec) (errs field.ErrorList) {
+func Validate_ResourceClaimSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.ResourceClaimSpec) (errs field.ErrorList) {
+
 	// field resourcev1.ResourceClaimSpec.Devices
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *resourcev1.DeviceClaim, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -1726,7 +1813,10 @@ func Validate_ResourceClaimSpec(ctx context.Context, op operation.Operation, fld
 
 // Validate_ResourceClaimStatus validates an instance of ResourceClaimStatus according
 // to declarative validation rules in the API schema.
-func Validate_ResourceClaimStatus(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.ResourceClaimStatus) (errs field.ErrorList) {
+func Validate_ResourceClaimStatus(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.ResourceClaimStatus) (errs field.ErrorList) {
+
 	// field resourcev1.ResourceClaimStatus.Allocation
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *resourcev1.AllocationResult, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -1810,7 +1900,10 @@ func Validate_ResourceClaimStatus(ctx context.Context, op operation.Operation, f
 
 // Validate_ResourceClaimTemplate validates an instance of ResourceClaimTemplate according
 // to declarative validation rules in the API schema.
-func Validate_ResourceClaimTemplate(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.ResourceClaimTemplate) (errs field.ErrorList) {
+func Validate_ResourceClaimTemplate(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.ResourceClaimTemplate) (errs field.ErrorList) {
+
 	// field resourcev1.ResourceClaimTemplate.TypeMeta has no validation
 	// field resourcev1.ResourceClaimTemplate.ObjectMeta has no validation
 
@@ -1833,7 +1926,10 @@ func Validate_ResourceClaimTemplate(ctx context.Context, op operation.Operation,
 
 // Validate_ResourceClaimTemplateSpec validates an instance of ResourceClaimTemplateSpec according
 // to declarative validation rules in the API schema.
-func Validate_ResourceClaimTemplateSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.ResourceClaimTemplateSpec) (errs field.ErrorList) {
+func Validate_ResourceClaimTemplateSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.ResourceClaimTemplateSpec) (errs field.ErrorList) {
+
 	// field resourcev1.ResourceClaimTemplateSpec.ObjectMeta has no validation
 
 	// field resourcev1.ResourceClaimTemplateSpec.Spec
@@ -1853,7 +1949,10 @@ func Validate_ResourceClaimTemplateSpec(ctx context.Context, op operation.Operat
 
 // Validate_ResourceSlice validates an instance of ResourceSlice according
 // to declarative validation rules in the API schema.
-func Validate_ResourceSlice(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.ResourceSlice) (errs field.ErrorList) {
+func Validate_ResourceSlice(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.ResourceSlice) (errs field.ErrorList) {
+
 	// field resourcev1.ResourceSlice.TypeMeta has no validation
 	// field resourcev1.ResourceSlice.ObjectMeta has no validation
 
@@ -1874,7 +1973,10 @@ func Validate_ResourceSlice(ctx context.Context, op operation.Operation, fldPath
 
 // Validate_ResourceSliceSpec validates an instance of ResourceSliceSpec according
 // to declarative validation rules in the API schema.
-func Validate_ResourceSliceSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1.ResourceSliceSpec) (errs field.ErrorList) {
+func Validate_ResourceSliceSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1.ResourceSliceSpec) (errs field.ErrorList) {
+
 	// field resourcev1.ResourceSliceSpec.Driver has no validation
 	// field resourcev1.ResourceSliceSpec.Pool has no validation
 	// field resourcev1.ResourceSliceSpec.NodeName has no validation

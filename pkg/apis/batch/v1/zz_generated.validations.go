@@ -59,7 +59,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_CronJob validates an instance of CronJob according
 // to declarative validation rules in the API schema.
-func Validate_CronJob(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *batchv1.CronJob) (errs field.ErrorList) {
+func Validate_CronJob(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *batchv1.CronJob) (errs field.ErrorList) {
+
 	// field batchv1.CronJob.TypeMeta has no validation
 	// field batchv1.CronJob.ObjectMeta has no validation
 
@@ -81,7 +84,10 @@ func Validate_CronJob(ctx context.Context, op operation.Operation, fldPath *fiel
 
 // Validate_CronJobSpec validates an instance of CronJobSpec according
 // to declarative validation rules in the API schema.
-func Validate_CronJobSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *batchv1.CronJobSpec) (errs field.ErrorList) {
+func Validate_CronJobSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *batchv1.CronJobSpec) (errs field.ErrorList) {
+
 	// field batchv1.CronJobSpec.Schedule
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {

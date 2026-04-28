@@ -59,7 +59,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_ValidatingAdmissionPolicyBinding validates an instance of ValidatingAdmissionPolicyBinding according
 // to declarative validation rules in the API schema.
-func Validate_ValidatingAdmissionPolicyBinding(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBinding) (errs field.ErrorList) {
+func Validate_ValidatingAdmissionPolicyBinding(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBinding) (errs field.ErrorList) {
+
 	// field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBinding.TypeMeta has no validation
 	// field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBinding.ObjectMeta has no validation
 
@@ -82,7 +85,10 @@ func Validate_ValidatingAdmissionPolicyBinding(ctx context.Context, op operation
 
 // Validate_ValidatingAdmissionPolicyBindingSpec validates an instance of ValidatingAdmissionPolicyBindingSpec according
 // to declarative validation rules in the API schema.
-func Validate_ValidatingAdmissionPolicyBindingSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec) (errs field.ErrorList) {
+func Validate_ValidatingAdmissionPolicyBindingSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec) (errs field.ErrorList) {
+
 	// field admissionregistrationv1alpha1.ValidatingAdmissionPolicyBindingSpec.PolicyName
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {

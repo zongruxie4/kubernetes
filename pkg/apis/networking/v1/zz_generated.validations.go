@@ -89,7 +89,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_IPAddress validates an instance of IPAddress according
 // to declarative validation rules in the API schema.
-func Validate_IPAddress(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.IPAddress) (errs field.ErrorList) {
+func Validate_IPAddress(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.IPAddress) (errs field.ErrorList) {
+
 	// field networkingv1.IPAddress.TypeMeta has no validation
 	// field networkingv1.IPAddress.ObjectMeta has no validation
 
@@ -110,7 +113,10 @@ func Validate_IPAddress(ctx context.Context, op operation.Operation, fldPath *fi
 
 // Validate_IPAddressSpec validates an instance of IPAddressSpec according
 // to declarative validation rules in the API schema.
-func Validate_IPAddressSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.IPAddressSpec) (errs field.ErrorList) {
+func Validate_IPAddressSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.IPAddressSpec) (errs field.ErrorList) {
+
 	// field networkingv1.IPAddressSpec.ParentRef
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *networkingv1.ParentReference, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -141,7 +147,10 @@ func Validate_IPAddressSpec(ctx context.Context, op operation.Operation, fldPath
 
 // Validate_IPBlock validates an instance of IPBlock according
 // to declarative validation rules in the API schema.
-func Validate_IPBlock(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.IPBlock) (errs field.ErrorList) {
+func Validate_IPBlock(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.IPBlock) (errs field.ErrorList) {
+
 	// field networkingv1.IPBlock.CIDR
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -167,7 +176,10 @@ func Validate_IPBlock(ctx context.Context, op operation.Operation, fldPath *fiel
 
 // Validate_IngressClass validates an instance of IngressClass according
 // to declarative validation rules in the API schema.
-func Validate_IngressClass(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.IngressClass) (errs field.ErrorList) {
+func Validate_IngressClass(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.IngressClass) (errs field.ErrorList) {
+
 	// field networkingv1.IngressClass.TypeMeta has no validation
 	// field networkingv1.IngressClass.ObjectMeta has no validation
 
@@ -188,7 +200,10 @@ func Validate_IngressClass(ctx context.Context, op operation.Operation, fldPath 
 
 // Validate_IngressClassParametersReference validates an instance of IngressClassParametersReference according
 // to declarative validation rules in the API schema.
-func Validate_IngressClassParametersReference(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.IngressClassParametersReference) (errs field.ErrorList) {
+func Validate_IngressClassParametersReference(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.IngressClassParametersReference) (errs field.ErrorList) {
+
 	// field networkingv1.IngressClassParametersReference.APIGroup has no validation
 
 	// field networkingv1.IngressClassParametersReference.Kind
@@ -236,7 +251,10 @@ func Validate_IngressClassParametersReference(ctx context.Context, op operation.
 
 // Validate_IngressClassSpec validates an instance of IngressClassSpec according
 // to declarative validation rules in the API schema.
-func Validate_IngressClassSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.IngressClassSpec) (errs field.ErrorList) {
+func Validate_IngressClassSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.IngressClassSpec) (errs field.ErrorList) {
+
 	// field networkingv1.IngressClassSpec.Controller has no validation
 
 	// field networkingv1.IngressClassSpec.Parameters
@@ -266,7 +284,10 @@ func Validate_IngressClassSpec(ctx context.Context, op operation.Operation, fldP
 
 // Validate_NetworkPolicy validates an instance of NetworkPolicy according
 // to declarative validation rules in the API schema.
-func Validate_NetworkPolicy(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.NetworkPolicy) (errs field.ErrorList) {
+func Validate_NetworkPolicy(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.NetworkPolicy) (errs field.ErrorList) {
+
 	// field networkingv1.NetworkPolicy.TypeMeta has no validation
 	// field networkingv1.NetworkPolicy.ObjectMeta has no validation
 
@@ -287,7 +308,10 @@ func Validate_NetworkPolicy(ctx context.Context, op operation.Operation, fldPath
 
 // Validate_NetworkPolicyEgressRule validates an instance of NetworkPolicyEgressRule according
 // to declarative validation rules in the API schema.
-func Validate_NetworkPolicyEgressRule(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.NetworkPolicyEgressRule) (errs field.ErrorList) {
+func Validate_NetworkPolicyEgressRule(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.NetworkPolicyEgressRule) (errs field.ErrorList) {
+
 	// field networkingv1.NetworkPolicyEgressRule.Ports has no validation
 
 	// field networkingv1.NetworkPolicyEgressRule.To
@@ -315,7 +339,10 @@ func Validate_NetworkPolicyEgressRule(ctx context.Context, op operation.Operatio
 
 // Validate_NetworkPolicyIngressRule validates an instance of NetworkPolicyIngressRule according
 // to declarative validation rules in the API schema.
-func Validate_NetworkPolicyIngressRule(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.NetworkPolicyIngressRule) (errs field.ErrorList) {
+func Validate_NetworkPolicyIngressRule(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.NetworkPolicyIngressRule) (errs field.ErrorList) {
+
 	// field networkingv1.NetworkPolicyIngressRule.Ports has no validation
 
 	// field networkingv1.NetworkPolicyIngressRule.From
@@ -345,7 +372,10 @@ func Validate_NetworkPolicyIngressRule(ctx context.Context, op operation.Operati
 
 // Validate_NetworkPolicyPeer validates an instance of NetworkPolicyPeer according
 // to declarative validation rules in the API schema.
-func Validate_NetworkPolicyPeer(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.NetworkPolicyPeer) (errs field.ErrorList) {
+func Validate_NetworkPolicyPeer(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.NetworkPolicyPeer) (errs field.ErrorList) {
+
 	// field networkingv1.NetworkPolicyPeer.PodSelector has no validation
 	// field networkingv1.NetworkPolicyPeer.NamespaceSelector has no validation
 
@@ -374,7 +404,10 @@ func Validate_NetworkPolicyPeer(ctx context.Context, op operation.Operation, fld
 
 // Validate_NetworkPolicySpec validates an instance of NetworkPolicySpec according
 // to declarative validation rules in the API schema.
-func Validate_NetworkPolicySpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.NetworkPolicySpec) (errs field.ErrorList) {
+func Validate_NetworkPolicySpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.NetworkPolicySpec) (errs field.ErrorList) {
+
 	// field networkingv1.NetworkPolicySpec.PodSelector has no validation
 
 	// field networkingv1.NetworkPolicySpec.Ingress
@@ -427,7 +460,10 @@ func Validate_NetworkPolicySpec(ctx context.Context, op operation.Operation, fld
 
 // Validate_ParentReference validates an instance of ParentReference according
 // to declarative validation rules in the API schema.
-func Validate_ParentReference(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1.ParentReference) (errs field.ErrorList) {
+func Validate_ParentReference(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1.ParentReference) (errs field.ErrorList) {
+
 	// field networkingv1.ParentReference.Group has no validation
 
 	// field networkingv1.ParentReference.Resource

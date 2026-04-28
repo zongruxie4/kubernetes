@@ -59,7 +59,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_CertificateSigningRequest validates an instance of CertificateSigningRequest according
 // to declarative validation rules in the API schema.
-func Validate_CertificateSigningRequest(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *certificatesv1.CertificateSigningRequest) (errs field.ErrorList) {
+func Validate_CertificateSigningRequest(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *certificatesv1.CertificateSigningRequest) (errs field.ErrorList) {
+
 	// field certificatesv1.CertificateSigningRequest.TypeMeta has no validation
 	// field certificatesv1.CertificateSigningRequest.ObjectMeta has no validation
 	// field certificatesv1.CertificateSigningRequest.Spec has no validation
@@ -85,7 +88,10 @@ var zeroOrOneOfMembershipFor_k8s_io_api_certificates_v1_CertificateSigningReques
 
 // Validate_CertificateSigningRequestStatus validates an instance of CertificateSigningRequestStatus according
 // to declarative validation rules in the API schema.
-func Validate_CertificateSigningRequestStatus(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *certificatesv1.CertificateSigningRequestStatus) (errs field.ErrorList) {
+func Validate_CertificateSigningRequestStatus(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *certificatesv1.CertificateSigningRequestStatus) (errs field.ErrorList) {
+
 	// field certificatesv1.CertificateSigningRequestStatus.Conditions
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []certificatesv1.CertificateSigningRequestCondition, oldValueCorrelated bool) (errs field.ErrorList) {

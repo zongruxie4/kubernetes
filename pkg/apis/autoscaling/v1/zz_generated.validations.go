@@ -74,7 +74,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_HorizontalPodAutoscaler validates an instance of HorizontalPodAutoscaler according
 // to declarative validation rules in the API schema.
-func Validate_HorizontalPodAutoscaler(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *autoscalingv1.HorizontalPodAutoscaler) (errs field.ErrorList) {
+func Validate_HorizontalPodAutoscaler(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *autoscalingv1.HorizontalPodAutoscaler) (errs field.ErrorList) {
+
 	// field autoscalingv1.HorizontalPodAutoscaler.TypeMeta has no validation
 	// field autoscalingv1.HorizontalPodAutoscaler.ObjectMeta has no validation
 
@@ -98,7 +101,10 @@ func Validate_HorizontalPodAutoscaler(ctx context.Context, op operation.Operatio
 
 // Validate_HorizontalPodAutoscalerSpec validates an instance of HorizontalPodAutoscalerSpec according
 // to declarative validation rules in the API schema.
-func Validate_HorizontalPodAutoscalerSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *autoscalingv1.HorizontalPodAutoscalerSpec) (errs field.ErrorList) {
+func Validate_HorizontalPodAutoscalerSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *autoscalingv1.HorizontalPodAutoscalerSpec) (errs field.ErrorList) {
+
 	// field autoscalingv1.HorizontalPodAutoscalerSpec.ScaleTargetRef has no validation
 
 	// field autoscalingv1.HorizontalPodAutoscalerSpec.MinReplicas
@@ -151,7 +157,10 @@ func Validate_HorizontalPodAutoscalerSpec(ctx context.Context, op operation.Oper
 
 // Validate_Scale validates an instance of Scale according
 // to declarative validation rules in the API schema.
-func Validate_Scale(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *autoscalingv1.Scale) (errs field.ErrorList) {
+func Validate_Scale(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *autoscalingv1.Scale) (errs field.ErrorList) {
+
 	// field autoscalingv1.Scale.TypeMeta has no validation
 	// field autoscalingv1.Scale.ObjectMeta has no validation
 
@@ -173,7 +182,10 @@ func Validate_Scale(ctx context.Context, op operation.Operation, fldPath *field.
 
 // Validate_ScaleSpec validates an instance of ScaleSpec according
 // to declarative validation rules in the API schema.
-func Validate_ScaleSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *autoscalingv1.ScaleSpec) (errs field.ErrorList) {
+func Validate_ScaleSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *autoscalingv1.ScaleSpec) (errs field.ErrorList) {
+
 	// field autoscalingv1.ScaleSpec.Replicas
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {

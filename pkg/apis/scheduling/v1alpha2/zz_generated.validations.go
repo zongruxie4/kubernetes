@@ -77,7 +77,10 @@ var symbolsForDisruptionMode = sets.New(schedulingv1alpha2.DisruptionModePod, sc
 
 // Validate_DisruptionMode validates an instance of DisruptionMode according
 // to declarative validation rules in the API schema.
-func Validate_DisruptionMode(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.DisruptionMode) (errs field.ErrorList) {
+func Validate_DisruptionMode(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.DisruptionMode) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDisruptionMode, nil)...)
 
 	return errs
@@ -85,7 +88,10 @@ func Validate_DisruptionMode(ctx context.Context, op operation.Operation, fldPat
 
 // Validate_GangSchedulingPolicy validates an instance of GangSchedulingPolicy according
 // to declarative validation rules in the API schema.
-func Validate_GangSchedulingPolicy(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.GangSchedulingPolicy) (errs field.ErrorList) {
+func Validate_GangSchedulingPolicy(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.GangSchedulingPolicy) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.GangSchedulingPolicy.MinCount
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -111,7 +117,10 @@ func Validate_GangSchedulingPolicy(ctx context.Context, op operation.Operation, 
 
 // Validate_PodGroup validates an instance of PodGroup according
 // to declarative validation rules in the API schema.
-func Validate_PodGroup(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroup) (errs field.ErrorList) {
+func Validate_PodGroup(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.PodGroup) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.PodGroup.TypeMeta has no validation
 	// field schedulingv1alpha2.PodGroup.ObjectMeta has no validation
 
@@ -146,7 +155,10 @@ var unionMembershipFor_k8s_io_api_scheduling_v1alpha2_PodGroupResourceClaim_ = v
 
 // Validate_PodGroupResourceClaim validates an instance of PodGroupResourceClaim according
 // to declarative validation rules in the API schema.
-func Validate_PodGroupResourceClaim(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroupResourceClaim) (errs field.ErrorList) {
+func Validate_PodGroupResourceClaim(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.PodGroupResourceClaim) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Union(ctx, op, fldPath, obj, oldObj, unionMembershipFor_k8s_io_api_scheduling_v1alpha2_PodGroupResourceClaim_, func(obj *schedulingv1alpha2.PodGroupResourceClaim) bool {
 		if obj == nil {
 			return false
@@ -224,7 +236,10 @@ func Validate_PodGroupResourceClaim(ctx context.Context, op operation.Operation,
 
 // Validate_PodGroupResourceClaimStatus validates an instance of PodGroupResourceClaimStatus according
 // to declarative validation rules in the API schema.
-func Validate_PodGroupResourceClaimStatus(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroupResourceClaimStatus) (errs field.ErrorList) {
+func Validate_PodGroupResourceClaimStatus(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.PodGroupResourceClaimStatus) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.PodGroupResourceClaimStatus.Name has no validation
 
 	// field schedulingv1alpha2.PodGroupResourceClaimStatus.ResourceClaimName
@@ -251,7 +266,10 @@ func Validate_PodGroupResourceClaimStatus(ctx context.Context, op operation.Oper
 
 // Validate_PodGroupSchedulingConstraints validates an instance of PodGroupSchedulingConstraints according
 // to declarative validation rules in the API schema.
-func Validate_PodGroupSchedulingConstraints(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroupSchedulingConstraints) (errs field.ErrorList) {
+func Validate_PodGroupSchedulingConstraints(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.PodGroupSchedulingConstraints) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.PodGroupSchedulingConstraints.Topology
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []schedulingv1alpha2.TopologyConstraint, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -285,7 +303,10 @@ var unionMembershipFor_k8s_io_api_scheduling_v1alpha2_PodGroupSchedulingPolicy_ 
 
 // Validate_PodGroupSchedulingPolicy validates an instance of PodGroupSchedulingPolicy according
 // to declarative validation rules in the API schema.
-func Validate_PodGroupSchedulingPolicy(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroupSchedulingPolicy) (errs field.ErrorList) {
+func Validate_PodGroupSchedulingPolicy(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.PodGroupSchedulingPolicy) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Union(ctx, op, fldPath, obj, oldObj, unionMembershipFor_k8s_io_api_scheduling_v1alpha2_PodGroupSchedulingPolicy_, func(obj *schedulingv1alpha2.PodGroupSchedulingPolicy) bool {
 		if obj == nil {
 			return false
@@ -345,7 +366,10 @@ func Validate_PodGroupSchedulingPolicy(ctx context.Context, op operation.Operati
 
 // Validate_PodGroupSpec validates an instance of PodGroupSpec according
 // to declarative validation rules in the API schema.
-func Validate_PodGroupSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroupSpec) (errs field.ErrorList) {
+func Validate_PodGroupSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.PodGroupSpec) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.PodGroupSpec.PodGroupTemplateRef
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroupTemplateReference, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -569,7 +593,10 @@ func Validate_PodGroupSpec(ctx context.Context, op operation.Operation, fldPath 
 
 // Validate_PodGroupStatus validates an instance of PodGroupStatus according
 // to declarative validation rules in the API schema.
-func Validate_PodGroupStatus(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroupStatus) (errs field.ErrorList) {
+func Validate_PodGroupStatus(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.PodGroupStatus) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.PodGroupStatus.Conditions has no validation
 
 	// field schedulingv1alpha2.PodGroupStatus.ResourceClaimStatuses
@@ -609,7 +636,10 @@ func Validate_PodGroupStatus(ctx context.Context, op operation.Operation, fldPat
 
 // Validate_PodGroupTemplate validates an instance of PodGroupTemplate according
 // to declarative validation rules in the API schema.
-func Validate_PodGroupTemplate(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroupTemplate) (errs field.ErrorList) {
+func Validate_PodGroupTemplate(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.PodGroupTemplate) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.PodGroupTemplate.Name
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -802,7 +832,10 @@ var unionMembershipFor_k8s_io_api_scheduling_v1alpha2_PodGroupTemplateReference_
 
 // Validate_PodGroupTemplateReference validates an instance of PodGroupTemplateReference according
 // to declarative validation rules in the API schema.
-func Validate_PodGroupTemplateReference(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroupTemplateReference) (errs field.ErrorList) {
+func Validate_PodGroupTemplateReference(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.PodGroupTemplateReference) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Union(ctx, op, fldPath, obj, oldObj, unionMembershipFor_k8s_io_api_scheduling_v1alpha2_PodGroupTemplateReference_, func(obj *schedulingv1alpha2.PodGroupTemplateReference) bool {
 		if obj == nil {
 			return false
@@ -837,7 +870,10 @@ func Validate_PodGroupTemplateReference(ctx context.Context, op operation.Operat
 
 // Validate_TopologyConstraint validates an instance of TopologyConstraint according
 // to declarative validation rules in the API schema.
-func Validate_TopologyConstraint(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.TopologyConstraint) (errs field.ErrorList) {
+func Validate_TopologyConstraint(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.TopologyConstraint) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.TopologyConstraint.Key
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -863,7 +899,10 @@ func Validate_TopologyConstraint(ctx context.Context, op operation.Operation, fl
 
 // Validate_TypedLocalObjectReference validates an instance of TypedLocalObjectReference according
 // to declarative validation rules in the API schema.
-func Validate_TypedLocalObjectReference(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.TypedLocalObjectReference) (errs field.ErrorList) {
+func Validate_TypedLocalObjectReference(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.TypedLocalObjectReference) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.TypedLocalObjectReference.APIGroup
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -928,7 +967,10 @@ func Validate_TypedLocalObjectReference(ctx context.Context, op operation.Operat
 
 // Validate_Workload validates an instance of Workload according
 // to declarative validation rules in the API schema.
-func Validate_Workload(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.Workload) (errs field.ErrorList) {
+func Validate_Workload(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.Workload) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.Workload.TypeMeta has no validation
 	// field schedulingv1alpha2.Workload.ObjectMeta has no validation
 
@@ -949,7 +991,10 @@ func Validate_Workload(ctx context.Context, op operation.Operation, fldPath *fie
 
 // Validate_WorkloadPodGroupTemplateReference validates an instance of WorkloadPodGroupTemplateReference according
 // to declarative validation rules in the API schema.
-func Validate_WorkloadPodGroupTemplateReference(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.WorkloadPodGroupTemplateReference) (errs field.ErrorList) {
+func Validate_WorkloadPodGroupTemplateReference(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.WorkloadPodGroupTemplateReference) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.WorkloadPodGroupTemplateReference.WorkloadName
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -999,7 +1044,10 @@ func Validate_WorkloadPodGroupTemplateReference(ctx context.Context, op operatio
 
 // Validate_WorkloadSpec validates an instance of WorkloadSpec according
 // to declarative validation rules in the API schema.
-func Validate_WorkloadSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.WorkloadSpec) (errs field.ErrorList) {
+func Validate_WorkloadSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *schedulingv1alpha2.WorkloadSpec) (errs field.ErrorList) {
+
 	// field schedulingv1alpha2.WorkloadSpec.ControllerRef
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *schedulingv1alpha2.TypedLocalObjectReference, oldValueCorrelated bool) (errs field.ErrorList) {

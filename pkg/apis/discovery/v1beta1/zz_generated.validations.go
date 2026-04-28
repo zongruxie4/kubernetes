@@ -62,7 +62,10 @@ var symbolsForAddressType = sets.New(discoveryv1beta1.AddressTypeFQDN, discovery
 
 // Validate_AddressType validates an instance of AddressType according
 // to declarative validation rules in the API schema.
-func Validate_AddressType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *discoveryv1beta1.AddressType) (errs field.ErrorList) {
+func Validate_AddressType(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *discoveryv1beta1.AddressType) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForAddressType, nil).MarkAlpha()...)
 
 	return errs
@@ -70,7 +73,10 @@ func Validate_AddressType(ctx context.Context, op operation.Operation, fldPath *
 
 // Validate_Endpoint validates an instance of Endpoint according
 // to declarative validation rules in the API schema.
-func Validate_Endpoint(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *discoveryv1beta1.Endpoint) (errs field.ErrorList) {
+func Validate_Endpoint(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *discoveryv1beta1.Endpoint) (errs field.ErrorList) {
+
 	// field discoveryv1beta1.Endpoint.Addresses
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -105,7 +111,10 @@ func Validate_Endpoint(ctx context.Context, op operation.Operation, fldPath *fie
 
 // Validate_EndpointSlice validates an instance of EndpointSlice according
 // to declarative validation rules in the API schema.
-func Validate_EndpointSlice(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *discoveryv1beta1.EndpointSlice) (errs field.ErrorList) {
+func Validate_EndpointSlice(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *discoveryv1beta1.EndpointSlice) (errs field.ErrorList) {
+
 	// field discoveryv1beta1.EndpointSlice.TypeMeta has no validation
 	// field discoveryv1beta1.EndpointSlice.ObjectMeta has no validation
 

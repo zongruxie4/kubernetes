@@ -75,7 +75,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_StorageClass validates an instance of StorageClass according
 // to declarative validation rules in the API schema.
-func Validate_StorageClass(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *storagev1.StorageClass) (errs field.ErrorList) {
+func Validate_StorageClass(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *storagev1.StorageClass) (errs field.ErrorList) {
+
 	// field storagev1.StorageClass.TypeMeta has no validation
 	// field storagev1.StorageClass.ObjectMeta has no validation
 
@@ -179,7 +182,10 @@ func Validate_StorageClass(ctx context.Context, op operation.Operation, fldPath 
 
 // Validate_VolumeAttachment validates an instance of VolumeAttachment according
 // to declarative validation rules in the API schema.
-func Validate_VolumeAttachment(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *storagev1.VolumeAttachment) (errs field.ErrorList) {
+func Validate_VolumeAttachment(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *storagev1.VolumeAttachment) (errs field.ErrorList) {
+
 	// field storagev1.VolumeAttachment.TypeMeta has no validation
 	// field storagev1.VolumeAttachment.ObjectMeta has no validation
 
@@ -210,7 +216,10 @@ func Validate_VolumeAttachment(ctx context.Context, op operation.Operation, fldP
 
 // Validate_VolumeAttachmentSpec validates an instance of VolumeAttachmentSpec according
 // to declarative validation rules in the API schema.
-func Validate_VolumeAttachmentSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *storagev1.VolumeAttachmentSpec) (errs field.ErrorList) {
+func Validate_VolumeAttachmentSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *storagev1.VolumeAttachmentSpec) (errs field.ErrorList) {
+
 	// field storagev1.VolumeAttachmentSpec.Attacher
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {

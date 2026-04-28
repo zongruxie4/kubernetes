@@ -59,7 +59,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_LimitResponse validates an instance of LimitResponse according
 // to declarative validation rules in the API schema.
-func Validate_LimitResponse(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *flowcontrolv1.LimitResponse) (errs field.ErrorList) {
+func Validate_LimitResponse(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *flowcontrolv1.LimitResponse) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Discriminated(ctx, op, fldPath, obj, oldObj, "queuing", func(obj *flowcontrolv1.LimitResponse) *flowcontrolv1.QueuingConfiguration { return obj.Queuing }, func(obj *flowcontrolv1.LimitResponse) flowcontrolv1.LimitResponseType { return obj.Type }, validate.DirectEqualPtr, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *flowcontrolv1.QueuingConfiguration) field.ErrorList {
 		errs := field.ErrorList{}
 		errs = append(errs, validate.ForbiddenPointer(ctx, op, fldPath, obj, oldObj).MarkAlpha()...)
@@ -122,7 +125,10 @@ func Validate_LimitResponse(ctx context.Context, op operation.Operation, fldPath
 
 // Validate_LimitedPriorityLevelConfiguration validates an instance of LimitedPriorityLevelConfiguration according
 // to declarative validation rules in the API schema.
-func Validate_LimitedPriorityLevelConfiguration(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *flowcontrolv1.LimitedPriorityLevelConfiguration) (errs field.ErrorList) {
+func Validate_LimitedPriorityLevelConfiguration(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *flowcontrolv1.LimitedPriorityLevelConfiguration) (errs field.ErrorList) {
+
 	// field flowcontrolv1.LimitedPriorityLevelConfiguration.NominalConcurrencyShares has no validation
 
 	// field flowcontrolv1.LimitedPriorityLevelConfiguration.LimitResponse
@@ -146,7 +152,10 @@ func Validate_LimitedPriorityLevelConfiguration(ctx context.Context, op operatio
 
 // Validate_PriorityLevelConfiguration validates an instance of PriorityLevelConfiguration according
 // to declarative validation rules in the API schema.
-func Validate_PriorityLevelConfiguration(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *flowcontrolv1.PriorityLevelConfiguration) (errs field.ErrorList) {
+func Validate_PriorityLevelConfiguration(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *flowcontrolv1.PriorityLevelConfiguration) (errs field.ErrorList) {
+
 	// field flowcontrolv1.PriorityLevelConfiguration.TypeMeta has no validation
 	// field flowcontrolv1.PriorityLevelConfiguration.ObjectMeta has no validation
 
@@ -170,7 +179,10 @@ func Validate_PriorityLevelConfiguration(ctx context.Context, op operation.Opera
 
 // Validate_PriorityLevelConfigurationSpec validates an instance of PriorityLevelConfigurationSpec according
 // to declarative validation rules in the API schema.
-func Validate_PriorityLevelConfigurationSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *flowcontrolv1.PriorityLevelConfigurationSpec) (errs field.ErrorList) {
+func Validate_PriorityLevelConfigurationSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *flowcontrolv1.PriorityLevelConfigurationSpec) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Discriminated(ctx, op, fldPath, obj, oldObj, "exempt", func(obj *flowcontrolv1.PriorityLevelConfigurationSpec) *flowcontrolv1.ExemptPriorityLevelConfiguration {
 		return obj.Exempt
 	}, func(obj *flowcontrolv1.PriorityLevelConfigurationSpec) flowcontrolv1.PriorityLevelEnablement {

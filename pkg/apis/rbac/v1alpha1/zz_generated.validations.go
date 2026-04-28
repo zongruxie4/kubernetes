@@ -104,7 +104,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_ClusterRole validates an instance of ClusterRole according
 // to declarative validation rules in the API schema.
-func Validate_ClusterRole(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *rbacv1alpha1.ClusterRole) (errs field.ErrorList) {
+func Validate_ClusterRole(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *rbacv1alpha1.ClusterRole) (errs field.ErrorList) {
+
 	// field rbacv1alpha1.ClusterRole.TypeMeta has no validation
 	// field rbacv1alpha1.ClusterRole.ObjectMeta has no validation
 
@@ -134,7 +137,10 @@ func Validate_ClusterRole(ctx context.Context, op operation.Operation, fldPath *
 
 // Validate_ClusterRoleBinding validates an instance of ClusterRoleBinding according
 // to declarative validation rules in the API schema.
-func Validate_ClusterRoleBinding(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *rbacv1alpha1.ClusterRoleBinding) (errs field.ErrorList) {
+func Validate_ClusterRoleBinding(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *rbacv1alpha1.ClusterRoleBinding) (errs field.ErrorList) {
+
 	// field rbacv1alpha1.ClusterRoleBinding.TypeMeta has no validation
 	// field rbacv1alpha1.ClusterRoleBinding.ObjectMeta has no validation
 
@@ -175,7 +181,10 @@ func Validate_ClusterRoleBinding(ctx context.Context, op operation.Operation, fl
 
 // Validate_PolicyRule validates an instance of PolicyRule according
 // to declarative validation rules in the API schema.
-func Validate_PolicyRule(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *rbacv1alpha1.PolicyRule) (errs field.ErrorList) {
+func Validate_PolicyRule(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *rbacv1alpha1.PolicyRule) (errs field.ErrorList) {
+
 	// field rbacv1alpha1.PolicyRule.Verbs
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -204,7 +213,10 @@ func Validate_PolicyRule(ctx context.Context, op operation.Operation, fldPath *f
 
 // Validate_Role validates an instance of Role according
 // to declarative validation rules in the API schema.
-func Validate_Role(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *rbacv1alpha1.Role) (errs field.ErrorList) {
+func Validate_Role(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *rbacv1alpha1.Role) (errs field.ErrorList) {
+
 	// field rbacv1alpha1.Role.TypeMeta has no validation
 	// field rbacv1alpha1.Role.ObjectMeta has no validation
 
@@ -233,7 +245,10 @@ func Validate_Role(ctx context.Context, op operation.Operation, fldPath *field.P
 
 // Validate_RoleBinding validates an instance of RoleBinding according
 // to declarative validation rules in the API schema.
-func Validate_RoleBinding(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *rbacv1alpha1.RoleBinding) (errs field.ErrorList) {
+func Validate_RoleBinding(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *rbacv1alpha1.RoleBinding) (errs field.ErrorList) {
+
 	// field rbacv1alpha1.RoleBinding.TypeMeta has no validation
 	// field rbacv1alpha1.RoleBinding.ObjectMeta has no validation
 
@@ -274,7 +289,10 @@ func Validate_RoleBinding(ctx context.Context, op operation.Operation, fldPath *
 
 // Validate_RoleRef validates an instance of RoleRef according
 // to declarative validation rules in the API schema.
-func Validate_RoleRef(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *rbacv1alpha1.RoleRef) (errs field.ErrorList) {
+func Validate_RoleRef(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *rbacv1alpha1.RoleRef) (errs field.ErrorList) {
+
 	// field rbacv1alpha1.RoleRef.APIGroup has no validation
 	// field rbacv1alpha1.RoleRef.Kind has no validation
 
@@ -302,7 +320,10 @@ func Validate_RoleRef(ctx context.Context, op operation.Operation, fldPath *fiel
 
 // Validate_Subject validates an instance of Subject according
 // to declarative validation rules in the API schema.
-func Validate_Subject(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *rbacv1alpha1.Subject) (errs field.ErrorList) {
+func Validate_Subject(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *rbacv1alpha1.Subject) (errs field.ErrorList) {
+
 	// field rbacv1alpha1.Subject.Kind has no validation
 	// field rbacv1alpha1.Subject.APIVersion has no validation
 

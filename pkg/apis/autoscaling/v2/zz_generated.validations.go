@@ -59,7 +59,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_HorizontalPodAutoscaler validates an instance of HorizontalPodAutoscaler according
 // to declarative validation rules in the API schema.
-func Validate_HorizontalPodAutoscaler(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *autoscalingv2.HorizontalPodAutoscaler) (errs field.ErrorList) {
+func Validate_HorizontalPodAutoscaler(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *autoscalingv2.HorizontalPodAutoscaler) (errs field.ErrorList) {
+
 	// field autoscalingv2.HorizontalPodAutoscaler.TypeMeta has no validation
 	// field autoscalingv2.HorizontalPodAutoscaler.ObjectMeta has no validation
 
@@ -83,7 +86,10 @@ func Validate_HorizontalPodAutoscaler(ctx context.Context, op operation.Operatio
 
 // Validate_HorizontalPodAutoscalerSpec validates an instance of HorizontalPodAutoscalerSpec according
 // to declarative validation rules in the API schema.
-func Validate_HorizontalPodAutoscalerSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *autoscalingv2.HorizontalPodAutoscalerSpec) (errs field.ErrorList) {
+func Validate_HorizontalPodAutoscalerSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *autoscalingv2.HorizontalPodAutoscalerSpec) (errs field.ErrorList) {
+
 	// field autoscalingv2.HorizontalPodAutoscalerSpec.ScaleTargetRef has no validation
 
 	// field autoscalingv2.HorizontalPodAutoscalerSpec.MinReplicas

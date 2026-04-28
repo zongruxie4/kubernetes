@@ -76,7 +76,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_DeviceTaint validates an instance of DeviceTaint according
 // to declarative validation rules in the API schema.
-func Validate_DeviceTaint(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1alpha3.DeviceTaint) (errs field.ErrorList) {
+func Validate_DeviceTaint(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1alpha3.DeviceTaint) (errs field.ErrorList) {
+
 	// field resourcev1alpha3.DeviceTaint.Key has no validation
 	// field resourcev1alpha3.DeviceTaint.Value has no validation
 
@@ -109,7 +112,10 @@ var symbolsForDeviceTaintEffect = sets.New(resourcev1alpha3.DeviceTaintEffectNoE
 
 // Validate_DeviceTaintEffect validates an instance of DeviceTaintEffect according
 // to declarative validation rules in the API schema.
-func Validate_DeviceTaintEffect(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1alpha3.DeviceTaintEffect) (errs field.ErrorList) {
+func Validate_DeviceTaintEffect(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1alpha3.DeviceTaintEffect) (errs field.ErrorList) {
+
 	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForDeviceTaintEffect, nil)...)
 
 	return errs
@@ -117,7 +123,10 @@ func Validate_DeviceTaintEffect(ctx context.Context, op operation.Operation, fld
 
 // Validate_DeviceTaintRule validates an instance of DeviceTaintRule according
 // to declarative validation rules in the API schema.
-func Validate_DeviceTaintRule(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1alpha3.DeviceTaintRule) (errs field.ErrorList) {
+func Validate_DeviceTaintRule(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1alpha3.DeviceTaintRule) (errs field.ErrorList) {
+
 	// field resourcev1alpha3.DeviceTaintRule.TypeMeta has no validation
 	// field resourcev1alpha3.DeviceTaintRule.ObjectMeta has no validation
 
@@ -141,7 +150,10 @@ func Validate_DeviceTaintRule(ctx context.Context, op operation.Operation, fldPa
 
 // Validate_DeviceTaintRuleSpec validates an instance of DeviceTaintRuleSpec according
 // to declarative validation rules in the API schema.
-func Validate_DeviceTaintRuleSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1alpha3.DeviceTaintRuleSpec) (errs field.ErrorList) {
+func Validate_DeviceTaintRuleSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1alpha3.DeviceTaintRuleSpec) (errs field.ErrorList) {
+
 	// field resourcev1alpha3.DeviceTaintRuleSpec.DeviceSelector has no validation
 
 	// field resourcev1alpha3.DeviceTaintRuleSpec.Taint
@@ -161,7 +173,10 @@ func Validate_DeviceTaintRuleSpec(ctx context.Context, op operation.Operation, f
 
 // Validate_PoolStatus validates an instance of PoolStatus according
 // to declarative validation rules in the API schema.
-func Validate_PoolStatus(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1alpha3.PoolStatus) (errs field.ErrorList) {
+func Validate_PoolStatus(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1alpha3.PoolStatus) (errs field.ErrorList) {
+
 	// field resourcev1alpha3.PoolStatus.Driver
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -360,7 +375,10 @@ func Validate_PoolStatus(ctx context.Context, op operation.Operation, fldPath *f
 
 // Validate_ResourcePoolStatusRequest validates an instance of ResourcePoolStatusRequest according
 // to declarative validation rules in the API schema.
-func Validate_ResourcePoolStatusRequest(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequest) (errs field.ErrorList) {
+func Validate_ResourcePoolStatusRequest(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequest) (errs field.ErrorList) {
+
 	// field resourcev1alpha3.ResourcePoolStatusRequest.TypeMeta has no validation
 	// field resourcev1alpha3.ResourcePoolStatusRequest.ObjectMeta has no validation
 
@@ -414,7 +432,10 @@ func Validate_ResourcePoolStatusRequest(ctx context.Context, op operation.Operat
 
 // Validate_ResourcePoolStatusRequestSpec validates an instance of ResourcePoolStatusRequestSpec according
 // to declarative validation rules in the API schema.
-func Validate_ResourcePoolStatusRequestSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec) (errs field.ErrorList) {
+func Validate_ResourcePoolStatusRequestSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequestSpec) (errs field.ErrorList) {
+
 	// field resourcev1alpha3.ResourcePoolStatusRequestSpec.Driver
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -481,7 +502,10 @@ func Validate_ResourcePoolStatusRequestSpec(ctx context.Context, op operation.Op
 
 // Validate_ResourcePoolStatusRequestStatus validates an instance of ResourcePoolStatusRequestStatus according
 // to declarative validation rules in the API schema.
-func Validate_ResourcePoolStatusRequestStatus(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus) (errs field.ErrorList) {
+func Validate_ResourcePoolStatusRequestStatus(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *resourcev1alpha3.ResourcePoolStatusRequestStatus) (errs field.ErrorList) {
+
 	// field resourcev1alpha3.ResourcePoolStatusRequestStatus.PoolCount
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {

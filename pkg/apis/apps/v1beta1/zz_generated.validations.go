@@ -58,7 +58,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_Scale validates an instance of Scale according
 // to declarative validation rules in the API schema.
-func Validate_Scale(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *appsv1beta1.Scale) (errs field.ErrorList) {
+func Validate_Scale(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *appsv1beta1.Scale) (errs field.ErrorList) {
+
 	// field appsv1beta1.Scale.TypeMeta has no validation
 	// field appsv1beta1.Scale.ObjectMeta has no validation
 
@@ -80,7 +83,10 @@ func Validate_Scale(ctx context.Context, op operation.Operation, fldPath *field.
 
 // Validate_ScaleSpec validates an instance of ScaleSpec according
 // to declarative validation rules in the API schema.
-func Validate_ScaleSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *appsv1beta1.ScaleSpec) (errs field.ErrorList) {
+func Validate_ScaleSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *appsv1beta1.ScaleSpec) (errs field.ErrorList) {
+
 	// field appsv1beta1.ScaleSpec.Replicas
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {

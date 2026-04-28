@@ -58,7 +58,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_RuntimeClass validates an instance of RuntimeClass according
 // to declarative validation rules in the API schema.
-func Validate_RuntimeClass(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *nodev1beta1.RuntimeClass) (errs field.ErrorList) {
+func Validate_RuntimeClass(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *nodev1beta1.RuntimeClass) (errs field.ErrorList) {
+
 	// field nodev1beta1.RuntimeClass.TypeMeta has no validation
 	// field nodev1beta1.RuntimeClass.ObjectMeta has no validation
 

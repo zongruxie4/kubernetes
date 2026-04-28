@@ -59,7 +59,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_VolumeAttachment validates an instance of VolumeAttachment according
 // to declarative validation rules in the API schema.
-func Validate_VolumeAttachment(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *storagev1alpha1.VolumeAttachment) (errs field.ErrorList) {
+func Validate_VolumeAttachment(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *storagev1alpha1.VolumeAttachment) (errs field.ErrorList) {
+
 	// field storagev1alpha1.VolumeAttachment.TypeMeta has no validation
 	// field storagev1alpha1.VolumeAttachment.ObjectMeta has no validation
 
@@ -92,7 +95,10 @@ func Validate_VolumeAttachment(ctx context.Context, op operation.Operation, fldP
 
 // Validate_VolumeAttachmentSpec validates an instance of VolumeAttachmentSpec according
 // to declarative validation rules in the API schema.
-func Validate_VolumeAttachmentSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *storagev1alpha1.VolumeAttachmentSpec) (errs field.ErrorList) {
+func Validate_VolumeAttachmentSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *storagev1alpha1.VolumeAttachmentSpec) (errs field.ErrorList) {
+
 	// field storagev1alpha1.VolumeAttachmentSpec.Attacher
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {

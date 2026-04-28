@@ -74,7 +74,10 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_IPAddress validates an instance of IPAddress according
 // to declarative validation rules in the API schema.
-func Validate_IPAddress(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1beta1.IPAddress) (errs field.ErrorList) {
+func Validate_IPAddress(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1beta1.IPAddress) (errs field.ErrorList) {
+
 	// field networkingv1beta1.IPAddress.TypeMeta has no validation
 	// field networkingv1beta1.IPAddress.ObjectMeta has no validation
 
@@ -95,7 +98,10 @@ func Validate_IPAddress(ctx context.Context, op operation.Operation, fldPath *fi
 
 // Validate_IPAddressSpec validates an instance of IPAddressSpec according
 // to declarative validation rules in the API schema.
-func Validate_IPAddressSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1beta1.IPAddressSpec) (errs field.ErrorList) {
+func Validate_IPAddressSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1beta1.IPAddressSpec) (errs field.ErrorList) {
+
 	// field networkingv1beta1.IPAddressSpec.ParentRef
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *networkingv1beta1.ParentReference, oldValueCorrelated bool) (errs field.ErrorList) {
@@ -128,7 +134,10 @@ func Validate_IPAddressSpec(ctx context.Context, op operation.Operation, fldPath
 
 // Validate_IngressClass validates an instance of IngressClass according
 // to declarative validation rules in the API schema.
-func Validate_IngressClass(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1beta1.IngressClass) (errs field.ErrorList) {
+func Validate_IngressClass(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1beta1.IngressClass) (errs field.ErrorList) {
+
 	// field networkingv1beta1.IngressClass.TypeMeta has no validation
 	// field networkingv1beta1.IngressClass.ObjectMeta has no validation
 
@@ -149,7 +158,10 @@ func Validate_IngressClass(ctx context.Context, op operation.Operation, fldPath 
 
 // Validate_IngressClassParametersReference validates an instance of IngressClassParametersReference according
 // to declarative validation rules in the API schema.
-func Validate_IngressClassParametersReference(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1beta1.IngressClassParametersReference) (errs field.ErrorList) {
+func Validate_IngressClassParametersReference(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1beta1.IngressClassParametersReference) (errs field.ErrorList) {
+
 	// field networkingv1beta1.IngressClassParametersReference.APIGroup has no validation
 
 	// field networkingv1beta1.IngressClassParametersReference.Kind
@@ -197,7 +209,10 @@ func Validate_IngressClassParametersReference(ctx context.Context, op operation.
 
 // Validate_IngressClassSpec validates an instance of IngressClassSpec according
 // to declarative validation rules in the API schema.
-func Validate_IngressClassSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1beta1.IngressClassSpec) (errs field.ErrorList) {
+func Validate_IngressClassSpec(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1beta1.IngressClassSpec) (errs field.ErrorList) {
+
 	// field networkingv1beta1.IngressClassSpec.Controller has no validation
 
 	// field networkingv1beta1.IngressClassSpec.Parameters
@@ -227,7 +242,10 @@ func Validate_IngressClassSpec(ctx context.Context, op operation.Operation, fldP
 
 // Validate_ParentReference validates an instance of ParentReference according
 // to declarative validation rules in the API schema.
-func Validate_ParentReference(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *networkingv1beta1.ParentReference) (errs field.ErrorList) {
+func Validate_ParentReference(
+	ctx context.Context, op operation.Operation, fldPath *field.Path,
+	obj, oldObj *networkingv1beta1.ParentReference) (errs field.ErrorList) {
+
 	// field networkingv1beta1.ParentReference.Group has no validation
 
 	// field networkingv1beta1.ParentReference.Resource
